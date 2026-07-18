@@ -34,6 +34,11 @@ build/
 .vscode/
 .idea/
 
+# Private strategy docs (gitignored; never in the image) + the Windows installer (not
+# needed in a Linux container, and it bundles a whole Node runtime).
+private-docs/
+installer/
+
 # Browser-automation / test artifacts
 .playwright-mcp/
 test-results/

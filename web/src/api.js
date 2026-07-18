@@ -12,10 +12,18 @@ export const setAsUser = (id) => {
 // session ended (logout elsewhere, expiry, login just turned on) — broadcast it so App can flip to the
 // login screen instead of every poller retrying into a wall. The error carries status + body so callers
 // can read structured fields (e.g. the IP-allowlist save's needsForce).
+// Base path the app is served under. Home Assistant ingress serves the UI from a prefix
+// (…/hassio_ingress/<token>/) and the browser must send that prefix on API calls (ingress
+// strips it again before Fanad sees it). At the normal site root this is '' — a no-op. Safe
+// because the web UI has no client-side routing, so the load-time path is a stable base.
+// Assets are handled separately by Vite's `base: './'`.
+const API_BASE = window.location.pathname.replace(/\/+$/, '');
+export const apiUrl = (u) => API_BASE + u;
+
 async function req(url, opts = {}) {
   const as = getAsUser();
   const headers = { ...(opts.headers || {}), ...(as ? { 'X-Fanad-User': as } : {}) };
-  const r = await fetch(url, { ...opts, headers });
+  const r = await fetch(apiUrl(url), { ...opts, headers });
   if (!r.ok) {
     const body = await r.json().catch(() => ({}));
     if (r.status === 401) window.dispatchEvent(new Event('fanad:unauthorized'));
@@ -110,7 +118,7 @@ export const restoreSettings = (data) => send('/api/settings/restore', 'POST', d
 export const getInstanceStatus = () => req('/api/instance/status');
 export async function exportBackup(includeKek = false) {
   const as = getAsUser();
-  const r = await fetch(`/api/instance/export${includeKek ? '?kek=1' : ''}`, {
+  const r = await fetch(apiUrl(`/api/instance/export${includeKek ? '?kek=1' : ''}`), {
     headers: as ? { 'X-Fanad-User': as } : {},
   });
   if (!r.ok) {

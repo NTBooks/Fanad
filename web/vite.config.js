@@ -37,6 +37,9 @@ function clientBuild() {
 // Dev: Vite serves the SPA and proxies /api to the Express server. Prod: `vite build` → web/dist,
 // which the Express server serves statically.
 export default defineConfig({
+  // Relative asset URLs so the built SPA works both at the site root and behind a path
+  // prefix (Home Assistant ingress serves it from …/hassio_ingress/<token>/).
+  base: './',
   plugins: [react()],
   define: { __CLIENT_BUILD__: JSON.stringify(clientBuild()) },
   server: {
