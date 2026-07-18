@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Fanad — get it out of your head</title>
+<meta name="description" content="Fanad is a private, local-AI assignment pad: a gentle conversational inbox where you put down what you owe future-you, see what's next, do one doable thing, and turn the page. Runs on your own local model, on Telegram, Slack, and the web.">
+<style>
+/* ============================================================
+   Fanad — shared design system (brochure + manual)
+   "Assignment pad" — ink on paper. Sharp, editorial, calm.
+   ============================================================ */
+:root{
+  --paper:#F6F1E3; --paper-alt:#EFE8D6; --card:#FDFBF5;
+  --ink:#211E17; --ink-2:#4C463A; --ink-3:#6B6353;
+  --rule:rgba(33,30,23,.14); --rule-2:rgba(33,30,23,.32);
+  --accent:#C0392B; --accent-ink:#8F2A1F; --accent-wash:#F5E3DB;
+  --bg:var(--paper); --bg-alt:var(--paper-alt); --surface:var(--card);
+  --text:var(--ink); --text-muted:var(--ink-2); --link:var(--accent-ink);
+  --accent-strong:var(--accent); --border:var(--rule); --focus:var(--accent);
+  --font-display:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --font-body:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,ui-sans-serif,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --fs-h1:clamp(2.3rem,1.55rem+3.3vw,3.3rem); --fs-h2:clamp(1.7rem,1.3rem+1.9vw,2.3rem);
+  --fs-h3:clamp(1.3rem,1.1rem+.9vw,1.6rem); --fs-h4:1.16rem;
+  --fs-body:1.06rem; --fs-small:.9rem; --fs-caption:.78rem;
+  --lh-tight:1.08; --lh-snug:1.3; --lh-body:1.62; --tracking-kicker:.16em;
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.5rem;
+  --space-6:2rem;--space-7:3rem;--space-8:4rem;--space-9:6rem;
+  --section-y:clamp(3.25rem,2rem+5vw,5.5rem);
+  --measure:64ch; --shell:70rem; --gutter:clamp(1.25rem,5vw,3rem); --margin-x:2.75rem;
+  --r-sm:0;--r-md:0;--r-lg:0;--r-xl:0;--r-2xl:0;--r-pill:0;
+  --shadow-1:0 1px 0 var(--rule);
+  --shadow-2:3px 3px 0 rgba(33,30,23,.06),0 0 0 1px var(--rule);
+  --rule-line:30px; --ring:0 0 0 2px var(--paper),0 0 0 4px var(--accent);
+  --dur:200ms; --ease:cubic-bezier(.2,.6,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text);background:var(--paper);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%;height:auto} p{max-width:var(--measure)}
+h1,h2,h3,h4,h5{font-family:var(--font-display);font-weight:600;line-height:var(--lh-tight);color:var(--ink);
+  margin:0 0 var(--space-4);text-wrap:balance;letter-spacing:-.011em}
+h1{font-size:var(--fs-h1)} h2{font-size:var(--fs-h2)} h3{font-size:var(--fs-h3);line-height:var(--lh-snug)} h4{font-size:var(--fs-h4)}
+.kicker{font-family:var(--font-mono);font-size:var(--fs-caption);font-weight:600;letter-spacing:var(--tracking-kicker);
+  text-transform:uppercase;color:var(--accent-ink);margin:0 0 var(--space-3);display:inline-flex;align-items:center;gap:.6em}
+.kicker::before{content:"";width:1.6em;height:2px;background:var(--accent);display:inline-block}
+a{color:var(--link);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;transition:color var(--dur) var(--ease)}
+a:hover{color:var(--accent);text-decoration-thickness:2px}
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:none;box-shadow:var(--ring)}
+code,kbd,samp{font-family:var(--font-mono);font-size:.9em}
+:not(pre)>code{background:var(--card);border:1px solid var(--rule-2);color:var(--ink);padding:.12em .45em}
+pre{background:var(--ink);color:var(--paper);padding:var(--space-5);overflow-x:auto;line-height:1.55;border:1px solid var(--ink)}
+hr{border:0;border-top:1px solid var(--rule-2);margin:var(--space-6) 0}
+.shell{max-width:var(--shell);margin-inline:auto;padding-inline:var(--gutter);width:100%}
+section{padding-block:var(--section-y)}
+.section-alt{background:var(--paper-alt);border-block:1px solid var(--rule-2)}
+.pad{position:relative}
+@media(min-width:860px){
+  .pad::before{content:"";position:fixed;top:0;bottom:0;left:max(calc((100vw - var(--shell))/2 + var(--margin-x)),var(--margin-x));width:2px;background:var(--accent);opacity:.45;pointer-events:none;z-index:1}
+  .pad .shell{padding-left:calc(var(--margin-x) + 1.75rem)}
+}
+.ruled{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--rule-line) - 1px),var(--rule) calc(var(--rule-line) - 1px),var(--rule) var(--rule-line))}
+.card{background:var(--card);border:1px solid var(--rule-2);border-top:3px solid var(--accent);padding:var(--space-5);box-shadow:var(--shadow-2)}
+.card>:first-child{margin-top:0}.card>:last-child{margin-bottom:0}
+.grid{display:grid;gap:var(--space-5)}
+@media(min-width:720px){.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:repeat(3,1fr)}}
+.callout{background:var(--card);border:1px solid var(--rule-2);border-left:4px solid var(--accent);padding:var(--space-4) var(--space-5);margin-block:var(--space-5)}
+.callout .label{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.12em;font-size:var(--fs-caption);color:var(--accent-ink);font-weight:700;display:block;margin-bottom:var(--space-2)}
+.callout>:last-child{margin-bottom:0}
+.cmd-table{width:100%;border-collapse:collapse;margin-block:var(--space-4);font-size:var(--fs-small)}
+.cmd-table th{text-align:left;font-family:var(--font-mono);text-transform:uppercase;font-size:var(--fs-caption);letter-spacing:.1em;color:var(--ink-3);border-bottom:2px solid var(--rule-2);padding:.55rem .75rem}
+.cmd-table td{border-bottom:1px solid var(--rule);padding:.65rem .75rem;vertical-align:top}
+.cmd-table tr:hover td{background:var(--accent-wash)}
+.cmd-table td:first-child{white-space:nowrap;width:1%}
+.cmd{font-family:var(--font-mono);font-size:.92em;color:var(--ink);background:var(--paper);border:1px solid var(--rule-2);padding:.14em .5em;display:inline-block}
+.checklist{list-style:none;padding:0;margin:var(--space-4) 0}
+.checklist li{position:relative;padding-left:2rem;margin-block:var(--space-3)}
+.checklist li::before{content:"☐";position:absolute;left:0;top:-.06em;color:var(--accent);font-size:1.15em;line-height:1}
+.btn{display:inline-block;font-family:var(--font-body);font-weight:600;font-size:1rem;padding:.72rem 1.4rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-decoration:none;transition:background var(--dur),color var(--dur),border-color var(--dur)}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.site-header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--rule-2)}
+.site-header .shell{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding-block:var(--space-3)}
+.brandmark{font-family:var(--font-display);font-weight:600;font-size:1.3rem;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.brandmark:hover{color:var(--ink)}
+.toc{border:1px solid var(--rule-2);background:var(--card);padding:var(--space-4)}
+.toc h2{font-size:var(--fs-caption);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);margin:0 0 var(--space-3)}
+.toc ul{list-style:none;margin:0;padding:0}
+.toc a{display:block;padding:.3rem 0;border-bottom:1px solid var(--rule);color:var(--ink);text-decoration:none;font-size:var(--fs-small)}
+.toc a:hover{color:var(--accent)} .toc li:last-child a{border-bottom:0}
+@media(min-width:960px){.toc{position:sticky;top:calc(var(--space-8) + var(--space-2))}}
+.site-footer{background:var(--ink);color:var(--paper);border-top:3px solid var(--accent);padding-block:var(--space-7);margin-top:var(--space-8)}
+.site-footer a{color:var(--paper)}
+.disclaimer{font-size:var(--fs-small);color:#D8D2C4;max-width:62ch;line-height:1.6}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+/* ---- page-specific tweaks (minimal) ---- */
+.skip-link{position:absolute;top:-3rem;left:var(--space-3);background:var(--ink);color:var(--paper);
+  padding:var(--space-2) var(--space-4);font-weight:600;z-index:100;transition:top var(--dur) var(--ease);text-decoration:none}
+.skip-link:focus{top:var(--space-2)}
+.header-back{font-family:var(--font-mono);font-size:var(--fs-small);text-decoration:none;color:var(--accent-ink)}
+.header-back:hover{color:var(--accent)}
+.hero-tagline{font-family:var(--font-display);font-weight:600;font-size:var(--fs-h2);color:var(--ink);
+  line-height:var(--lh-snug);margin:0 0 var(--space-4);letter-spacing:-.011em;text-wrap:balance}
+.hero-lead{font-size:1.15rem;color:var(--ink-2);margin:0 0 var(--space-6);max-width:58ch}
+.hero-actions{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center}
+.lede{font-size:1.12rem;color:var(--ink-2);max-width:60ch}
+.card h3{margin-bottom:var(--space-2)}
+.card p{color:var(--ink-2)}
+.card .card-mark{font-family:var(--font-mono);font-size:var(--fs-caption);text-transform:uppercase;
+  letter-spacing:.12em;color:var(--accent-ink);font-weight:700;display:block;margin-bottom:var(--space-2)}
+.steps{list-style:none;counter-reset:step;padding:0;margin:var(--space-5) 0 0}
+.steps>li{position:relative;padding-left:3.25rem;margin-block:var(--space-5)}
+.steps>li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-.15em;
+  width:2.1rem;height:2.1rem;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:600;font-size:1.15rem;color:#fff;background:var(--accent);border:2px solid var(--accent)}
+.steps h3{font-size:var(--fs-h4);line-height:var(--lh-tight);margin:0 0 var(--space-1)}
+.steps p{color:var(--ink-2);margin:0;max-width:60ch}
+.surface-list{list-style:none;padding:0;margin:var(--space-4) 0 0}
+.surface-list li{padding:var(--space-3) 0;border-bottom:1px solid var(--rule);display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:baseline}
+.surface-list li:last-child{border-bottom:0}
+.surface-list .surface-name{font-family:var(--font-display);font-weight:600;font-size:1.1rem;min-width:7rem}
+.surface-list .surface-desc{color:var(--ink-2);flex:1;min-width:16rem;max-width:none}
+.section-lead{max-width:60ch;color:var(--ink-2)}
+.section-head{margin-bottom:var(--space-6)}
+/* privacy comparison chart */
+.privacy-wrap{overflow-x:auto;border:1px solid var(--rule-2);background:var(--card);margin-top:var(--space-6)}
+.privacy-wrap:focus-visible{outline:none;box-shadow:var(--ring)}
+.privacy-table{width:100%;border-collapse:collapse;min-width:640px;font-size:var(--fs-small)}
+.privacy-table th,.privacy-table td{border:1px solid var(--rule);padding:.65rem .8rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.privacy-table thead th{background:var(--paper-alt);border-bottom:2px solid var(--rule-2);vertical-align:bottom}
+.privacy-table thead th:first-child,.privacy-table th[scope=row]{font-family:var(--font-mono);text-transform:uppercase;font-size:var(--fs-caption);letter-spacing:.05em;color:var(--ink-3);font-weight:600;white-space:nowrap}
+.privacy-table th[scope=row]{background:var(--card);vertical-align:top;white-space:normal;width:9rem}
+.privacy-table .tier{font-family:var(--font-display);font-weight:600;font-size:1rem;display:block;line-height:1.14;white-space:normal;overflow-wrap:normal;color:var(--ink)}
+.privacy-table .col-full{background:var(--accent-wash)}
+.privacy-table thead th.col-full{border-top:3px solid var(--accent)}
+.privacy-table td strong{color:var(--ink);font-weight:700}
+.meter{display:flex;gap:3px;margin-bottom:.4rem}
+.meter i{width:.55rem;height:.55rem;border:1.5px solid var(--accent);display:inline-block}
+.meter i.on{background:var(--accent)}
+.privacy-hint{display:none;font-family:var(--font-mono);font-size:var(--fs-caption);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-top:var(--space-2)}
+@media(max-width:700px){.privacy-hint{display:block}}
+.privacy-note{font-size:var(--fs-caption);color:var(--ink-3);line-height:1.6;margin-top:var(--space-4);max-width:74ch}
+.privacy-note code{font-size:.9em}
+
+/* ---- motion (progressive enhancement; the reduced-motion kill switch above neutralises it all) ---- */
+section[id]{scroll-margin-top:5rem}
+/* Scroll reveals: gated on html.js (set in <head>) so no-JS readers never meet hidden content, and on
+   no-preference so reduced-motion readers never see opacity:0 even before the kill switch applies. */
+@media(prefers-reduced-motion:no-preference){
+  html.js .reveal{opacity:0;translate:0 16px;transition:opacity .6s var(--ease),translate .6s var(--ease)}
+  html.js .reveal.in{opacity:1;translate:0 0}
+  .card,.btn{transition:transform var(--dur) var(--ease),box-shadow var(--dur) var(--ease),background var(--dur),color var(--dur),border-color var(--dur)}
+  .card:hover{transform:translateY(-2px);box-shadow:5px 5px 0 rgba(33,30,23,.08),0 0 0 1px var(--rule)}
+  .btn:hover{transform:translateY(-1px)}
+}
+</style>
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="./index.html">Fanad</a>
+    <a class="header-back" href="./manual.html">Read the manual &rarr;</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="ruled" aria-labelledby="hero-title">
+    <div class="shell">
+      <p class="kicker">A local-AI assignment pad</p>
+      <h1 id="hero-title">Fanad</h1>
+      <p class="hero-tagline">Get it out of your head.</p>
+      <p class="hero-lead">A gentle place to put down what's looping in your mind. Just talk to it &mdash; no
+        forms, no sorting, no setup rituals. Fanad files what you say, holds it for you, and hands you one
+        doable thing when you're ready. Then you clear it, and it turns the page.</p>
+      <div class="hero-actions">
+        <a class="btn" href="./manual.html">Read the manual</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE PAD / OFF-LOADING THESIS -->
+  <section id="the-pad" aria-labelledby="pad-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">The pad that empties</p>
+        <h2 id="pad-title">A pad, not a notebook</h2>
+      </div>
+      <p class="lede">A notebook fills up. A notes app wins when the pile grows. An assignment pad is
+        different: you jot what you owe and by when, glance at it, cross one off, and turn the page. The
+        pad <strong>empties</strong> &mdash; it doesn't hoard.</p>
+      <p style="margin-top:var(--space-4)">That emptying is the whole point. Fanad's deepest job isn't
+        tracking &mdash; it's the relief of putting a looping thought down somewhere you trust, so your mind
+        can stop holding it. Writing it down is the relief, before you do anything at all. It's the plainest
+        move there is: get it out of your head before bed, and let the pad carry it until morning.</p>
+
+      <div class="callout">
+        <span class="label">The idea in one line</span>
+        <p>Don't sort &mdash; just unload. You say it in your own words; Fanad quietly picks a category and an
+          effort level and files it. Organizing is Fanad's job, not yours.</p>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:var(--space-6)">
+        <div class="card">
+          <span class="card-mark">No nagging by design</span>
+          <h3>No recurring tasks</h3>
+          <p>Recurrence is nagging, and nagging is stress. Fanad never repeats on a schedule. A dated task can
+            be added to your <em>own</em> calendar instead, so anything recurring lives on your terms.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark">The page turns itself</span>
+          <h3>Stale things rest</h3>
+          <p>Tasks untouched for about three weeks quietly go to sleep, so the list stays scannable and never
+            rots into a guilt archive. Nothing is lost &mdash; you can bring anything back anytime.</p>
+        </div>
+      </div>
+
+      <div class="callout">
+        <span class="label">A "no" is never the end</span>
+        <p>Refusing a suggestion never fails. Fanad offers something smaller, or nothing at all &mdash; and
+          repeated passes lead to a gentle offer to reshape the task, never to pressure.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PILLARS -->
+  <section id="pillars" class="section-alt" aria-labelledby="pillars-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">What makes it different</p>
+        <h2 id="pillars-title">Four things Fanad holds to</h2>
+      </div>
+      <div class="grid grid-2">
+        <div class="card">
+          <span class="card-mark">Private &amp; local-first</span>
+          <h3>Bring your own local model</h3>
+          <p>Fanad can run entirely on your own machine &mdash; your notes in a local database, a local model
+            (LM Studio or Ollama, bring your own) doing the thinking, no account and no telemetry. How private it
+            is depends on how you run it: the <a href="#privacy">four tiers below</a> lay out the honest
+            trade-offs, from fully private to convenience-first.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark">Gentle &amp; anti-guilt</span>
+          <h3>Nothing flashes or shames</h3>
+          <p>It never nags, counts you down, or moralizes. A missed day is just a day. Every line is meant to
+            lower the weight of the list, not add to it.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark">Grounded, never invents</span>
+          <h3>A calm mirror, not an authority</h3>
+          <p>Fanad only ranks and rephrases your own real rows back to you. It never fabricates demands,
+            homework, or advice &mdash; you assign, and the app holds. That's what earns the trust that lets
+            you actually put a thought down.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark">Capacity &amp; mood aware</span>
+          <h3>A page you can face today</h3>
+          <p>A quick mood signal sizes how much of the pad you see. On a hard day it hides the backlog and
+            offers one tiny thing &mdash; or permission to rest. On a good day it surfaces the fuller page. It
+            matches the ask to what you have.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVACY TIERS -->
+  <section id="privacy" aria-labelledby="privacy-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">How private is it?</p>
+        <h2 id="privacy-title">Four ways to run it &mdash; from fully private to convenient</h2>
+      </div>
+      <p class="section-lead">Privacy isn't one switch. It comes down to three choices: where Fanad is
+        <strong>hosted</strong>, how you <strong>talk to it</strong>, and which <strong>model</strong> does the
+        thinking. Here's the honest trade-off &mdash; pick the column you're comfortable with.</p>
+
+      <div class="privacy-wrap" role="region" aria-label="Privacy comparison of the four ways to run Fanad" tabindex="0">
+        <table class="privacy-table">
+          <thead>
+            <tr>
+              <th scope="col">Your setup</th>
+              <th scope="col" class="col-full">
+                <span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+                <span class="tier">Full privacy</span>
+              </th>
+              <th scope="col">
+                <span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+                <span class="tier">Mostly private</span>
+              </th>
+              <th scope="col">
+                <span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>
+                <span class="tier">Performance over privacy</span>
+              </th>
+              <th scope="col">
+                <span class="meter" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span>
+                <span class="tier">Convenience</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">You talk to it via</th>
+              <td class="col-full">Your own <strong>web app</strong>, over your private tunnel</td>
+              <td><strong>Telegram</strong></td>
+              <td><strong>Telegram</strong></td>
+              <td><strong>Telegram</strong></td>
+            </tr>
+            <tr>
+              <th scope="row">Hosted on</th>
+              <td class="col-full">Your machine</td>
+              <td>Your machine</td>
+              <td>Your machine</td>
+              <td>A <strong>cloud server</strong> you rent</td>
+            </tr>
+            <tr>
+              <th scope="row">The AI model</th>
+              <td class="col-full">Local (LM Studio / Ollama)</td>
+              <td>Local (LM Studio / Ollama)</td>
+              <td>A <strong>cloud AI</strong> provider</td>
+              <td>A <strong>cloud AI</strong> provider</td>
+            </tr>
+            <tr>
+              <th scope="row">Notes &amp; data live</th>
+              <td class="col-full">On your machine</td>
+              <td>On your machine</td>
+              <td>On your machine</td>
+              <td>On the cloud host</td>
+            </tr>
+            <tr>
+              <th scope="row">Who can see your words</th>
+              <td class="col-full"><strong>Only you</strong></td>
+              <td>You <strong>+ Telegram</strong></td>
+              <td>You + Telegram <strong>+ the AI provider</strong></td>
+              <td>Telegram + the AI provider <strong>+ your host</strong></td>
+            </tr>
+            <tr>
+              <th scope="row">Good when</th>
+              <td class="col-full">Your notes are sensitive and privacy comes first.</td>
+              <td>You want Telegram's ease, but keep data &amp; AI at home.</td>
+              <td>You want the strongest model and will trade some privacy for it.</td>
+              <td>You just want the easiest start and privacy isn't the concern.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="privacy-hint" aria-hidden="true">Swipe sideways to compare &rarr;</p>
+
+      <p class="privacy-note">Why Telegram counts as less private: bot messages aren't end-to-end encrypted, so
+        Telegram's servers can see what you send its bot. The <strong>web app over your own tunnel</strong> keeps
+        messages between your browser and your server &mdash; choose a tunnel you trust, since one that terminates
+        TLS could see the traffic. A cloud model only ever sees your prompts if you deliberately turn one on &mdash;
+        the <code>LLM_ALLOW_CLOUD</code> switch is off by default.</p>
+    </div>
+  </section>
+
+  <!-- WHO IT'S FOR -->
+  <section id="who" aria-labelledby="who-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">Who it's for</p>
+        <h2 id="who-title">For minds carrying a lot</h2>
+      </div>
+      <p class="section-lead">If a normal to-do app makes things worse &mdash; another wall of overdue red,
+        another thing to organize before you can even start &mdash; Fanad is built the other way around.</p>
+      <div class="grid grid-2" style="margin-top:var(--space-6)">
+        <div class="card">
+          <h3>People buried by lists and pings</h3>
+          <p>For anyone overwhelmed by traditional to-do apps, who wants to off-load without first organizing.
+            You unload; Fanad sorts.</p>
+        </div>
+        <div class="card">
+          <h3>Anxious, looping, tired minds</h3>
+          <p>For anyone who needs to put a looping thought down before bed and get gentle, one-at-a-time
+            nudges instead of a stream of nagging.</p>
+        </div>
+        <div class="card">
+          <h3>Privacy-minded people</h3>
+          <p>For those who want their notes to stay on their own machine, running on their own model, with
+            nothing shipped to a cloud.</p>
+        </div>
+        <div class="card">
+          <h3>People who just want to unload</h3>
+          <p>For anyone who wants to off-load a thought without first sorting it, and get gentle,
+            one-at-a-time nudges rather than a tool that adds one more demand.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="section-alt" aria-labelledby="how-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">How it works</p>
+        <h2 id="how-title">Just talk to it, in three steps</h2>
+      </div>
+      <p class="section-lead">The whole loop is small on purpose. You talk; it holds; you clear; it turns the
+        page for you.</p>
+      <ol class="steps">
+        <li>
+          <h3>Just talk to it</h3>
+          <p>Say what's on your mind in your own words. Fanad files it as a task &mdash; in your words &mdash;
+            quietly picking a category and an effort level for you.</p>
+        </li>
+        <li>
+          <h3>It sorts &amp; holds it</h3>
+          <p>Your list stays scannable and grouped. When it feels like a lot, ask <code>/whatdo</code> and
+            Fanad hands you one next step, sized to your time, energy, and mood &mdash; never a wall.</p>
+        </li>
+        <li>
+          <h3>You clear it, and it turns the page</h3>
+          <p>Say <code>/done</code> to cross it off. A "smaller," a "not today," or a plain "no" is always
+            welcome. Stale things drift off to sleep on their own, so the page keeps clearing.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- SURFACES -->
+  <section id="surfaces" aria-labelledby="surfaces-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">Where it runs</p>
+        <h2 id="surfaces-title">It meets you where you already are</h2>
+      </div>
+      <p class="section-lead">One shared brain behind all three surfaces &mdash; same text-in, text-out
+        everywhere. Both bots reach out over outbound connections, so there's no public URL and no inbound
+        ports to open.</p>
+      <ul class="surface-list">
+        <li>
+          <span class="surface-name">Telegram</span>
+          <span class="surface-desc">The primary bot: capture by text or photo, with tappable menus and quick
+            acknowledgements.</span>
+        </li>
+        <li>
+          <span class="surface-name">Slack</span>
+          <span class="surface-desc">An optional second channel at full parity &mdash; buttons, formatting,
+            and calendar files included.</span>
+        </li>
+        <li>
+          <span class="surface-name">Web</span>
+          <span class="surface-desc">A chat interface with Settings, a browser for your own data, and
+            scroll-back history.</span>
+        </li>
+      </ul>
+
+      <div class="callout" style="margin-top:var(--space-6)">
+        <span class="label">To start</span>
+        <p>Bring your own local model (LM Studio or Ollama) and start talking. Fanad is free to self-host on
+          your own machine, and on Windows a one-click installer handles everything (no Node.js setup needed)
+          &mdash; set it up once, then forget the busywork and let Fanad handle the sorting.
+          The full walkthrough lives in <a href="./manual.html">the manual</a>.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p class="kicker">Fanad</p>
+    <p style="font-family:var(--font-display);font-size:var(--fs-h4);color:var(--paper);margin:0 0 var(--space-4)">Get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./manual.html">Read the manual &rarr;</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. The brain-state framing is an educational metaphor, not a clinical assessment. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+// Scroll reveals: tag the readable blocks and fade each in the first time it enters the viewport.
+// Progressive enhancement — the .reveal styles only exist under html.js + prefers-reduced-motion:
+// no-preference, so no-JS and reduced-motion readers always see everything.
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.section-head, .card, .callout, .steps > li, .surface-list li, .privacy-wrap');
+  // threshold 0 (any pixel), not a ratio — a block taller than the viewport never reaches a 12%
+  // visibility ratio and would stay hidden forever. Blocks already ABOVE the viewport (an anchor jump
+  // landed past them) reveal immediately too, so scrolling back up never meets blank space.
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

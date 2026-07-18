@@ -1,0 +1,2455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Fanad — get it out of your head</title>
+<meta name="description" content="The Fanad manual: how to capture, clear, and turn the page. A private, local-AI assignment pad — quickstart, core commands, advanced features, and admin setup.">
+<style>
+/* ============================================================
+   Fanad — shared design system (brochure + manual)
+   "Assignment pad" — ink on paper. Sharp, editorial, calm.
+   ============================================================ */
+:root{
+  --paper:#F6F1E3; --paper-alt:#EFE8D6; --card:#FDFBF5;
+  --ink:#211E17; --ink-2:#4C463A; --ink-3:#6C6455;
+  --rule:rgba(33,30,23,.14); --rule-2:rgba(33,30,23,.32);
+  --accent:#C0392B; --accent-ink:#8F2A1F; --accent-wash:#F5E3DB;
+  --bg:var(--paper); --bg-alt:var(--paper-alt); --surface:var(--card);
+  --text:var(--ink); --text-muted:var(--ink-2); --link:var(--accent-ink);
+  --accent-strong:var(--accent); --border:var(--rule); --focus:var(--accent);
+  --font-display:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --font-body:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,ui-sans-serif,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --fs-h1:clamp(2.3rem,1.55rem+3.3vw,3.3rem); --fs-h2:clamp(1.7rem,1.3rem+1.9vw,2.3rem);
+  --fs-h3:clamp(1.3rem,1.1rem+.9vw,1.6rem); --fs-h4:1.16rem;
+  --fs-body:1.06rem; --fs-small:.9rem; --fs-caption:.78rem;
+  --lh-tight:1.08; --lh-snug:1.3; --lh-body:1.62; --tracking-kicker:.16em;
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.5rem;
+  --space-6:2rem;--space-7:3rem;--space-8:4rem;--space-9:6rem;
+  --section-y:clamp(3.25rem,2rem+5vw,5.5rem);
+  --measure:64ch; --shell:70rem; --gutter:clamp(1.25rem,5vw,3rem); --margin-x:2.75rem;
+  --r-sm:0;--r-md:0;--r-lg:0;--r-xl:0;--r-2xl:0;--r-pill:0;
+  --shadow-1:0 1px 0 var(--rule);
+  --shadow-2:3px 3px 0 rgba(33,30,23,.06),0 0 0 1px var(--rule);
+  --rule-line:30px; --ring:0 0 0 2px var(--paper),0 0 0 4px var(--accent);
+  --dur:200ms; --ease:cubic-bezier(.2,.6,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scroll-padding-top:4rem}
+body{margin:0;font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text);background:var(--paper);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%;height:auto} p{max-width:var(--measure)}
+h1,h2,h3,h4,h5{font-family:var(--font-display);font-weight:600;line-height:var(--lh-tight);color:var(--ink);
+  margin:0 0 var(--space-4);text-wrap:balance;letter-spacing:-.011em}
+h1{font-size:var(--fs-h1)} h2{font-size:var(--fs-h2)} h3{font-size:var(--fs-h3);line-height:var(--lh-snug)} h4{font-size:var(--fs-h4)}
+.kicker{font-family:var(--font-mono);font-size:var(--fs-caption);font-weight:600;letter-spacing:var(--tracking-kicker);
+  text-transform:uppercase;color:var(--accent-ink);margin:0 0 var(--space-3);display:inline-flex;align-items:center;gap:.6em}
+.kicker::before{content:"";width:1.6em;height:2px;background:var(--accent);display:inline-block}
+a{color:var(--link);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;transition:color var(--dur) var(--ease)}
+a:hover{color:var(--accent);text-decoration-thickness:2px}
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:none;box-shadow:var(--ring)}
+code,kbd,samp{font-family:var(--font-mono);font-size:.9em}
+:not(pre)>code{background:var(--card);border:1px solid var(--rule-2);color:var(--ink);padding:.12em .45em}
+pre{background:var(--ink);color:var(--paper);padding:var(--space-5);overflow-x:auto;line-height:1.55;border:1px solid var(--ink)}
+hr{border:0;border-top:1px solid var(--rule-2);margin:var(--space-6) 0}
+.shell{max-width:var(--shell);margin-inline:auto;padding-inline:var(--gutter);width:100%}
+section{padding-block:var(--section-y)}
+.section-alt{background:var(--paper-alt);border-block:1px solid var(--rule-2)}
+.pad{position:relative}
+@media(min-width:860px){
+  .pad::before{content:"";position:fixed;top:0;bottom:0;left:max(calc((100vw - var(--shell))/2 + var(--margin-x)),var(--margin-x));width:2px;background:var(--accent);opacity:.45;pointer-events:none;z-index:1}
+  .pad .shell{padding-left:calc(var(--margin-x) + 1.75rem)}
+}
+.ruled{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--rule-line) - 1px),var(--rule) calc(var(--rule-line) - 1px),var(--rule) var(--rule-line))}
+.card{background:var(--card);border:1px solid var(--rule-2);border-top:3px solid var(--accent);padding:var(--space-5);box-shadow:var(--shadow-2)}
+.card>:first-child{margin-top:0}.card>:last-child{margin-bottom:0}
+.grid{display:grid;gap:var(--space-5)}
+@media(min-width:720px){.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:repeat(3,1fr)}}
+.callout{background:var(--card);border:1px solid var(--rule-2);border-left:4px solid var(--accent);padding:var(--space-4) var(--space-5);margin-block:var(--space-5)}
+.callout .label{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.12em;font-size:var(--fs-caption);color:var(--accent-ink);font-weight:700;display:block;margin-bottom:var(--space-2)}
+.callout>:last-child{margin-bottom:0}
+.cmd-table{width:100%;border-collapse:collapse;margin-block:var(--space-4);font-size:var(--fs-small)}
+.cmd-table th{text-align:left;font-family:var(--font-mono);text-transform:uppercase;font-size:var(--fs-caption);letter-spacing:.1em;color:var(--ink-3);border-bottom:2px solid var(--rule-2);padding:.55rem .75rem}
+.cmd-table td{border-bottom:1px solid var(--rule);padding:.65rem .75rem;vertical-align:top}
+.cmd-table tr:hover td{background:var(--accent-wash)}
+.cmd-table td:first-child,.cmd-table th:first-child{width:9rem}
+.cmd-table td:nth-child(2),.cmd-table th:nth-child(2){overflow-wrap:anywhere}
+.cmd-table .cmd{white-space:normal}
+.cmd{font-family:var(--font-mono);font-size:.92em;color:var(--ink);background:var(--paper);border:1px solid var(--rule-2);padding:.14em .5em;display:inline-block}
+.checklist{list-style:none;padding:0;margin:var(--space-4) 0}
+.checklist li{position:relative;padding-left:2rem;margin-block:var(--space-3)}
+.checklist li::before{content:"☐";position:absolute;left:0;top:-.06em;color:var(--accent);font-size:1.15em;line-height:1}
+.btn{display:inline-block;font-family:var(--font-body);font-weight:600;font-size:1rem;padding:.72rem 1.4rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-decoration:none;transition:background var(--dur),color var(--dur),border-color var(--dur)}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.site-header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--rule-2)}
+.site-header .shell{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding-block:var(--space-3)}
+.brandmark{font-family:var(--font-display);font-weight:600;font-size:1.3rem;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.brandmark:hover{color:var(--ink)}
+.toc{border:1px solid var(--rule-2);background:var(--card);padding:var(--space-4)}
+.toc h2{font-size:var(--fs-caption);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--ink-3);margin:0 0 var(--space-3)}
+.toc ul{list-style:none;margin:0;padding:0}
+.toc a{display:block;padding:.3rem 0;border-bottom:1px solid var(--rule);color:var(--ink);text-decoration:none;font-size:var(--fs-small)}
+.toc a:hover{color:var(--accent)} .toc li:last-child a{border-bottom:0}
+@media(min-width:960px){.toc{position:sticky;top:calc(var(--space-8) + var(--space-2));max-height:calc(100vh - 6rem);overflow-y:auto}}
+.site-footer{background:var(--ink);color:var(--paper);border-top:3px solid var(--accent);padding-block:var(--space-7);margin-top:var(--space-8)}
+.site-footer a{color:var(--paper)}
+.disclaimer{font-size:var(--fs-small);color:#D8D2C4;max-width:62ch;line-height:1.6}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+/* ---- page-specific tweaks (minimal) ---- */
+.rules-list{list-style:none;margin:0 0 var(--space-3);padding:0}
+.rules-list li{margin-block:var(--space-1)}
+.rule-n{color:var(--accent)}
+/* per-command example dropdowns */
+.cmd-table details.ex{margin-top:.5rem}
+.cmd-table details.ex summary{cursor:pointer;display:inline-block;font-family:var(--font-mono);font-size:var(--fs-caption);text-transform:uppercase;letter-spacing:.1em;color:var(--accent-ink);list-style:none}
+.cmd-table details.ex summary::-webkit-details-marker{display:none}
+.cmd-table details.ex summary::before{content:"▸ "}
+.cmd-table details.ex[open] summary::before{content:"▾ "}
+.ex-chat{margin-top:.5rem;border:1px solid var(--rule-2);background:var(--card);padding:.6rem .8rem}
+.ex-chat p{margin:.4rem 0;white-space:pre-wrap;overflow-wrap:anywhere;max-width:none;padding-left:3.9rem;position:relative;font-size:var(--fs-small)}
+.ex-chat p::before{position:absolute;left:0;top:.18em;font-family:var(--font-mono);font-size:var(--fs-caption);text-transform:uppercase;letter-spacing:.06em}
+.ex-you{font-style:italic}
+.ex-you::before{content:"you";color:var(--ink-3)}
+.ex-bot::before{content:"fanad";color:var(--accent-ink)}
+.ex-btns{display:flex;gap:.4rem;flex-wrap:wrap;margin:.35rem 0 .1rem;padding-left:3.9rem}
+.ex-btns span{border:1px solid var(--rule-2);background:var(--paper);font-family:var(--font-mono);font-size:var(--fs-caption);padding:.15em .6em;white-space:nowrap}
+@media(max-width:700px){
+  .ex-chat p{padding-left:0;padding-top:1.15rem}
+  .ex-chat p::before{top:0}
+  .ex-btns{padding-left:0}
+  .cmd-table td:first-child,.cmd-table th:first-child{width:auto}
+}
+.skip-link{position:absolute;left:var(--space-4);top:-3rem;background:var(--accent);color:#fff;
+  padding:var(--space-2) var(--space-4);font-weight:600;z-index:100;transition:top var(--dur) var(--ease);text-decoration:none}
+.skip-link:focus{top:var(--space-2)}
+.header-back{font-family:var(--font-mono);font-size:var(--fs-small);text-decoration:none;color:var(--accent-ink)}
+.header-back:hover{color:var(--accent)}
+.hero-lead{font-family:var(--font-display);font-size:var(--fs-h4);color:var(--ink-2);margin:0 0 var(--space-5);max-width:56ch}
+.manual-layout{display:grid;gap:var(--space-6);min-width:0}
+.manual-layout>*{min-width:0}
+@media(min-width:960px){.manual-layout{grid-template-columns:16rem 1fr;gap:var(--space-8);align-items:start}}
+.subsec{margin-block:var(--space-6)}
+.subsec:first-of-type{margin-top:var(--space-4)}
+.subsec h3{font-size:var(--fs-h4);margin-bottom:var(--space-2);font-family:var(--font-display);font-weight:600;line-height:var(--lh-tight);letter-spacing:-.011em}
+.subsec p{color:var(--ink-2);margin:0 0 var(--space-2)}
+.sec-head{border-bottom:2px solid var(--rule-2);padding-bottom:var(--space-3);margin-bottom:var(--space-5)}
+.sec-head h2{font-size:var(--fs-h3);line-height:var(--lh-snug);margin-bottom:var(--space-1)}
+.sec-head p{color:var(--ink-2);margin:0}
+.mono-note{font-family:var(--font-mono);font-size:var(--fs-caption);color:var(--ink-3)}
+.toc > details > summary{cursor:pointer;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.14em;
+  font-size:var(--fs-caption);color:var(--ink-3);padding:var(--space-1) 0;list-style:none}
+.toc > details > summary::-webkit-details-marker{display:none}
+.toc > details > summary::after{content:"▾";float:right;color:var(--accent)}
+.toc > details[open] > summary::after{content:"▴"}
+@media(min-width:960px){.toc > details > summary{display:none}}
+/* nested, self-collapsing TOC parts */
+.toc-parts > li{border-bottom:1px solid var(--rule)}
+.toc-parts > li:last-child{border-bottom:0}
+.toc details.toc-part summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.35rem 0}
+.toc details.toc-part summary::-webkit-details-marker{display:none}
+.toc details.toc-part summary::after{content:"▸";color:var(--accent);font-size:.75em}
+.toc details.toc-part[open] summary::after{content:"▾"}
+.toc details.toc-part summary a{border-bottom:0;font-weight:600;color:var(--ink);padding:0}
+.toc details.toc-part ul{margin:0 0 .4rem;padding-left:.9rem}
+.toc details.toc-part ul a{border-bottom:0;font-size:var(--fs-caption);padding:.24rem 0}
+.toc a.active{color:var(--accent-ink);font-weight:600}
+@media(max-width:959px){.toc h2{display:none}}
+/* privacy comparison chart */
+.privacy-wrap{overflow-x:auto;border:1px solid var(--rule-2);background:var(--card);margin-top:var(--space-4)}
+.privacy-wrap:focus-visible{outline:none;box-shadow:var(--ring)}
+.privacy-table{width:100%;border-collapse:collapse;min-width:640px;font-size:var(--fs-small)}
+.privacy-table th,.privacy-table td{border:1px solid var(--rule);padding:.65rem .8rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.privacy-table thead th{background:var(--paper-alt);border-bottom:2px solid var(--rule-2);vertical-align:bottom}
+.privacy-table thead th:first-child,.privacy-table th[scope=row]{font-family:var(--font-mono);text-transform:uppercase;font-size:var(--fs-caption);letter-spacing:.05em;color:var(--ink-3);font-weight:600;white-space:nowrap}
+.privacy-table th[scope=row]{background:var(--card);vertical-align:top;white-space:normal;width:9rem}
+.privacy-table .tier{font-family:var(--font-display);font-weight:600;font-size:1rem;display:block;line-height:1.14;white-space:normal;overflow-wrap:normal;color:var(--ink)}
+.privacy-table .col-full{background:var(--accent-wash)}
+.privacy-table thead th.col-full{border-top:3px solid var(--accent)}
+.privacy-table td strong{color:var(--ink);font-weight:700}
+.meter{display:flex;gap:3px;margin-bottom:.4rem}
+.meter i{width:.55rem;height:.55rem;border:1.5px solid var(--accent);display:inline-block}
+.meter i.on{background:var(--accent)}
+.privacy-hint{display:none;font-family:var(--font-mono);font-size:var(--fs-caption);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-top:var(--space-2)}
+@media(max-width:700px){.privacy-hint{display:block}}
+.privacy-note{font-size:var(--fs-caption);color:var(--ink-3);line-height:1.6;margin-top:var(--space-4);max-width:74ch}
+/* step-by-step setup */
+.subsec h4{font-family:var(--font-display);font-weight:600;font-size:1.08rem;margin:var(--space-5) 0 var(--space-2)}
+ol.setup-steps{margin:var(--space-3) 0 var(--space-4);padding-left:1.5rem;max-width:70ch}
+ol.setup-steps>li{margin-block:var(--space-3);padding-left:.3rem}
+ol.setup-steps>li::marker{color:var(--accent);font-weight:700}
+
+/* ---- motion (progressive enhancement; the reduced-motion kill switch above neutralises it all) ---- */
+/* Anchor targets clear the sticky header when the TOC jumps to them. */
+section[id],[id^="cmd-"],.subsec[id],h3[id],h4[id]{scroll-margin-top:5rem}
+/* Scroll reveals: gated on html.js (set in <head>) so no-JS readers never meet hidden content, and on
+   no-preference so reduced-motion readers never see opacity:0 even before the kill switch applies. */
+@media(prefers-reduced-motion:no-preference){
+  html.js .reveal{opacity:0;translate:0 16px;transition:opacity .6s var(--ease),translate .6s var(--ease)}
+  html.js .reveal.in{opacity:1;translate:0 0}
+  .cmd-table tr td{transition:background-color var(--dur) var(--ease)}
+  .toc a{transition:color var(--dur) var(--ease)}
+}
+/* Animated example dropdowns — modern CSS only; older browsers just snap open as before. */
+details.ex,details.toc-part{interpolate-size:allow-keywords}
+details.ex::details-content,details.toc-part::details-content{block-size:0;overflow:clip;transition:block-size .3s var(--ease),content-visibility .3s allow-discrete}
+details.ex[open]::details-content,details.toc-part[open]::details-content{block-size:auto}
+summary{transition:color var(--dur) var(--ease)}
+details.ex[open]>summary{color:var(--accent)}
+</style>
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the manual</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="./index.html">Fanad</a>
+    <a class="header-back" href="./index.html">&larr; Fanad</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">The manual</p>
+    <h1 id="page-title">Fanad</h1>
+    <p class="hero-lead">Get it out of your head.</p>
+    <p>Everything you can say to Fanad, in the order you'll need it: start here, learn the
+      everyday moves, then reach for the advanced pieces and the admin setup only when you
+      want them. The whole tool fits in three rules &mdash; and a leading slash is always optional.</p>
+    <p style="margin-top:var(--space-5)"><a class="btn" href="#quickstart">Start with the quickstart</a>
+      <a class="btn btn-ghost" href="./happy-path-installer.html" style="margin-left:var(--space-3)">Install &amp; set up</a>
+      <a class="btn btn-ghost" href="./cheatsheet.html" style="margin-left:var(--space-3)">Printable cheat sheet</a>
+      <a class="btn btn-ghost" href="./index.html" style="margin-left:var(--space-3)">What is Fanad?</a></p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<!-- ============================ TOC ============================ -->
+<nav class="toc" aria-label="On this page">
+  <details open>
+    <summary>On this page</summary>
+    <div>
+      <h2>On this page</h2>
+      <ul class="toc-parts">
+        <li><details class="toc-part" data-static>
+          <summary><a href="./happy-path-installer.html">Get started &middot; install walkthrough</a></summary>
+          <ul>
+            <li><a href="./happy-path-installer.html#install">Download &amp; install</a></li>
+            <li><a href="./happy-path-installer.html#brain">Give it a brain (hosted or local)</a></li>
+            <li><a href="./happy-path-installer.html#telegram">Telegram bot</a></li>
+            <li><a href="./happy-path-installer.html#remote">Reach it from anywhere</a></li>
+          </ul>
+        </details></li>
+        <li><details class="toc-part" open>
+          <summary><a href="#quickstart">1 &middot; Quickstart</a></summary>
+          <ul>
+            <li><a href="#qs-rules">The Rules of Three</a></li>
+            <li><a href="#qs-capture">Just talk to capture</a></li>
+            <li><a href="#qs-list">See &amp; clear your list</a></li>
+            <li><a href="#qs-whatdo">One thing to do now</a></li>
+            <li><a href="#qs-mood">Tell Fanad how you feel</a></li>
+            <li><a href="#qs-help">Where to get help</a></li>
+          </ul>
+        </details></li>
+        <li><details class="toc-part">
+          <summary><a href="#core">2 &middot; Core</a></summary>
+          <ul>
+            <li><a href="#core-filing">Filing tasks your way</a></li>
+            <li><a href="#core-steps">Steps: breaking down</a></li>
+            <li><a href="#core-notes">Notes</a></li>
+            <li><a href="#core-dates">Deadlines &amp; calendar</a></li>
+            <li><a href="#core-me">Knowing yourself</a></li>
+            <li><a href="#core-lock">Locking categories</a></li>
+            <li><a href="#core-sleep">Snoozing, sleeping &amp; reviving</a></li>
+            <li><a href="#core-shortcuts">Photos &amp; shortcuts</a></li>
+            <li><a href="#core-modules">Modules on &amp; off</a></li>
+          </ul>
+        </details></li>
+        <li><details class="toc-part">
+          <summary><a href="#advanced">3 &middot; Advanced</a></summary>
+          <ul>
+            <li><a href="#adv-lists">Lists &amp; nesting</a></li>
+            <li><a href="#adv-recall">Recall &amp; grounding</a></li>
+            <li><a href="#adv-guess">Guessing steps</a></li>
+            <li><a href="#adv-templates">Templates</a></li>
+            <li><a href="#adv-metrics">Metrics</a></li>
+            <li><a href="#adv-diet">Diet &amp; foods</a></li>
+            <li><a href="#adv-journal">Journal &amp; trends</a></li>
+            <li><a href="#adv-journal-howto">How-to: a trend journal</a></li>
+            <li><a href="#adv-batches">Batches</a></li>
+            <li><a href="#adv-homeassistant">Home Assistant</a></li>
+            <li><a href="#adv-notebooks">Notebooks</a></li>
+            <li><a href="#adv-vouch">Vouching people in</a></li>
+            <li><a href="#adv-checkins">Check-ins</a></li>
+            <li><a href="#adv-suggest">How suggestions think</a></li>
+            <li><a href="#adv-mood">Mood &amp; sizing</a></li>
+            <li><a href="#adv-honest">Reactions &amp; honesty</a></li>
+          </ul>
+        </details></li>
+        <li><details class="toc-part">
+          <summary><a href="#admin">4 &middot; Admin &amp; setup</a></summary>
+          <ul>
+            <li><a href="#admin-privacy">Privacy tiers</a></li>
+            <li><a href="#admin-install">Install &amp; run</a></li>
+            <li><a href="#admin-surfaces">Surfaces &amp; channels</a></li>
+            <li><a href="#admin-llm">Bring your own LLM</a></li>
+            <li><a href="#admin-cloud">Cloud &amp; privacy boundary</a></li>
+            <li><a href="#admin-creds">Channel &amp; weather creds</a></li>
+            <li><a href="#admin-kek">Secret encryption</a></li>
+            <li><a href="#admin-toggles">Feature toggles</a></li>
+            <li><a href="#admin-access">Vouch &amp; impersonation</a></li>
+            <li><a href="#admin-weblogin">Web login</a></li>
+            <li><a href="#admin-deletion">Deletion &amp; data</a></li>
+            <li><a href="#admin-diag">Diagnostics &amp; logs</a></li>
+            <li><a href="#admin-persist">Persistence &amp; env</a></li>
+            <li><a href="#admin-setupmode">Setup mode</a></li>
+            <li><a href="#admin-backup">Instance backup</a></li>
+            <li><a href="#admin-connect">Connecting channels</a></li>
+          </ul>
+        </details></li>
+        <li><details class="toc-part">
+          <summary><a href="#faq">5 &middot; Common questions</a></summary>
+          <ul>
+            <li><a href="#faq-chart">Chart of a metric</a></li>
+            <li><a href="#faq-calendar">Task on my calendar</a></li>
+            <li><a href="#faq-recurring">Repeating tasks?</a></li>
+            <li><a href="#faq-timer">Quick kitchen timer</a></li>
+            <li><a href="#faq-browser">Fanad in a browser</a></li>
+            <li><a href="#faq-invite">Letting a friend in</a></li>
+            <li><a href="#faq-numbers">Task numbers change?</a></li>
+            <li><a href="#faq-onetask">One task at a time</a></li>
+            <li><a href="#faq-disappeared">Where old tasks go</a></li>
+            <li><a href="#faq-spaces">Work &amp; home apart</a></li>
+            <li><a href="#faq-food">Fastest food logging</a></li>
+            <li><a href="#faq-erase">Deleting everything</a></li>
+            <li><a href="#faq-ailog">Watching the AI</a></li>
+            <li><a href="#faq-ask">Asking the manual</a></li>
+          </ul>
+        </details></li>
+        <li><details class="toc-part" data-static>
+          <summary><a href="./howto/index.html">6 &middot; How-tos</a></summary>
+          <ul>
+            <li><a href="./howto/getting-it-out-of-your-head.html">Getting it out of your head</a></li>
+            <li><a href="./howto/diet-and-meal-tracking.html">Diet &amp; meal tracking</a></li>
+            <li><a href="./howto/problem-solving-journal.html">Problem-solving journal</a></li>
+            <li><a href="./howto/nested-lists-and-groceries.html">Nested lists &amp; groceries</a></li>
+            <li><a href="./howto/planning-a-party-with-steps.html">Planning a party with steps</a></li>
+            <li><a href="./howto/household-memory.html">Household memory</a></li>
+            <li><a href="./howto/reminders-and-deadlines.html">Reminders &amp; deadlines</a></li>
+            <li><a href="./howto/kitchen-timers.html">Kitchen timers</a></li>
+            <li><a href="./howto/routines-without-recurrence.html">Routines without recurrence</a></li>
+            <li><a href="./howto/notebooks-separate-spaces.html">Notebooks: separate spaces</a></li>
+          </ul>
+        </details></li>
+      </ul>
+    </div>
+  </details>
+</nav>
+
+<!-- ============================ CONTENT ============================ -->
+<div>
+
+<!-- ==================== 1 · QUICKSTART ==================== -->
+<section id="quickstart" aria-labelledby="quickstart-h" style="padding-top:0">
+  <div class="sec-head">
+    <p class="kicker">Part one</p>
+    <h2 id="quickstart-h">Quickstart</h2>
+    <p>The handful of moves that are 90% of Fanad. If you only read one part, read this one.</p>
+  </div>
+
+  <div class="callout" role="note">
+    <span class="label">The Rules of Three</span>
+    <ul class="rules-list">
+      <li><span class="rule-n">&#9312;</span> A statement becomes a task on your list.</li>
+      <li><span class="rule-n">&#9313;</span> A question runs a command.</li>
+      <li><span class="rule-n">&#9314;</span> Answering Fanad's own open question is taken as that answer.</li>
+    </ul>
+    <p>That's the whole grammar &mdash; and the leading slash is always optional, so
+      <span class="cmd">/mood 🙂</span> and <span class="cmd">mood 🙂</span> do the same thing.</p>
+  </div>
+
+  <div class="subsec" id="qs-rules">
+    <h3>The Rules of Three</h3>
+    <p>The rules live in chat too &mdash; ask for them any time.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/rules</span></td><td>Show the Rules of Fanad &mdash; the rules of three.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/rules</p>
+        <p class="ex-bot">✨ The Rules of Fanad
+ask of me these rules of three…
+
+① Make a statement, and I’ll add it to my list.
+② Ask a question, and I’ll see what I can do.
+③ Answer my question, and so shall it be.
+
+🌱 A “no” is never the end in Fanad — we’ll find something the right size, or nothing at all.
+🙂 And show me how you feel, anytime, with an emoji.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/howto</span></td><td>The getting-started walkthrough on how to fill your Fanad.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">howto</p>
+        <p class="ex-bot">✨ How to fill your Fanad
+
+Use Fanad like an extra memory, or a little notebook. Just wander — through your home, your day, your head — and jot down anything you’d like to change, accomplish, experience, clean up, or tear down. Don’t sort it; that’s my job. …</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="qs-capture">
+    <h3>Just talk to capture</h3>
+    <p>Say what's on your mind in your own words and Fanad files it as a task, quietly picking a
+      category and effort. You unload; Fanad organizes.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Do this</th><th scope="col">What happens</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Capture a task by talking</span></td><td>Make a plain statement and Fanad files it as a task in your own words.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">the gutters need clearing</p>
+        <p class="ex-bot">✓ Filed: “the gutters need clearing” · Home · medium</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">Send a photo</span></td><td>A photo with a caption files a task with the photo attached.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">(a photo, captioned) fix the fence gate</p>
+        <p class="ex-bot">✓ Filed: “fix the fence gate” · Home · medium</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">Paste a link</span></td><td>Paste a URL and Fanad fetches the page&rsquo;s title once, names the task after it, and makes the task title a clickable link. Add your own words and they stay the title &mdash; still linked.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">https://example.com/how-to-descale-a-kettle</p>
+        <p class="ex-bot">✓ Filed: “How to descale a kettle” · Home · trivial</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">Don't sort, just unload</span>
+      <p>Organizing is Fanad's job, not yours. Fanad keeps your own words as the task title and silently
+        picks the category and effort &mdash; you never have to file, tag, or tidy anything by hand.</p>
+    </div>
+    <div class="callout" role="note">
+      <span class="label">About pasted links &amp; your privacy</span>
+      <p>To flesh out a pasted link, <strong>your own server</strong> fetches that one page directly, once,
+        when you file it &mdash; just its title and description, nothing tracked or stored elsewhere. It only
+        follows public <code>http(s)</code> addresses (never your local network), and if a page can&rsquo;t be
+        reached the task still files exactly as you typed it. An admin can turn the whole thing off with
+        <code>LINK_PREVIEW=off</code>.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="qs-list">
+    <h3>See and clear your list</h3>
+    <p>Your open tasks, always numbered 1..N for whatever's on screen. Finish what's done, clear
+      what isn't yours anymore.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/tasks</span></td><td>Show your open tasks &mdash; grouped by category, or counts to drill into when there are many.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/tasks</p>
+        <p class="ex-bot">🌊 You’ve got 23 open tasks — too many to list at once.
+
+Tap a kind or difficulty below to see its top 7 — or grab 📅 Today / 📋 All.</p>
+        <div class="ex-btns"><span>Home (8)</span><span>Admin (6)</span><span>📅 Today</span><span>📋 All</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/start</span></td><td>Start task N, showing your original words plus its steps.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/start 3</p>
+        <p class="ex-bot">▶ Started: “bake sourdough”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">unstart</span></td><td>Put the task you started back &mdash; not started, not finished, nothing lost. Bare <span class="cmd">unstart</span> means the one in progress; <span class="cmd">unstart 2</span> targets row N. There&rsquo;s a ⏸ Unstart button on the started card too.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">unstart</p>
+        <p class="ex-bot">⏸ Put “bake sourdough” back on your list — not started, not lost.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">undo</span></td><td>Take back the last thing Fanad did &mdash; a capture you didn&rsquo;t mean (the task vanishes as if never filed), a done/drop/snooze/start, a logged portion or metric, a fresh timer, a list item. It works everywhere, remembers the last ~20 undoable things from the past day (newest first &mdash; say it again to keep going), and tells you exactly what it took back. When there&rsquo;s nothing it can take back, it says so.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">done 3</p>
+        <p class="ex-bot">✓ Done: “bake sourdough”.</p>
+        <p class="ex-you">undo</p>
+        <p class="ex-bot">↩ Not done after all — “bake sourdough” is back on your list.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/done</span></td><td>Finish task N (or a few: <span class="cmd">done 1 2 3</span>), or a bare <span class="cmd">done</span> finishes what you just started.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/done 1 2</p>
+        <p class="ex-bot">✓ Done: “call the pharmacy”, “water the plants”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/drop</span></td><td>Clear task N off your list, archiving it as dropped.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/drop 4</p>
+        <p class="ex-bot">Removed “relist the old couch” from your list.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">List numbers are per-listing</span>
+      <p>Positions restart at 1 on every listing and every page. <span class="cmd">done 3</span> always means
+        the third row you last saw &mdash; never a hidden database id.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="qs-whatdo">
+    <h3>One thing to do now</h3>
+    <p>When the list feels like a lot, ask for a single next step, sized to your time, energy, and
+      mood &mdash; never a wall.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/whatdo</span></td><td>Fanad suggests one thing to do right now, sized to you.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/whatdo</p>
+        <p class="ex-bot">💡 How about “clear the gutters”? — you usually finish home things by afternoon
+(“yes” to start · “done” if it’s finished · “no” · “smaller”)</p>
+        <div class="ex-btns"><span>yes</span><span>done</span><span>no</span><span>smaller</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">yes / no / smaller / done / not today</span></td><td>Steer it: <span class="cmd">yes</span> to start, <span class="cmd">done</span> if finished, <span class="cmd">smaller</span> for lighter, <span class="cmd">no</span>/<span class="cmd">not today</span> to pass.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">no</p>
+        <p class="ex-bot">Okay, that’s fine. Want something smaller, or done for now?</p>
+        <p class="ex-you">smaller</p>
+        <p class="ex-bot">💡 Sure — here’s a smaller one:
+How about “water the plants”?
+(“yes” to start · “done” if it’s finished · “no” · “smaller”)</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">A "no" is never the end</span>
+      <p>Refusing a suggestion never fails. Fanad simply offers something smaller, or nothing at all &mdash;
+        and after a few passes it gently offers to reword or break the task down rather than push.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="qs-mood">
+    <h3>Tell Fanad how you feel</h3>
+    <p>Drop a mood anytime; it gently softens and sizes what Fanad suggests for a while.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/mood</span></td><td>Set how you feel with an emoji (<span class="cmd">mood 🙂</span>) or a word (<span class="cmd">mood overwhelmed</span>); it steers suggestion size.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">mood 😴</p>
+        <p class="ex-bot">Mood set: 😴</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="qs-help">
+    <h3>Where to get help</h3>
+    <p>Friendly, tappable references whenever you need them. Prefer a story to a reference?
+      The <a href="./howto/index.html">how-to articles</a> walk one real use case each, start to finish.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/guide</span></td><td>Open the topic-guide hub, or <span class="cmd">guide &lt;topic&gt;</span> for a deep dive on one feature.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">guide</p>
+        <p class="ex-bot">✨ The Fanad guide — tap a topic and I’ll keep it short.</p>
+        <div class="ex-btns"><span>📝 Capturing</span><span>💡 What to do</span><span>🪜 Steps</span><span>🗓 Reminders</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/commands</span></td><td>The tappable command reference, split into sections that expand in place.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/commands</p>
+        <p class="ex-bot">Everything I can do — tap a section: ✨</p>
+        <div class="ex-btns"><span>▶ Tasks</span><span>➕ Capture &amp; steps</span><span>⏰ Reminders &amp; calendar</span><span>❔ Help</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/manual</span> &nbsp;(<span class="cmd">h</span>)</td><td>Ask this manual a free-form question — <span class="cmd">/manual &lt;question&gt;</span> or just <span class="cmd">h &lt;question&gt;</span> — and the answer comes strictly from what’s written here, kept short. It won’t answer anything beyond the manual.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">h how do I set a reminder?</p>
+        <p class="ex-bot">End the task with a time — “…on friday 3pm” sets a deadline plus a one-time reminder. See “Deadlines, reminders &amp; calendar”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">c</span> &nbsp;(<span class="cmd">/menu</span>)</td><td>Pop the tappable command menu; works mid-question to back out.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">c</p>
+        <p class="ex-bot">Everything I can do — tap a section: ✨</p>
+        <div class="ex-btns"><span>▶ Tasks</span><span>➕ Capture &amp; steps</span><span>🧩 Modules</span><span>❔ Help</span></div>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 2 · CORE ==================== -->
+<section id="core" class="section-alt" aria-labelledby="core-h" style="margin-inline:calc(-1 * var(--gutter));padding-inline:var(--gutter)">
+  <div class="sec-head">
+    <p class="kicker">Part two</p>
+    <h2 id="core-h">Core</h2>
+    <p>The everyday depth: filing precisely, breaking tasks into steps, jotting notes, dates, and letting stale tasks rest.</p>
+  </div>
+
+  <div class="subsec" id="core-filing">
+    <h3>Filing tasks your way</h3>
+    <p>Capture happens by just talking, but you can be explicit when you want a category, a due
+      date, or a quick "today".</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/task</span> &nbsp;(<span class="cmd">/task:category</span>)</td><td>Explicitly file a task, optionally with a category, deadline, or inline priority.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/task:health book a check-up</p>
+        <p class="ex-bot">✓ Filed: “book a check-up” · Health · low</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/today</span> &nbsp;(<span class="cmd">x</span>)</td><td>File a task due by the end of today (e.g. <span class="cmd">x call the pharmacy</span>).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">x call the pharmacy</p>
+        <p class="ex-bot">✓ Filed: “call the pharmacy” · Errands · trivial · ⏳ due today</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/tasks all</span></td><td>Show every open task as a ranked, paginated flat list.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/tasks all</p>
+        <p class="ex-bot">1. call the pharmacy · Errands · trivial · ⏳ due today
+▶ /start_1 · ✓ /done_1
+2. clear the gutters · Home · medium
+▶ /start_2 · ✓ /done_2
+3. renew the passport · Admin · medium · ⏳ due friday
+▶ /start_3 · ✓ /done_3 · 📅 /cal_3</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/tasks today</span></td><td>Show only the tasks due by the end of today.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/tasks today</p>
+        <p class="ex-bot">Nothing due today. 🌱  (try /tasks for everything)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/whatdo today</span></td><td>The same one-thing suggestion, scoped to tasks due today.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/whatdo today</p>
+        <p class="ex-bot">💡 How about “call the pharmacy”?
+(“yes” to start · “done” if it’s finished · “no” · “smaller”)</p>
+        <div class="ex-btns"><span>yes</span><span>done</span><span>no</span><span>smaller</span></div>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="core-steps">
+    <h3>Steps: breaking a task down</h3>
+    <p>Add steps under a task and Fanad walks you through them one at a time with tappable checkboxes.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">step</span> (<span class="cmd">s</span>) / substep / subtask</td><td>Add a step under your last task, or under a listed task with <span class="cmd">step N …</span>
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">step feed the starter</p>
+        <p class="ex-bot">✓ Step 1 added to “bake sourdough”: feed the starter</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">unstep</span> / remove step</td><td>Remove step N (or <span class="cmd">unstep all</span>); the list renumbers.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">unstep 2</p>
+        <p class="ex-bot">🗑 Removed step 2.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">start</span> (stepping)</td><td>Starting a stepped task walks you through its steps one at a time.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">start</p>
+        <p class="ex-bot">▶ Started: “bake sourdough”.
+☐ 1. feed the starter
+☐ 2. shape the loaf
+☐ 3. bake at 230C</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">done</span> / <span class="cmd">done N</span> / <span class="cmd">done all</span></td><td>Tick off steps: <span class="cmd">done</span> for the next, <span class="cmd">done 2 3</span> for a few, <span class="cmd">done all</span> finishes the task.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">done</p>
+        <p class="ex-bot">☑ 1. feed the starter
+☐ 2. shape the loaf
+☐ 3. bake at 230C</p>
+        <p class="ex-you">done all</p>
+        <p class="ex-bot">✅ All 3 steps done.
+✓ Done: “bake sourdough”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">stop</span> / <span class="cmd">pause</span></td><td>Leave a stepping session without finishing; steps stay saved.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">stop</p>
+        <p class="ex-bot">Paused — 2 steps left on “bake sourdough”. Steps stay saved.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="core-notes">
+    <h3>Notes: a place for the rest</h3>
+    <p>Jot things you want to recall later, kept separate from your task list. Find them by meaning,
+      not exact words. <span class="mono-note">(Opt-in.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/note</span> &nbsp;(<span class="cmd">n</span>)</td><td>Jot something to recall later, kept separate from tasks.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">note the spare key is under the blue pot</p>
+        <p class="ex-bot">📝 Noted.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/notes</span></td><td>Show your note inbox.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/notes</p>
+        <p class="ex-bot">📝 3 waiting:
+1. the spare key is under the blue pot
+2. wifi guest password is sunflower42
+3. paint the hallway ceiling
+(“/promote 3” → task · “/forget 3” — or a few: “forget 1 2 3” — → delete)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/recall</span> &nbsp;(<span class="cmd">r</span>)</td><td>Find a note by meaning rather than exact words.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">r where’s the spare key</p>
+        <p class="ex-bot">• the spare key is under the blue pot</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/promote</span></td><td>Turn note N into a real task (carrying any attached photo over).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/promote 3</p>
+        <p class="ex-bot">✓ Promoted to a task: “paint the hallway ceiling”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/forget</span> &nbsp;(<span class="cmd">/delete</span>)</td><td>Delete note N from your inbox.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/forget 2</p>
+        <p class="ex-bot">🗑 Deleted that note.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="core-dates">
+    <h3>Deadlines, reminders &amp; calendar</h3>
+    <p>Dates gently lift a task's ranking. Reminders fire once. For anything recurring, hand it to
+      your own calendar &mdash; Fanad won't nag on a schedule.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">by &lt;when&gt;</span></td><td>End a task with <span class="cmd">by friday</span> to set a due date that lifts ranking and retires after it passes.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">renew the passport by friday</p>
+        <p class="ex-bot">✓ Filed: “renew the passport” · Admin · medium · ⏳ due friday</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">on &lt;when&gt;</span></td><td><span class="cmd">on sunday 6pm</span> sets both a deadline and a one-time reminder at that moment.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">call mom on sunday 6pm</p>
+        <p class="ex-bot">✓ Filed: “call mom” · Social · trivial · 🔔 sunday 6pm</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">remind me … at &lt;time&gt;</span></td><td>A one-time nudge that pings once and leaves the task on your list.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">remind me to take the bins out at 8pm</p>
+        <p class="ex-bot">✓ Filed: “take the bins out” · Home · trivial · 🔔 8pm
+
+…then, at 8:00 pm:
+🔔 Reminder: “take the bins out” — it’s time.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/timer &lt;how long&gt;</span></td><td>Timer module (opt-in): a one-shot ding &mdash; <span class="cmd">timer 12 min pasta</span>; bare <span class="cmd">timer</span> lists, <span class="cmd">timer off 1</span> cancels. Nothing lands on your list.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">timer 12 min pasta</p>
+        <p class="ex-bot">⏰ Timer set — 12 min — pasta · rings 6:42 pm. (“timer” shows it · “timer off” cancels)
+
+…12 minutes later:
+⏰ Ding — 12 min is up: pasta.</p>
+        <div class="ex-btns"><span>✕ Cancel timer</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/cal</span></td><td>Add dated task N to your own calendar via a downloadable .ics file.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/cal 3</p>
+        <p class="ex-bot">📅 Add “renew the passport” to your calendar
+(hands you an .ics file to open — recur it there if you like)</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">No recurring tasks &mdash; use /cal</span>
+      <p>Recurrence is nagging, and nagging is stress, so Fanad has none. A dated task instead gives you an
+        "add to calendar" <span class="cmd">.ics</span> so <em>you</em> make it recur in your own calendar, on your terms. Reminders fire exactly once.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="core-me">
+    <h3>Knowing yourself</h3>
+    <p>See what Fanad has quietly learned about your patterns.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/me</span> &nbsp;(<span class="cmd">/dossier</span>)</td><td>Show what Fanad has learned &mdash; completion rate, favored categories, usual mood.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/me</p>
+        <p class="ex-bot">✨ What I’ve learned about you
+• Finished 24 tasks — about 60% of what you added.
+• You lean into: Home (10, mostly by afternoon) · Admin (6)
+• Your usual mood: 🙂
+• Set aside: 3 snoozed · 2 let go
+(I use this to suggest the right thing at the right time.)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/summary</span></td><td>A narrative recap of your activity, optionally scoped (today, this week, last week).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/summary today</p>
+        <p class="ex-bot">Today you finished “call the pharmacy” and “water the plants”, added two admin tasks, and kept the evening clear. 🌱</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="core-lock">
+    <h3>Locking categories</h3>
+    <p>Doing a batch on one theme? Pin a category or effort so Fanad stops guessing each one.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/lock</span></td><td>Pin a category and/or difficulty for the next tasks you add; a new word mints that category.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/lock gardening</p>
+        <p class="ex-bot">🆕 New category “gardening” — added for good.
+🔒 Locked to gardening — new tasks skip the guessing. “/unlock” to clear.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/unlock</span></td><td>Clear the lock so Fanad sorts each task on its own again.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/unlock</p>
+        <p class="ex-bot">🔓 Unlocked — I’ll sort each task on its own again.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="core-sleep">
+    <h3>Snoozing, sleeping &amp; reviving</h3>
+    <p>Set-aside tasks are never a black hole. Tasks you 😴 Snooze hide until their wake time
+      (<span class="cmd">/snoozed</span> shows them, <span class="cmd">/unsnooze 1</span> brings one back early),
+      and tasks untouched for about three weeks quietly go to sleep so the list stays scannable.
+      Nothing is lost &mdash; bring any of it back anytime.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/snoozed</span></td><td>Show the tasks you tucked away with 😴 Snooze, and when each one wakes on its own.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/snoozed</p>
+        <p class="ex-bot">😴 1 snoozed:
+1. paint the shed · Home · medium · wakes tomorrow 16:36
+(“/unsnooze 1” to bring one back now · a few: “/unsnooze 1 2 3”)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/unsnooze</span></td><td>Bring a snoozed task back before its timer (e.g. <span class="cmd">/unsnooze 1</span>, or a few: <span class="cmd">/unsnooze 1 2 3</span>). Bare <span class="cmd">/unsnooze</span> shows the snoozed list.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/unsnooze 1</p>
+        <p class="ex-bot">☀️ Unsnoozed 1 task — back on your list.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/sleeping</span></td><td>Show tasks that drifted off to sleep after ~3 weeks untouched.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/sleeping</p>
+        <p class="ex-bot">💤 2 sleeping (untouched for a while):
+1. reorganize the garage
+2. learn some spanish
+(“/revive 1” to bring one back · a few: “/revive 1 2 3”)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/revive</span></td><td>Bring a sleeping task back onto your list (e.g. <span class="cmd">/revive 1</span>, or a few: <span class="cmd">/revive 1 2 3</span>).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/revive 1</p>
+        <p class="ex-bot">☀️ Revived 1 task — back on your list.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">Auto-sleep after ~3 weeks</span>
+      <p>Once a day, anything left untouched for about three weeks quietly goes to sleep &mdash; kept out of
+        both your listings <em>and</em> your suggestions, so the pad never rots into a guilt archive. Revive any of it whenever you like.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="core-shortcuts">
+    <h3>Photos &amp; shortcuts</h3>
+    <p>Little conveniences: resend an attached photo, and lead a message with a single letter to
+      skip the command.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/pic</span></td><td>Resend the photo attached to task N (rows with a photo show a tappable 📷 <span class="cmd">/pic_N</span> link).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/pic 3</p>
+        <p class="ex-bot">📷 fix the fence gate
+(sends the photo back with that caption)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">n t d k u s r g x j h w</span></td><td>Lead with one letter: n=note, t=task, d=done, k=drop, u=undo (bare), s=step, r=recall, g=guide, x=today, j=journal, h=manual, w=whatdo.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">n the wifi password is sunflower42</p>
+        <p class="ex-bot">📝 Noted.</p>
+        <p class="ex-you">w</p>
+        <p class="ex-bot">💡 How about “clear the gutters”?
+(“yes” to start · “done” if it’s finished · “no” · “smaller”)</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="core-modules">
+    <h3>Turning modules on &amp; off</h3>
+    <p>A new account sees only Tasks. Turn on the extras you want, whenever you want; turning one
+      off hides but never deletes your data.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">modules</span></td><td>Show your optional modules and tap to turn each on or off.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">modules</p>
+        <p class="ex-bot">🧩 Your modules — tap one to turn it on or off. Tasks are always on.</p>
+        <div class="ex-btns"><span>⚪ Notes — off</span><span>🟢 Lists — on</span><span>⚪ Metrics — off</span><span>⚪ Diet — off</span><span>⚪ Timer — off</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">optin / optout &lt;module&gt;</span></td><td>Turn a module (notes/lists/metrics/diet/vouch/notebook/timer/journal/batches/ha) on or off; opt-out keeps your data.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">optin lists</p>
+        <p class="ex-bot">✓ Lists on. Make nestable lists with /lists and “/list &lt;name&gt;”.</p>
+        <p class="ex-you">optout lists</p>
+        <p class="ex-bot">✓ Lists hidden. Your lists are kept — “optin lists” brings them back.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">Per-user modules are opt-in</span>
+      <p>Notes, Lists, Metrics, Diet, Vouch, Notebooks, Timer, Journal, Batches, and Home Assistant are all off by default so a fresh account sees only Tasks.
+        Turn on exactly what you want; opting a module back out only hides its data, it never deletes it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 3 · ADVANCED ==================== -->
+<section id="advanced" aria-labelledby="advanced-h">
+  <div class="sec-head">
+    <p class="kicker">Part three</p>
+    <h2 id="advanced-h">Advanced</h2>
+    <p>For when you want more control: nestable lists, templates instead of recurrence, metrics, notebooks, and a look under the hood at how suggestions are chosen.</p>
+  </div>
+
+  <div class="subsec" id="adv-lists">
+    <h3>Lists &amp; nesting</h3>
+    <p>A separate outliner for anything that isn't a task &mdash; checklists, packing lists, anything
+      nestable. <span class="mono-note">(Opt-in.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/lists</span></td><td>Open your nestable lists; at the top, type a name or <span class="cmd">/list &lt;name&gt;</span> to start one.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/lists</p>
+        <p class="ex-bot">📑 Your lists · 2 items
+1. Groceries · /sub_1
+2. Trip packing · /sub_2
+(type a name to start a list · /sub_1 to open one · “exit” to leave)</p>
+      </div>
+      </details>
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/list Groceries</p>
+        <p class="ex-bot">📑 Groceries
+This list is empty. Type an item to add it, or “out” to go back. 🌱
+(type to add an item · /sub_1 to open one · “out” · “top” · “del 1” · “rename 1 …” · “exit”)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/list &lt;name&gt;</span></td><td>Create a new top-level list, or add an item when a list is open.</td></tr>
+        <tr><td><span class="cmd">/sub_N</span></td><td>Descend into list item N as its own sub-list; <span class="cmd">/sub_N text</span> quick-adds a child.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/sub_1</p>
+        <p class="ex-bot">📑 Groceries › Produce · 3 items
+1. apples · /sub_1
+2. bananas · /sub_2
+3. spinach · /sub_3
+(type to add an item · /sub_1 to open one · “out” · “top” · “del 1” · “rename 1 …” · “exit”)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">out / top / next / prev / del / rename / exit</span></td><td>Move around inside lists: up a level, to all lists, page, delete, rename, or leave.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">exit</p>
+        <p class="ex-bot">Closed your lists. 🌱  (“/lists” opens them again)</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-recall">
+    <h3>Notes recall, grounding &amp; photos</h3>
+    <p>Fanad finds your real notes by meaning &mdash; and only ever surfaces notes and tasks that
+      actually exist. It never invents a row.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Feature</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Semantic note recall</span></td><td>Finds your real notes by embedding-cosine meaning plus keyword match &mdash; only actual stored notes.</td></tr>
+        <tr><td><span class="cmd">Notes inbox + photos</span></td><td>A caption-less photo waits in your notes for recall; a captioned photo becomes a task.</td></tr>
+        <tr><td><span class="cmd">Closed-world id allow-list</span></td><td>Rejects any suggested task that isn't in your real tasks, so Fanad can never surface an invented one.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">Grounded &mdash; never invents</span>
+      <p>Retrieval decides what <em>exists</em>; the model may only order and rephrase a closed set of your own
+        real rows. An id allow-list backstop rejects any invented task, so Fanad can't hand you homework you never wrote down.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="adv-guess">
+    <h3>Guessing steps</h3>
+    <p>The one place Fanad draws on general know-how: once a task is started, it can guess a
+      first-draft checklist &mdash; always labeled a guess, always yours to edit.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/guess</span></td><td>Once a task is started, Fanad guesses an editable step checklist from general know-how (add via <span class="cmd">step</span>, remove via <span class="cmd">unstep</span>).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/guess</p>
+        <p class="ex-bot">💡 A guess at the steps for “bake sourdough” (my own best guess, not from your notes — edit freely):
+☐ 1. feed the starter
+☐ 2. mix and rest the dough
+☐ 3. shape the loaf
+☐ 4. bake at 230C
+Tick off with “done” / “done 2” / “done all” · add “step …” · remove “unstep 2”.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">/guess is the one labeled exception</span>
+      <p>Everywhere else Fanad never invents. <span class="cmd">/guess</span> is the single sanctioned place it draws on the
+        model's general know-how &mdash; and the result is always surfaced as an explicit, disposable, fully-editable guess, never as fact.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="adv-templates">
+    <h3>Templates</h3>
+    <p>The calm alternative to recurring tasks: save a task's shape and steps, then drop a fresh
+      copy whenever you need it.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/template N &lt;name&gt;</span></td><td>Save listed task N as a reusable blueprint (shape + steps), never a deadline or priority.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/template 3 sourdough</p>
+        <p class="ex-bot">🗂 Saved template “sourdough” (4 steps). Start a fresh copy anytime: “/template sourdough”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/template &lt;name&gt;</span></td><td>Drop a fresh copy of a saved template onto your list, reset to unchecked.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/template sourdough</p>
+        <p class="ex-bot">📋 Fresh copy on your list:
+✓ Filed: “bake sourdough” · Home · medium (4 steps) — say “start” to walk through it.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/templates</span></td><td>List your saved templates.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/templates</p>
+        <p class="ex-bot">🗂 Your templates:
+• sourdough — “bake sourdough” (4 steps)
+(“/template &lt;name&gt;” → a fresh copy · “/template retire &lt;name&gt;” → remove)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/template retire &lt;name&gt;</span></td><td>Delete a saved template.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/template retire sourdough</p>
+        <p class="ex-bot">Retired the “sourdough” template.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-metrics">
+    <h3>Metrics</h3>
+    <p>Track any number you like &mdash; water, pages, push-ups &mdash; and see a daily tally and a chart
+      against optional targets. <span class="mono-note">(Opt-in.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">track &lt;name&gt; &lt;number&gt;</span></td><td>Log a value that adds up over the day (water, push-ups). The metric is created on first use.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/track water 3</p>
+        <p class="ex-bot">Logged water: 3.
+• water: 3</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">measure &lt;name&gt; &lt;number&gt;</span></td><td>Record a one-off reading (weight, blood pressure) &mdash; the tally shows the <em>latest</em> value instead of a daily sum.</td></tr>
+        <tr><td><span class="cmd">metric add &lt;name&gt; [unit] [sum|avg|last|max|min]</span></td><td>Define a metric up front with a unit and how a day's readings combine &mdash; e.g. <span class="cmd">metric add weight kg last</span>.</td></tr>
+        <tr><td><span class="cmd">tally [name]</span></td><td>Today's numbers against their targets &mdash; every metric, or just the one you name. Metrics sitting at zero (or a measurement with no reading yet) are left out of the full list to keep it short; name one to see it regardless.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/tally</p>
+        <p class="ex-bot">Today:
+• calories: 1450 / 2000 kcal
+• water: 5
+• weight: 182 lbs</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">chart &lt;name&gt; [range]</span></td><td>A picture of the history, sent as an image: tracked metrics draw one bar per day, measured ones a line of readings. The default range is the last 30 days; add one word for another &mdash; <span class="cmd">7d</span>, <span class="cmd">30d</span>, <span class="cmd">90d</span>, <span class="cmd">ytd</span>, <span class="cmd">today</span>, <span class="cmd">yesterday</span>, <span class="cmd">this_week</span>, <span class="cmd">last_week</span>, <span class="cmd">this_month</span>.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/chart water 7d</p>
+        <p class="ex-bot">📈 water · the past 7 days
+(sends a chart image — one bar per day, with your target as a dashed line if you set one)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">undo</span></td><td>Take back the last tracked entry &mdash; <span class="cmd">undo</span> is app-wide, so it pops whatever Fanad did last (see Tasks).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-diet">
+    <h3>Diet &amp; foods</h3>
+    <p>Calorie logging the way it actually works: weigh the food, multiply by a per-ounce density &mdash;
+      or skip the scale entirely and teach a food (or a whole meal) its <em>typical serving</em>.
+      Each food&rsquo;s number is confirmed <em>once</em> &mdash; after that it&rsquo;s canonical and never
+      re-guessed. One calories number, no macros. <span class="mono-note">(Opt-in &mdash; its own module,
+      separate from <a href="#adv-metrics">Metrics</a>, though both share the calories metric.)</span></p>
+    <p>The day changes at <strong>2:00&nbsp;am</strong>, not midnight &mdash; a late snack at 1&nbsp;am still
+      counts toward the evening&rsquo;s day. Days follow <em>your</em> timezone: the server adopts the timezone
+      of your weather location (Settings &rarr; Weather), so set that if Fanad runs on a hosted box &mdash; the
+      web Diet view warns you when the server&rsquo;s clock and your device disagree. (The <span class="cmd">TZ</span>
+      environment variable overrides it.)</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">eat &lt;amount&gt; &lt;food&gt;</span></td><td>Logs weight &times; the food&rsquo;s cal/oz (oz, g, or lb). A food I&rsquo;ve never seen gets one guessed density you confirm or correct; piece and serving foods count instead (<span class="cmd">eat 2 eggs</span>, <span class="cmd">eat 2 skyr</span>) &mdash; a bare <span class="cmd">eat &lt;food&gt;</span> logs one piece or one typical serving. No amount on a weighed food and I&rsquo;ll ask for it.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">eat 4 oz chicken breast</p>
+        <p class="ex-bot">chicken breast ≈ 45 cal/oz (my guess) — 4 oz ≈ 180 cal.
+Reply “yes” to save &amp; log, send the right cal/oz (a bare number), or “no” to skip.</p>
+        <p class="ex-you">yes</p>
+        <p class="ex-bot">✓ chicken breast saved at 45 cal/oz — I’ll reuse it from now on.
+Logged 4 oz chicken breast: 180 cal.
+• calories: 180 / 2000 kcal</p>
+        <p class="ex-you">eat 6 oz chicken breast</p>
+        <p class="ex-bot">Logged 6 oz chicken breast: 270 cal.
+• calories: 450 / 2000 kcal</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">eat &lt;food&gt; &lt;n&gt; cal</span></td><td>Know the calories already? Your own count always wins &mdash; no guess, no question. With no amount, that number becomes the food&rsquo;s <em>typical serving</em>: saved once, so a bare <span class="cmd">eat &lt;food&gt;</span> logs it from then on, and saying it again with a new number updates the serving. Add an amount instead and an unknown food&rsquo;s density is derived and saved from <em>your</em> numbers. A known weighed or piece food (or recipe) is never rewritten by a one-off.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">eat olives 80 cal</p>
+        <p class="ex-bot">✓ olives saved at 80 cal/serving — I’ll reuse it.
+Logged olives: 80 cal.
+• calories: 530 / 2000 kcal</p>
+        <p class="ex-you">eat olives</p>
+        <p class="ex-bot">Logged olives: 80 cal.
+• calories: 610 / 2000 kcal</p>
+        <p class="ex-you">eat 4 oz mac salad 240 cal</p>
+        <p class="ex-bot">✓ mac salad saved at 60 cal/oz — I’ll reuse it.
+Logged 4 oz mac salad: 240 cal.
+• calories: 850 / 2000 kcal</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">eat &lt;a, comma, list&gt;</span></td><td>Threw a plate together? List the parts, separated by commas &mdash; each amount binds to its <em>own</em> item, so <span class="cmd">eat 8 oz chicken, half a pepper, 5 mushrooms</span> is 8 oz of the <em>chicken</em>, not of the whole plate. Known foods price from your library; the rest get one batched guess. It logs as a single one-off entry &mdash; nothing is saved for reuse (that&rsquo;s what <span class="cmd">save meal</span> is for). An all-known plate logs straight away; if anything had to be guessed you get one yes/number/no question first.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">eat 8 oz chicken breast, half a red pepper, 5 white mushrooms</p>
+        <p class="ex-bot">8 oz chicken breast, half a red pepper, 5 white mushrooms ≈ 425 cal (8 oz chicken breast 360 · half a red pepper ~20 guess · 5 white mushrooms ~45 guess).
+“yes” logs it, a number sets the total, or “no” to skip.</p>
+        <p class="ex-you">yes</p>
+        <p class="ex-bot">Logged 8 oz chicken breast, half a red pepper, 5 white mushrooms: 425 cal.
+• calories: 425 / 2000 kcal</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">eat whatever</span></td><td>A cheat day, a fast, a travel day &mdash; take today <em>off the record</em>. It shows in a different colour on the graph and drops out of your average, so one deliberate blow-out (or a skipped day) never masquerades as a tracked result. You can still log food on it if you like. <span class="cmd">eat whatever off</span> puts the day back on the books. (In the web Diet view, the food log&rsquo;s <span class="cmd">🍕 eat-whatever</span> button does the same for whichever day you&rsquo;re viewing.)
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">eat whatever</p>
+        <p class="ex-bot">🍕 Today’s an eat-whatever day — off the record. I’ll tint it on the graph and leave it out of your averages.
+(“eat whatever off” puts it back on the books.)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">save meal &lt;name&gt; &lt;what&rsquo;s in it&gt; [&lt;n&gt; cal]</span> <span class="cmd">eat meal &lt;name&gt;</span></td><td>Eat the same breakfast every day? Save it once &mdash; a one-word name, then what&rsquo;s in it. State the total and it saves silently; leave the total off and Fanad prices it from your foods (one batched guess covers the unknowns) behind a single yes/number/no question. <span class="cmd">eat meal &lt;name&gt;</span> &mdash; or just <span class="cmd">eat &lt;name&gt;</span> &mdash; logs one serving. <span class="cmd">foods</span> lists meals with their contents; <span class="cmd">food del</span> removes one; re-saving overwrites.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">save meal breakfast 2 eggs, skyr, toast 450 cal</p>
+        <p class="ex-bot">✓ breakfast saved at 450 cal/serving (2 eggs, skyr, toast). “eat breakfast” logs it.</p>
+        <p class="ex-you">eat breakfast</p>
+        <p class="ex-bot">Logged breakfast: 450 cal.
+• calories: 450 / 2000 kcal</p>
+        <p class="ex-you">save meal lunch 2 eggs, skyr, toast</p>
+        <p class="ex-bot">lunch ≈ 380 cal (2 eggs 140 · skyr 140 · toast ~100 guess).
+“yes” saves it, a number sets the total, or “no” to skip.</p>
+        <p class="ex-you">yes</p>
+        <p class="ex-bot">✓ lunch saved at 380 cal/serving (2 eggs, skyr, toast). “eat lunch” logs it.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">foods</span> <span class="cmd">food add/set/del/show</span></td><td>Your food library. <span class="cmd">food add &lt;name&gt; &lt;cal&gt;</span> sets a density directly (per-oz unless you say <span class="cmd">/g</span>, <span class="cmd">/piece</span>, or <span class="cmd">/serving</span>); <span class="cmd">food set</span> corrects one by listing number or name.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">food add olives 47</p>
+        <p class="ex-bot">✓ olives — 47 cal/oz. Log it with: eat 4 oz olives</p>
+        <p class="ex-you">foods</p>
+        <p class="ex-bot">🥗 Your foods:
+1. chicken breast — 45 cal/oz
+2. olives — 47 cal/oz
+(“food set 2 48” corrects one · “food del 2” removes it)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">recipe new &lt;name&gt;</span></td><td>Build a recipe conversationally: an amount + ingredient per line, then the dish&rsquo;s <em>cooked</em> weight &mdash; total calories &divide; cooked oz becomes the recipe&rsquo;s own cal/oz, so a portion logs like any food.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">recipe new chili</p>
+        <p class="ex-bot">🍲 Building chili. what’s in it? e.g. “16 oz chicken breast”
+(an amount + ingredient per line · “cooked 28 oz” sets the dish weight · “done” finishes · “cancel” discards)</p>
+        <p class="ex-you">16 oz chicken breast</p>
+        <p class="ex-bot">✓ chicken breast 16 oz (720 cal) — next?</p>
+        <p class="ex-you">done</p>
+        <p class="ex-bot">What does the finished dish weigh, in oz? (weigh the whole pot minus the pot)</p>
+        <p class="ex-you">28</p>
+        <p class="ex-bot">🍲 chili: 720 cal ÷ 28 oz cooked = 25.7 cal/oz.
+Log it with: eat 8 oz chili</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">recipe &lt;name&gt; = &hellip;</span></td><td>The one-line version: comma-separated ingredients (each already in your foods) ending <span class="cmd">@ &lt;oz&gt; cooked</span>. Redefines the recipe wholesale.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">recipe chili = 16 oz chicken breast, 8 oz olives @ 28 oz cooked</p>
+        <p class="ex-bot">🍲 chili:
+  • chicken breast — 16 oz @ 45 cal/oz = 720 cal
+  • olives — 8 oz @ 47 cal/oz = 376 cal
+= 1096 cal ÷ 28 oz cooked = 39.1 cal/oz. Log it with: eat 8 oz chili</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">recipes</span> <span class="cmd">recipe show/del &lt;name&gt;</span></td><td>List your recipes, see one&rsquo;s ingredients and math, or remove it. (Past logs keep their calories.)</td></tr>
+        <tr><td><span class="cmd">weight &lt;n&gt;</span> <span class="cmd">target &lt;n&gt;</span></td><td>Log today&rsquo;s body weight, and set the daily calorie goal every tally is measured against.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">weight 182</p>
+        <p class="ex-bot">⚖️ 182 lbs logged.</p>
+        <p class="ex-you">target 1800</p>
+        <p class="ex-bot">🎯 Daily target set to 1800 kcal.
+• calories: 450 / 1800 kcal</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">undo</span></td><td>Take back the last logged portion &mdash; <span class="cmd">undo</span> is app-wide, so it pops whatever Fanad did last (see Tasks).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-journal">
+    <h3>Journal &amp; trends</h3>
+    <p>A named daily checklist + note that Fanad reads back over weeks &mdash; its heaviest AI feature.
+      Good for spotting slow problems: a food that doesn&rsquo;t sit right, sleep that slips, even a pet&rsquo;s
+      on-again-off-again limp. <span class="mono-note">(Opt-in.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">journal new &lt;name&gt;</span></td><td>Start a named journal &mdash; keep several (one for you, one for the dog). Bare <span class="cmd">journal</span> lists yours; <span class="cmd">journal use &lt;name&gt;</span> picks the default.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">journal new food</p>
+        <p class="ex-bot">📔 Started “food”. Give it a daily checklist with “journal template &lt;template&gt;” (see /templates), or just “entry” + “journal note &lt;text&gt;” for a note-only journal.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">journal template</span></td><td>Snapshot one of your saved <a href="#adv-templates">templates</a> as the journal&rsquo;s daily checklist. It&rsquo;s a copy &mdash; editing the template later never rewrites the journal; re-run this to re-snapshot.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">journal template morning-checks</p>
+        <p class="ex-bot">✓ “food” now uses the “morning-checks” checklist (3 items) — snapshotted, so editing the template later won’t touch this journal. Tomorrow’s entry uses it; “entry” starts today’s.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/entry</span> <span class="cmd">check</span></td><td>Open today&rsquo;s entry (one per day &mdash; asking again shows the same one) and tick items by number, or tap the ☐ buttons. <span class="cmd">uncheck 2</span> unticks. An unticked box is data, never guilt.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">entry</p>
+        <p class="ex-bot">📔 food — 2026-07-09 (fresh entry)
+Checklist 0/3:
+1. ☐ walk the dog
+2. ☐ no dairy breakfast
+3. ☐ meds
+(“check 1 2” ticks items · “journal note &lt;text&gt;” adds to the day)</p>
+        <p class="ex-you">check 1 3</p>
+        <p class="ex-bot">📔 food — 2026-07-09
+Checklist 2/3:
+1. ☑ walk the dog
+2. ☐ no dairy breakfast
+3. ☑ meds</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">journal note</span></td><td>Add to today&rsquo;s free-text note (creates the entry if needed; repeats stack up). The note is where trends hide &mdash; jot symptoms, food, mood. Shortcut: <span class="cmd">j note &hellip;</span>
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">j note had dairy at lunch, headache by 3pm</p>
+        <p class="ex-bot">📝 Added to today’s “food” note. (“entry” shows the day.)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">journal today week month</span></td><td>AI summaries of what you logged: <span class="cmd">journal today</span> / <span class="cmd">yesterday</span> for a day, <span class="cmd">journal week</span> / <span class="cmd">month</span> roll days up. Each night Fanad quietly files the finished day&rsquo;s summary, so month-old detail is never re-read raw.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">journal week</p>
+        <p class="ex-bot">📅 food · 2026-W28
+You kept 5 of 7 days. Adherence held around 80% — dairy turned up in three notes, headaches in two, both in the back half of the week.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">journal trends</span></td><td>The long look: gentle correlations across weeks, with their evidence, phrased as things worth watching &mdash; never a diagnosis.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">journal trends</p>
+        <p class="ex-bot">🧭 food — trends
+One pattern might be worth watching: headaches turned up on 4 of the 5 days that followed dairy. Tentative — the data is still thin.
+
+🩺 These are patterns in what you logged, not medical advice — a real conversation with a doctor (or vet) is the next step if one worries you.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">journal delete</span></td><td>Erase a journal and all of its entries + summaries. Asks you to confirm first &mdash; a bare &ldquo;yes&rdquo; never deletes; only an explicit &ldquo;delete&rdquo; does.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-journal-howto">
+    <h3>How-to: running a trend journal, start to finish</h3>
+    <p>The journal only pays off as a small daily habit, so here&rsquo;s the whole loop once, end to end &mdash;
+      using the classic case it was built for: <em>&ldquo;is it the dairy?&rdquo;</em> (Swap in sleep, a medication,
+      or your dog&rsquo;s limp &mdash; the shape is identical.)</p>
+    <ol class="setup-steps">
+      <li><strong>Turn it on:</strong> <span class="cmd">optin journal</span>. (It&rsquo;s per-person, like every module.)</li>
+      <li><strong>Build the daily checklist as a template.</strong> File a task (&ldquo;morning checks&rdquo;), give it steps
+        (<span class="cmd">step walk the dog</span> &middot; <span class="cmd">step no dairy breakfast</span> &middot; <span class="cmd">step meds</span>),
+        then save it: <span class="cmd">/template 1 morning-checks</span>. Track whatever you want to correlate later &mdash;
+        the &ldquo;no dairy&rdquo; item is the experiment.</li>
+      <li><strong>Point a journal at it:</strong> <span class="cmd">journal new food</span>, then
+        <span class="cmd">journal template morning-checks</span>. The steps are copied in &mdash; editing the template
+        later won&rsquo;t rewrite your journal.</li>
+      <li><strong>Each day, two small moves:</strong> <span class="cmd">entry</span> opens today (tap the boxes, or
+        <span class="cmd">check 1 2</span>), and the note carries the story: <span class="cmd">j note had dairy at lunch,
+        headache by 3pm</span>. Skipped a day? Fine &mdash; a gap is data too.</li>
+      <li><strong>Let the nights do the heavy lifting.</strong> Fanad summarizes each finished day overnight, and
+        weeks/months are built from those summaries &mdash; so the AI stays fast and cheap no matter how old the
+        journal gets.</li>
+      <li><strong>Read it back:</strong> <span class="cmd">journal week</span> after a few days,
+        <span class="cmd">journal month</span> once it&rsquo;s been running, and <span class="cmd">journal trends</span>
+        for the long look. Trends name their evidence (&ldquo;headaches on 4 of the 5 days after dairy&rdquo;) and stay
+        tentative on thin data.</li>
+      <li><strong>Act on it like a scientist, not a patient.</strong> A pattern is a hypothesis: tighten the checklist
+        (&ldquo;no dairy after noon&rdquo;), keep logging, and take a real question to a doctor &mdash; or the vet, if the
+        journal is <span class="cmd">journal new pepper</span> and the mystery is the morning limp.</li>
+    </ol>
+    <p class="mono-note">Honest by design: summaries and trends only ever describe what you logged — Fanad never
+      invents days, and the not-medical-advice line is part of every trends reply on purpose.</p>
+  </div>
+
+  <div class="subsec" id="adv-batches">
+    <h3>Batches</h3>
+    <p>Track each <em>run</em> of something you make again and again &mdash; a sourdough, a kombucha,
+      a batch of soap. Write the directions once as a <a href="#adv-templates">template</a>; every run
+      gets its own numbered checklist snapshotted from it, a dated log of how it went, and a closing
+      verdict &mdash; so batch #7 can actually beat batch #3. A run is a <em>working copy</em>: tweak its
+      steps as you learn, then <span class="cmd">batch save</span> to graduate the winners into a new,
+      auto-numbered recipe version that the next run starts from (a dud version can be rejected back out).
+      No AI and no reminders: a batch only moves when you say so. <span class="mono-note">(Opt-in.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">batch new &lt;name&gt;</span></td><td>Open a run. The steps are copied from the same-named template &mdash; a snapshot, so editing the template later never touches a batch already going. Run again to open another (two crocks at once is fine); bare <span class="cmd">batches</span> lists your processes.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch new sourdough</p>
+        <p class="ex-bot">🧪 Batch #1 of “sourdough” is open — 3 steps snapshotted from the template.
+
+🧪 sourdough — batch #1 (fresh) · opened 7/13
+Steps 0/3:
+1. ☐ feed the starter
+2. ☐ mix and autolyse
+3. ☐ bake at 450
+(“batch check 1 2” ticks steps · “batch log &lt;text&gt;” adds a line · “batch done &lt;how it went&gt;” closes it)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch</span> <span class="cmd">batch check</span></td><td>Bare <span class="cmd">batch</span> shows the current open run; <span class="cmd">batch check 1 2</span> ticks steps by number (<span class="cmd">batch uncheck 2</span> unticks), or tap the ☐ buttons. The explicit <span class="cmd">batch</span> prefix keeps a plain <span class="cmd">check</span> free for the journal.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch check 1 2</p>
+        <p class="ex-bot">🧪 sourdough — batch #1 · opened 7/13
+Steps 2/3:
+1. ☑ feed the starter
+2. ☑ mix and autolyse
+3. ☐ bake at 450</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch add</span> <span class="cmd">edit</span> <span class="cmd">rm</span></td><td>Tweak the run&rsquo;s steps as you learn: <span class="cmd">batch add cold-proof overnight</span> appends a step, <span class="cmd">batch edit 2 autolyse 45 min</span> rewords step 2 (keeping its tick), <span class="cmd">batch rm 5</span> removes it. The run is a working copy &mdash; change it freely; only <em>open</em> runs are editable.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch edit 2 autolyse 45 min</p>
+        <p class="ex-bot">🧪 sourdough — batch #1 · opened 7/13
+Steps 2/3:
+1. ☑ feed the starter
+2. ☑ autolyse 45 min
+3. ☐ bake at 450</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch save</span></td><td>Graduate the run&rsquo;s current steps into a <strong>new recipe version</strong> &mdash; auto-numbered (<span class="cmd">sourdough #2</span>, <span class="cmd">#3</span>&hellip;), so you never manage names. The original is never overwritten; <span class="cmd">batch new sourdough</span> just starts from your <em>latest</em> version from now on.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch save</p>
+        <p class="ex-bot">🌱 Saved “sourdough” as new template version “sourdough #2” (3 steps, reset). The original is untouched — “batch new sourdough” now starts from this version.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch log</span></td><td>Add a dated line to the run&rsquo;s diary &mdash; days or weeks of them. This is where the story lives: what you fed it, how it smelled, what you&rsquo;d change.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch log smells lively, nice rise overnight</p>
+        <p class="ex-bot">🧪 sourdough — batch #1 · opened 7/13
+Steps 2/3:
+1. ☑ feed the starter
+2. ☑ mix and autolyse
+3. ☐ bake at 450
+📓 Log:
+7/13 — smells lively, nice rise overnight</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch done</span></td><td>Close the run with its outcome. Bare <span class="cmd">batch done</span> asks how it turned out (say <span class="cmd">skip</span> for none); the verdict is what makes the next run better.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch done tangy, best crumb yet</p>
+        <p class="ex-bot">🏁 Closed “sourdough” #1.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch history</span></td><td>Every run of a process, newest first &mdash; dates, steps done, and each verdict, so a good batch is reproducible.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch history sourdough</p>
+        <p class="ex-bot">🗂 sourdough — 2 runs:
+#2 · 7/13→7/13 · 3/3 steps · 🏁 tangy, best crumb yet
+#1 · opened 7/13 · 1/3 steps · still open
+🌱 versions: #1 (original) · #2 ← latest</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch versions</span></td><td>The recipe lineage of a process &mdash; every saved version, which one is the <em>latest</em> (what a new run starts from), and any that are rejected.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch versions sourdough</p>
+        <p class="ex-bot">🌱 “sourdough” recipe versions:
+#1 — original · 3 steps
+#2 — 4 steps · ← latest
+(“batch reject sourdough #<n>” drops one · “batch unreject …” restores it)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch reject</span> <span class="cmd">unreject</span></td><td>A version that turned out badly? <span class="cmd">batch reject sourdough #2</span> pulls it from the lineage, so <span class="cmd">batch new sourdough</span> falls back to the last good version. Reversible &mdash; <span class="cmd">batch unreject sourdough #2</span> brings it back. Rejecting targets the <em>recipe version</em>, not a run; your run history is untouched.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">batch reject sourdough #2</p>
+        <p class="ex-bot">✗ Rejected “sourdough #2” — dropped from the lineage. “batch new sourdough” now starts from “sourdough”. (“batch unreject sourdough #2” restores it.)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">batch delete</span></td><td>Erase a process and all of its runs + logs. Asks you to confirm first &mdash; a bare &ldquo;yes&rdquo; never deletes; only an explicit &ldquo;delete&rdquo; does.</td></tr>
+      </tbody>
+    </table>
+    <p class="mono-note">The whole loop, once: <span class="cmd">optin batches</span> &rarr; file a task, give it steps,
+      save it (<span class="cmd">/template 1 sourdough</span>) &rarr; <span class="cmd">batch new sourdough</span> &rarr;
+      tick steps, <span class="cmd">batch log &hellip;</span>, and <span class="cmd">batch add</span>/<span class="cmd">edit</span>/<span class="cmd">rm</span> as you learn &rarr;
+      <span class="cmd">batch save</span> to keep the winning steps as the next version &rarr; <span class="cmd">batch done &hellip;</span> to
+      file the verdict. Each run refines the recipe; a dud version is <span class="cmd">batch reject</span>-ed out. A batch is a run,
+      not a recurring chore &mdash; there are no reminders, on purpose.</p>
+  </div>
+
+  <div class="subsec" id="adv-homeassistant">
+    <h3>Home Assistant: ring the house</h3>
+    <p>Home Assistant has no reminders of its own that survive a restart &mdash; Fanad does. With this module
+      on, the timers and reminders you already set here also ring the <em>house</em>: a voice satellite speaks
+      the ding, a script you name can flash lights or sound a siren, and your phone gets a push through the HA
+      companion app. You can also talk straight to HA (<span class="cmd">ha turn off the kitchen light</span>)
+      and push a dated task onto a house calendar. Fanad never reads your house &mdash; no sensors, no presence;
+      the house is an output, not an input. <span class="mono-note">(Opt-in.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">ha &lt;command&gt;</span></td><td>Anything after <span class="cmd">ha</span> goes straight to Home Assistant&rsquo;s own assistant, and its answer comes back &mdash; lights, covers, questions, whatever your HA can do.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">ha turn off the kitchen light</p>
+        <p class="ex-bot">🏠 Turned off the light</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/ha</span></td><td>Status: is HA reachable, which ring outputs are enabled, and whether the last ring got through. Owners see the host and targets; everyone else just the health.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">ha</p>
+        <p class="ex-bot">🏠 Home Assistant
+✓ Connected — HA 2026.7 · Home
+Ring outputs: announce (1) · script fanad_alarm
+Calendar: calendar.house
+(“ha test” rings the outputs · “ha &lt;command&gt;” talks to HA)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">ha test</span></td><td>Ring every enabled output right now &mdash; the satellite speaks a test line, the script runs, the push arrives &mdash; so you know the wiring works before a real timer needs it.</td></tr>
+        <tr><td><span class="cmd">ha cal &lt;n&gt;</span></td><td>Push dated task <em>n</em> onto the house calendar (the 📅 <span class="cmd">/cal_N</span> reply also grows a 🏠 button). Needs HA&rsquo;s <em>Local Calendar</em> integration and a calendar picked in Settings.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">ha cal 3</p>
+        <p class="ex-bot">🏠 Sent “dentist” to the HA calendar.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <p class="mono-note">Setup (owner, once): in HA open your profile &rarr; <em>Security</em> and create a
+      <em>long-lived access token</em>; paste the HA URL + token in Settings &rarr; Home Assistant and pick the
+      outputs &mdash; voice satellites to announce on, an optional script (it receives <span class="cmd">kind</span>
+      and <span class="cmd">title</span> variables &mdash; wire a siren or lights there), and any companion-app
+      notify services. For the calendar push, add the <em>Local Calendar</em> integration in HA first. The token
+      is stored encrypted, like every other secret. Then <span class="cmd">optin ha</span> and
+      <span class="cmd">ha test</span>.</p>
+    <h4>Dashboards: let Home Assistant read Fanad</h4>
+    <p>The other direction: <span class="cmd">GET /api/ha/summary</span> is one read-only JSON bundle built
+      for HA dashboards &mdash; open tasks, due today, overdue, cleared today, the next deadline and ding,
+      plus a block per module you have on (calories today, journal entries, timers&hellip;). It carries
+      <em>counts and timestamps only</em>: no task text leaves Fanad unless you add
+      <span class="cmd">?titles=1</span>, because entity states flow into HA&rsquo;s recorder, logbook, and
+      whatever voice assistant you wired up. &ldquo;Today&rdquo; rolls at Fanad&rsquo;s 02:00 logical day,
+      not midnight. Pair it with a <em>read-only</em> token (Settings &rarr; Security &rarr; Terminal client
+      tokens &rarr; tick <em>Read-only</em>, or <span class="cmd">fanad token --read-only</span>) &mdash; that
+      token can never post chat or change anything, so the credential sitting in your HA config is harmless.
+      A minimal HA REST sensor:</p>
+    <pre>rest:
+  - resource: http://YOUR_FANAD_HOST:8787/api/ha/summary
+    headers:
+      Authorization: Bearer YOUR_READ_ONLY_TOKEN
+    scan_interval: 300
+    sensor:
+      - name: Fanad tasks due today
+        value_template: "{{ value_json.tasks.due_today }}"
+      - name: Fanad overdue
+        value_template: "{{ value_json.tasks.overdue }}"
+      - name: Fanad next deadline
+        device_class: timestamp
+        value_template: "{{ value_json.tasks.next_deadline }}"</pre>
+    <p class="mono-note">Live updates: <span class="cmd">GET /api/stream</span> (SSE, same token) emits a
+      <span class="cmd">counts</span> event whenever these numbers change &mdash; poll on that instead of a
+      timer if your integration can. The payload carries <span class="cmd">version: 1</span>; the shape only
+      changes with that number.</p>
+  </div>
+
+  <div class="subsec" id="adv-notebooks">
+    <h3>Notebooks</h3>
+    <p>Step into an isolated sub-space with its own tasks, notes, and lists &mdash; separate from
+      your main one. Like a fresh account you can walk into and back out of. <span class="mono-note">(Opt-in.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">optin notebook</span></td><td>Turn Notebooks on (off by default). Opting back out returns you to your main space; nothing is deleted.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">optin notebook</p>
+        <p class="ex-bot">✓ Notebooks on. Open a fresh space with “notebook &lt;name&gt;”, list them with “notebook”, head home with “notebook main”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">notebook</span></td><td>Where am I? Lists your notebooks with tappable switch buttons &mdash; plus a &ldquo;back to main&rdquo; chip when you're inside one.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">notebook</p>
+        <p class="ex-bot">📓 Notebooks — a separate, private space for tasks, notes &amp; lists.
+
+• work
+• garden — you’re here
+
+Switch or create: “notebook &lt;name&gt;” · back home: “notebook main” · rename: “notebook rename &lt;old&gt; &lt;new&gt;”.</p>
+        <div class="ex-btns"><span>📓 work</span><span>📖 Back to main</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">notebook &lt;name&gt;</span></td><td>Switch into that notebook &mdash; a new name creates it on the spot (<span class="cmd">notebook work</span>). Keep names under 40 characters.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">notebook garden</p>
+        <p class="ex-bot">✓ Made a new notebook 📓 garden and switched you in — a clean space for tasks, notes &amp; lists. “notebook main” takes you home.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">notebook main</span></td><td>Back to your default space (<span class="cmd">home</span>, <span class="cmd">exit</span>, and <span class="cmd">out</span> work too). Notebooks never nest.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">notebook main</p>
+        <p class="ex-bot">📖 You’re already in your main space.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">notebook rename &lt;old&gt; &lt;new&gt;</span></td><td>Rename one of your notebooks.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">notebook rename garden allotment</p>
+        <p class="ex-bot">✓ Renamed to 📓 allotment.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">notebook retire &lt;name&gt;</span></td><td>Hide a notebook you're done with. Nothing is deleted &mdash; it just leaves your listings, its reminders go quiet, and its name frees up for a fresh notebook. Retiring the space you're in returns you to main.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">notebook retire allotment</p>
+        <p class="ex-bot">🗄 Retired 📓 allotment. Everything in it is kept, just hidden. “notebook recover allotment” brings it back.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">notebook retired</span></td><td>See your retired notebooks, each with a tappable recover chip.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">notebook retired</p>
+        <p class="ex-bot">🗄 Retired notebooks — hidden, not deleted. Recover one to bring it (and everything in it) back:
+
+• allotment</p>
+        <div class="ex-btns"><span>♻️ allotment</span></div>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">notebook recover &lt;name&gt;</span></td><td>Bring a retired notebook back, with everything in it. If a live notebook has taken its name meanwhile, it returns under a numbered name (&ldquo;allotment 2&rdquo;) &mdash; rename it afterwards if you like.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">notebook recover allotment</p>
+        <p class="ex-bot">✓ Recovered 📓 allotment — it’s back in your notebooks.</p>
+        <div class="ex-btns"><span>Switch to 📓 allotment</span></div>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">One person, separate rooms</span>
+      <p>Everything you say lands in whichever space you're standing in &mdash; say <span class="cmd">notebook</span>
+        if you're unsure where you are. A notebook is yours alone (nobody else can reach it), your module choices
+        carry across all your spaces, and reminders still find you in the same chat.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="adv-vouch">
+    <h3>Vouching people in</h3>
+    <p>Fanad is invite-only by endorsement: anyone already in can vouch a friend in, and the record
+      remembers who let in whom. <span class="mono-note">(Opt-in &mdash; already on for the owner.)</span></p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">optin vouch</span></td><td>Turn vouching on for yourself (off by default; the owner has it on already).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">optin vouch</p>
+        <p class="ex-bot">✓ Vouch on. Add someone with “vouch @username”.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">vouch @username</span></td><td>Let someone you trust message this bot &mdash; their Telegram @username, or on Slack just @-mention them. You're on record as who let them in.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">vouch @sam_gardner</p>
+        <p class="ex-bot">✅ Vouched. @sam_gardner can message me now — they’ll get in next time they write. You’re on record as who let them in.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">vouch</span></td><td>Who you've vouched in so far.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">vouch</p>
+        <p class="ex-bot">🤝 You’ve vouched in 2: @sam_gardner, @old_pal_pete
+Add someone with “vouch @username” — they’ll be able to message me, and you’ll be on record as who let them in.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">Grows by trust, revokes from the root</span>
+      <p>There's no un-vouch in chat: the owner revokes from web Settings, and revoking someone also
+        revokes everyone <em>they</em> vouched in. Vouches are per-platform &mdash; letting someone into
+        Telegram doesn't open Slack. A vouched-in friend lives in chat only &mdash; if the admin has set a
+        Site URL and turned on web login, they can send <span class="cmd">/web</span> for a one-time link
+        that opens the web UI signed in as themselves (see <a href="#admin-weblogin">Web login</a>).</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="adv-checkins">
+    <h3>Check-ins</h3>
+    <p>Ask for a gentle, once-a-day nudge at a time that suits you &mdash; a check-in, never a
+      stream of pings.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/wake</span></td><td>Set a gentle check-in at a time of day (e.g. <span class="cmd">/wake 8:30</span>).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/wake 8:30</p>
+        <p class="ex-bot">⏰ I'll check in at 08:30 (tomorrow). (“/wakelist” · “/wake off 1”)
+
+…next morning at 8:30:
+💡 A gentle nudge: how about “water the plants”? (reply /whatdo when you're ready)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/wakelist</span></td><td>List your scheduled check-ins.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/wakelist</p>
+        <p class="ex-bot">⏰ Check-ins:
+#1 08:30
+(“/wake off &lt;id&gt;” to remove)</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">/wake off &lt;id&gt;</span></td><td>Remove a check-in by id.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/wake off 1</p>
+        <p class="ex-bot">Removed check-in #1.</p>
+      </div>
+      </details></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-suggest">
+    <h3>How the suggestions think</h3>
+    <p><span class="cmd">/whatdo</span> isn't random. Fanad retrieves your own tasks, scores them on
+      real signals, then lets the model pick one with an honest reason &mdash; and a "no" just
+      reshapes the offer.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Piece</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">RAG suggestion engine</span></td><td>Retrieves your open tasks, prefilters a shortlist, then the model chooses the single best next one with an honest reason.</td></tr>
+        <tr><td><span class="cmd">Learned affinity scoring</span></td><td>Nudges a task from your real outcomes (done/refused/dropped and 👍/🙁) per category and time of day.</td></tr>
+        <tr><td><span class="cmd">Context-fit scoring</span></td><td>Nudges a task by whether now matches the day-part, hour, and weather it was noted in.</td></tr>
+        <tr><td><span class="cmd">Deadline urgency boost</span></td><td>Lifts a live-dated task as its due date nears, without ever being an absolute override.</td></tr>
+        <tr><td><span class="cmd">Anti-repetition + refusal penalties</span></td><td>Down-weights recently-shown tasks and ones you tend to refuse now; never re-offers the just-declined pick.</td></tr>
+        <tr><td><span class="cmd">Grooming reshapers</span></td><td>After repeated refusals, offers to reword a task or break it into first steps &mdash; inventing nothing.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-mood">
+    <h3>Mood, brain-state &amp; sizing</h3>
+    <p>Your mood steers how big a suggestion is, so a hard day gets an easier ask.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Piece</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Mood-to-energy sizing</span></td><td>Infers energy from your last mood (low/sad/sick/hungry &rarr; lighter offers) to soften suggestions for ~6h.</td></tr>
+        <tr><td><span class="cmd">Brain-state awareness</span></td><td>A designed nervous-system gate to down-shift to low-demand offers when dysregulated; not yet in code &mdash; the shipped proxy is mood sizing.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="adv-honest">
+    <h3>Reactions &amp; the honest-by-design behavior</h3>
+    <p>Fanad acks your message with a quick two-step reaction, and holds two promises: it never
+      invents, and it lets stale tasks rest.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Behavior</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Reactions on your message</span></td><td>A two-step reaction: 👀 on arrival, then a decision emoji (mood, ✍ for a note, else 🫡; 🤬 on error).</td></tr>
+        <tr><td><span class="cmd">Auto-sleep of stale tasks</span></td><td>Once a day, long-untouched tasks go to sleep and are also excluded from suggestions.</td></tr>
+        <tr><td><span class="cmd">Honest recommendation reasons</span></td><td>Every suggestion's reason is the model's own or a deterministic phrase grounded in real signals &mdash; never fabricated.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 4 · ADMIN & SETUP ==================== -->
+<section id="admin" class="section-alt" aria-labelledby="admin-h" style="margin-inline:calc(-1 * var(--gutter));padding-inline:var(--gutter)">
+  <div class="sec-head">
+    <p class="kicker">Part four &middot; host only</p>
+    <h2 id="admin-h">Admin &amp; setup</h2>
+    <p>For whoever runs the box: installing, wiring up surfaces, bringing your own local model, and the flags that guard privacy and persistence.</p>
+  </div>
+
+  <div class="subsec" id="admin-privacy">
+    <h3>How private is it? The four tiers</h3>
+    <p>Privacy isn't one switch &mdash; it's three choices: where Fanad is <strong>hosted</strong>, how you
+      <strong>talk to it</strong>, and which <strong>model</strong> does the thinking. The setup below can land you
+      anywhere on this scale, so pick the column you're comfortable with before you wire things up.</p>
+    <div class="privacy-wrap" role="region" aria-label="Privacy comparison of the four ways to run Fanad" tabindex="0">
+      <table class="privacy-table">
+        <thead>
+          <tr>
+            <th scope="col">Your setup</th>
+            <th scope="col" class="col-full">
+              <span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+              <span class="tier">Full privacy</span>
+            </th>
+            <th scope="col">
+              <span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+              <span class="tier">Mostly private</span>
+            </th>
+            <th scope="col">
+              <span class="meter" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i></span>
+              <span class="tier">Performance over privacy</span>
+            </th>
+            <th scope="col">
+              <span class="meter" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span>
+              <span class="tier">Convenience</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">You talk to it via</th>
+            <td class="col-full">Your own <strong>web app</strong>, over your private tunnel</td>
+            <td><strong>Telegram</strong></td>
+            <td><strong>Telegram</strong></td>
+            <td><strong>Telegram</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">Hosted on</th>
+            <td class="col-full">Your machine</td>
+            <td>Your machine</td>
+            <td>Your machine</td>
+            <td>A <strong>cloud server</strong> you rent</td>
+          </tr>
+          <tr>
+            <th scope="row">The AI model</th>
+            <td class="col-full">Local (LM Studio / Ollama)</td>
+            <td>Local (LM Studio / Ollama)</td>
+            <td>A <strong>cloud AI</strong> provider</td>
+            <td>A <strong>cloud AI</strong> provider</td>
+          </tr>
+          <tr>
+            <th scope="row">Notes &amp; data live</th>
+            <td class="col-full">On your machine</td>
+            <td>On your machine</td>
+            <td>On your machine</td>
+            <td>On the cloud host</td>
+          </tr>
+          <tr>
+            <th scope="row">Who can see your words</th>
+            <td class="col-full"><strong>Only you</strong></td>
+            <td>You <strong>+ Telegram</strong></td>
+            <td>You + Telegram <strong>+ the AI provider</strong></td>
+            <td>Telegram + the AI provider <strong>+ your host</strong></td>
+          </tr>
+          <tr>
+            <th scope="row">Good when</th>
+            <td class="col-full">Your notes are sensitive and privacy comes first.</td>
+            <td>You want Telegram's ease, but keep data &amp; AI at home.</td>
+            <td>You want the strongest model and will trade some privacy for it.</td>
+            <td>You just want the easiest start and privacy isn't the concern.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="privacy-hint" aria-hidden="true">Swipe sideways to compare &rarr;</p>
+    <p class="privacy-note">Telegram bot messages aren't end-to-end encrypted, so Telegram can see what you send its
+      bot &mdash; that's why the web app (reached over your own tunnel, browser-to-server) is the private surface. A
+      cloud model only sees your prompts when <span class="cmd">LLM_ALLOW_CLOUD</span> is on (off by default); see
+      <a href="#admin-cloud">Cloud &amp; privacy boundary</a> below.</p>
+  </div>
+
+  <div class="subsec" id="admin-install">
+    <h3>Install &amp; run</h3>
+    <p>Pick your path: a double-click Windows installer with everything bundled, a one-line npx
+      bootstrap, or a checkout and a handful of npm scripts. All state lives in one SQLite file.</p>
+    <div class="callout" role="note">
+      <span class="label">New here? Start with the walkthrough</span>
+      <p>The <a href="./happy-path-installer.html">Happy Path installer</a> is a friendly,
+        start-to-finish guide &mdash; download the Windows app, set up a local model, run the wizard,
+        hook up a Telegram bot, and reach it from anywhere. This section is the reference behind it.</p>
+    </div>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Path</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">FanadSetup.exe (Windows)</span></td><td>The easiest start: an installer with its own bundled Node runtime &mdash; nothing to install first, no admin rights, nothing added to PATH. It adds "Fanad Setup" and "Start Fanad Server" to the Start Menu, and the first launch opens the setup wizard in your browser. The installer isn't code-signed yet, so SmartScreen warns once: click More info &rarr; Run anyway. Uninstalling keeps your data and settings.</td></tr>
+        <tr><td><span class="cmd">npx github:NTBooks/Fanad</span></td><td>One-liner for technical users on any platform (needs Node 24+): copies the app into ./fanad, opens the setup wizard, installs dependencies, builds, and starts.</td></tr>
+        <tr><td><span class="cmd">installer.bat + run.bat</span></td><td>From a Windows checkout with Node 24+ installed: installer.bat opens the setup wizard and writes .env; run.bat installs, builds, and starts the server.</td></tr>
+      </tbody>
+    </table>
+    <p>From a checkout, the npm scripts:</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Node &gt;= 24</span></td><td>Pinned because Fanad uses the built-in node:sqlite module (unflagged on 24+). The Windows installer ships its own copy, so this only matters for the checkout and npx paths.</td></tr>
+        <tr><td><span class="cmd">npm run dev</span></td><td>Runs the server with --watch and auto-loads .env for local development.</td></tr>
+        <tr><td><span class="cmd">npm start</span></td><td>Starts the production server (Express API + built frontend) on PORT (default 8787).</td></tr>
+        <tr><td><span class="cmd">npm run build</span></td><td>Builds the web/ React app into static assets served in production.</td></tr>
+        <tr><td><span class="cmd">npm run web:dev</span></td><td>Runs the Vite dev server for the web frontend (proxies /api to the Node server).</td></tr>
+        <tr><td><span class="cmd">npm test</span></td><td>Runs the built-in node --test suite.</td></tr>
+        <tr><td><span class="cmd">npm run reindex</span></td><td>Re-embeds every task/note for all users after switching embed providers.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-surfaces">
+    <h3>Surfaces &amp; channels</h3>
+    <p>Three surfaces, one shared brain. Both bots reach out via outbound connections &mdash; no
+      public URL or inbound ports. Access is fail-closed: strangers get silence.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Surface</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Telegram bot</span></td><td>The primary surface: text/photo capture, inline menus, two-step reaction acks, via grammY long-polling.</td></tr>
+        <tr><td><span class="cmd">Telegram setup</span></td><td>Paste a @BotFather token and allowed usernames into web Settings; the server validates and starts the bot.</td></tr>
+        <tr><td><span class="cmd">Slack bot</span></td><td>Optional second channel at Telegram parity via Bolt Socket Mode: Block Kit buttons, mrkdwn, .ics uploads.</td></tr>
+        <tr><td><span class="cmd">Slack setup</span></td><td>Paste xoxb- bot token and xapp- app-level token into web Settings; secrets stored encrypted.</td></tr>
+        <tr><td><span class="cmd">Web app</span></td><td>A React chat UI with Settings, a your-data browser, reactions, and scroll-back history.</td></tr>
+        <tr><td><span class="cmd">Web reach</span></td><td>The built frontend is served by the same Express server; reach it over LAN at http://&lt;host&gt;:8787 or via Tailscale.</td></tr>
+        <tr><td><span class="cmd">/web (chat &rarr; browser)</span></td><td>A Telegram/Slack user asks the bot for a one-time link that opens the web UI signed in as them &mdash; no password to invent. Needs the Site URL set and web login on (see <a href="#admin-weblogin">Web login</a>).</td></tr>
+        <tr><td><span class="cmd">Mac mini always-on deploy</span></td><td>A copy-pasteable guide to run Fanad + LM Studio on an always-on Mac mini via launchd/pm2 with Tailscale.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-llm">
+    <h3>Bring your own local LLM</h3>
+    <p>Local is the default and the privacy boundary. Run LM Studio or Ollama separately with both
+      a chat and an embedding model loaded.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">LM Studio (local, default)</span></td><td>Default local provider at http://127.0.0.1:1234/v1; auto-uses the loaded chat model.</td></tr>
+        <tr><td><span class="cmd">Ollama (local)</span></td><td>Alternative local provider at http://127.0.0.1:11434/v1, selectable in Settings.</td></tr>
+        <tr><td><span class="cmd">BYO local model requirement</span></td><td>Run LM Studio/Ollama with BOTH a chat and an embedding model loaded, or chat/embeddings error.</td></tr>
+        <tr><td><span class="cmd">LLM setup in Settings</span></td><td>Configure provider, base URL, chat/embed models, and (for cloud) an API key from the web UI; keys never returned.</td></tr>
+        <tr><td><span class="cmd">LLM_PROVIDER</span></td><td>Selects the chat provider (lmstudio|ollama|openai|gemini|anthropic); default lmstudio.</td></tr>
+        <tr><td><span class="cmd">EMBED_PROVIDER</span></td><td>Selects the embeddings provider independently (lmstudio|ollama|openai|gemini); default lmstudio.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" role="note">
+      <span class="label">Privacy is the default</span>
+      <p>Everything stays on your own machine with a local model doing the thinking &mdash; no cloud, no account,
+        no telemetry, nothing leaving the box. That boundary is what makes an honest note possible.</p>
+    </div>
+  </div>
+
+  <div class="subsec" id="admin-cloud">
+    <h3>Cloud providers &amp; the privacy boundary</h3>
+    <p>Cloud is off by default and hard-blocked at the factory. <span class="cmd">LLM_ALLOW_CLOUD</span>
+      is the real boundary &mdash; the UI gate is only the friendly front.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Flag</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">LLM_ALLOW_CLOUD</span></td><td>Master flag unlocking cloud providers in Settings and on the write path; OFF by default, enforced by a 403 too.</td></tr>
+        <tr><td><span class="cmd">Provider cloud hard-block</span></td><td>Cloud providers are refused at the provider factory unless LLM_ALLOW_CLOUD is on.</td></tr>
+        <tr><td><span class="cmd">OPENAI_API_KEY / _CHAT_MODEL / _EMBED_MODEL</span></td><td>BYO OpenAI credentials + model overrides; only usable when LLM_ALLOW_CLOUD is on.</td></tr>
+        <tr><td><span class="cmd">GEMINI_API_KEY / _CHAT_MODEL / _EMBED_MODEL</span></td><td>BYO Google Gemini credentials + model overrides; gated by LLM_ALLOW_CLOUD.</td></tr>
+        <tr><td><span class="cmd">ANTHROPIC_API_KEY / _CHAT_MODEL</span></td><td>BYO Anthropic Claude chat credentials + model (no embeddings); gated by LLM_ALLOW_CLOUD.</td></tr>
+        <tr><td><span class="cmd">LMSTUDIO_BASE_URL / OLLAMA_BASE_URL</span></td><td>Base URL of the local server; blank falls back to a provider-aware default.</td></tr>
+        <tr><td><span class="cmd">LMSTUDIO_CHAT_MODEL / _EMBED_MODEL</span></td><td>The exact chat and embedding model ids on the local server.</td></tr>
+        <tr><td><span class="cmd">LMSTUDIO_API_KEY</span></td><td>API key for the local server (LM Studio ignores it; defaults to 'lm-studio').</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-creds">
+    <h3>Channel &amp; weather credentials</h3>
+    <p>Bot tokens and weather keys, all stored encrypted and configured from Settings, not .env.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">TELEGRAM_BOT_TOKEN</span></td><td>Telegram bot token from @BotFather; enables Telegram via outbound long-polling. Blank disables it.</td></tr>
+        <tr><td><span class="cmd">SLACK_BOT_TOKEN / _APP_TOKEN / _SIGNING_SECRET</span></td><td>Slack credentials: xoxb- bot token plus xapp- app token (Socket Mode) or a signing secret (HTTP/Events).</td></tr>
+        <tr><td><span class="cmd">WEATHER_PROVIDER</span></td><td>Weather backend selector (default open-meteo, which needs no key).</td></tr>
+        <tr><td><span class="cmd">OPENWEATHER_API_KEY</span></td><td>API key for the OpenWeather provider (only if not the keyless open-meteo).</td></tr>
+        <tr><td><span class="cmd">Web Settings (Telegram)</span></td><td>Sets the bot token + allowed username and (re)starts Telegram; the token is stored encrypted.</td></tr>
+        <tr><td><span class="cmd">Web Settings (Slack)</span></td><td>Sets the Slack tokens/mode and allow-list, then (re)starts Slack; secrets stored encrypted.</td></tr>
+        <tr><td><span class="cmd">Web Settings (Weather)</span></td><td>Sets the location and unit and immediately refreshes conditions from Open-Meteo.</td></tr>
+        <tr><td><span class="cmd">Web Settings (LLM)</span></td><td>Configures provider, base URL, models and API key from the UI; cloud rejected when the flag is off.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-kek">
+    <h3>Secret encryption (KEK)</h3>
+    <p>Every stored secret is encrypted at rest. The off-box KEK is the only thing defending secrets
+      against box theft.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">KEK envelope encryption</span></td><td>AES-256-GCM encryption of stored secrets so nothing is ever plaintext; decrypted only on read.</td></tr>
+        <tr><td><span class="cmd">KEK</span></td><td>The off-box env encryption key; deleted from process.env at boot and the only defense against box theft.</td></tr>
+        <tr><td><span class="cmd">KEK_FILE</span></td><td>Overrides the on-box bootstrap-key file path (default &lt;dataDir&gt;.kek) to move it off the backup set.</td></tr>
+        <tr><td><span class="cmd">Secret re-key migration</span></td><td>Lifts every bootstrap-encrypted secret to the env KEK once one arrives, then retires the bootstrap key.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-toggles">
+    <h3>Feature toggles &amp; opt-in</h3>
+    <p>Tasks are the always-on core. Notes, Lists, Metrics, Diet, Vouch, Notebooks, Timer, Journal, Batches, and
+      Home Assistant are per-user opt-in and off by default. As the owner you can also enable or disable each module for the
+      <strong>whole deployment</strong> &mdash; release features over time, or gate one &mdash; a global layer that
+      sits above each person's own opt-in.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">optin / optout / modules</span></td><td>Per-user opt-in for optional modules (all OFF by default; Tasks always-on) via chat or web.</td></tr>
+        <tr><td><span class="cmd">Web feature-toggle checkboxes</span></td><td>Returns and sets the acting user's module state; turning Notebooks off drops them to their main space.</td></tr>
+        <tr><td><span class="cmd">Metrics &amp; Diet toggles (web)</span></td><td>Separate per-user on/offs for Metrics and Diet (each off by default); Diet logs land on the calories metric either way.</td></tr>
+        <tr><td><span class="cmd">Notebooks switch/create (web)</span></td><td>List, switch into, and create the account's isolated sub-user spaces; hidden when the module is off.</td></tr>
+        <tr><td><span class="cmd">System modules (Settings &rarr; Modules)</span></td><td>Owner-only: enable or disable each module for the whole deployment. A disabled module is hidden and unavailable for everyone <em>but you</em> (so you can preview it before releasing); this global switch sits above each user's own opt-in.</td></tr>
+        <tr><td><span class="cmd">system &middot; system enable|disable &lt;module&gt;</span></td><td>The same deployment-wide switches from chat (owner only): <span class="cmd">system</span> shows the board, <span class="cmd">system disable journal</span> gates one.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-access">
+    <h3>Access: vouch &amp; impersonation</h3>
+    <p>Grow the whitelist by <a href="#adv-vouch">endorsement</a>, and &mdash; on a single-operator
+      host only &mdash; act as any user.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Telegram auth</span></td><td>Fail-closed: owner claims on first contact, plus a @username allowlist and social vouches; strangers dropped.</td></tr>
+        <tr><td><span class="cmd">Slack auth</span></td><td>Same fail-closed control keyed on the Slack user id, with platform-namespaced vouches.</td></tr>
+        <tr><td><span class="cmd">Vouch list + cascade-revoke (web)</span></td><td>Lists who endorsed whom and soft-revokes a handle plus everyone in the subtree they vouched.</td></tr>
+        <tr><td><span class="cmd">USER_IMPERSONATION</span></td><td>Host-only flag letting the web UI act as any user via X-Fanad-User; default OFF, keep off on multi-user deploys. The server prints a loud warning banner on every boot while it's on.</td></tr>
+        <tr><td><span class="cmd">Impersonation picker (web)</span></td><td>Lists accounts so the operator can switch which user the web acts as; empty unless USER_IMPERSONATION is on.</td></tr>
+        <tr><td><span class="cmd">Acting-user resolver</span></td><td>The single seam mapping X-Fanad-User to an acting user, defaulting to root so a bad header can't escalate. When web login is on, the session decides instead and the header is ignored.</td></tr>
+        <tr><td><span class="cmd">Web local access</span></td><td>By default the web app has no login (auth mode <span class="cmd">none</span>); it acts as root and is meant for LAN/Tailscale only. Turn on web login below for anything networked.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-weblogin">
+    <h3>Web login (Settings &rarr; Security)</h3>
+    <p>An opt-in login for the web UI: username + password + a <strong>mandatory</strong> authenticator
+      (TOTP) code, enrolled by scanning a QR. Set everything up while the mode is still off, then flip
+      the dropdown &mdash; it refuses to enable until the credentials are complete, so you can't lock
+      yourself out. Telegram/Slack channels are unaffected.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">Auth mode (none | simple)</span></td><td>The in-app dropdown. <span class="cmd">none</span> = open web UI (today's trust model); <span class="cmd">simple</span> = every web visitor signs in. Only the root user can change Settings while login is on.</td></tr>
+        <tr><td><span class="cmd">Web login account</span></td><td>Root's username + password (scrypt-hashed at rest). Changing the password signs out every other session.</td></tr>
+        <tr><td><span class="cmd">Two-factor (required)</span></td><td>Scan the QR with any authenticator app, verify a code to finish. The secret is stored encrypted under the KEK; a re-enroll keeps the old authenticator working until the new one is proven.</td></tr>
+        <tr><td><span class="cmd">Allow new users to register</span></td><td>Shows "Create an account" on the login screen &mdash; and adds a "sign up in your browser" link to the public <span class="cmd">/demo</span> page, so people without Telegram can join. Each account is a fully separate tenant. Normally a registration isn't usable until its own 2FA is scanned and verified; but while demo mode (<span class="cmd">demo signup on</span>) is active these browser signups skip 2FA and drop straight in &mdash; and are asked to set up an authenticator if you later turn demo mode off. Per-IP limits and the <span class="cmd">MAX_WEB_DEMO_ACCOUNTS</span> cap keep a public box from being flooded.</td></tr>
+        <tr><td><span class="cmd">Web IP allowlist</span></td><td>Optional, works in either mode: restrict the whole web UI to listed IPs/CIDR ranges. Loopback always passes and /api/health stays open (platform healthchecks). Needs TRUST_PROXY behind a reverse proxy.</td></tr>
+        <tr><td><span class="cmd">Site URL (Advanced)</span></td><td>The public address of this server (e.g. <span class="cmd">https://fanad.example.com</span>) &mdash; the base the <span class="cmd">/web</span> links below point at. Blank (the default) keeps /web off. Deployment-specific, so it doesn't ride the setup-mode settings backup.</td></tr>
+        <tr><td><span class="cmd">/web</span></td><td>In a Telegram/Slack DM: a one-time link (10-minute, single-use) that opens the web UI signed in as that chat user &mdash; the authorized DM is the proof of identity, so chat-only users never need a password. The link lands on a page with a single button; tapping the button is what signs you in (so a chat app's link preview can't spend the link for you). Requires the Site URL and login mode <span class="cmd">simple</span> &mdash; while either is missing, only the owner is pointed at the Settings switch; for everyone else the word behaves like any other and simply files as a task. The root operator is always refused (2FA can't be bypassed from chat).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/web</p>
+        <p class="ex-bot">🔗 Your one-time sign-in link:
+
+https://fanad.example.com/web/3fK…9Qw
+
+It opens a page with one button — tap it and Fanad opens in your browser, already signed in as you. It works once and expires in 10 minutes — run /web again whenever you need a fresh one.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">cmd</span> (terminal client)</td><td>In any chat &mdash; web, or an authorized Telegram/Slack DM: mints a long-lived claim token for the <b>terminal client</b> and replies with the ready-to-paste connect command &mdash; <span class="cmd">fanad &lt;server&gt; &lt;token&gt;</span>, run from a Fanad checkout. <b>Admin opt-in, default off</b>: nothing mints and no token authenticates until the owner ticks &ldquo;Enable the terminal client&rdquo; (Settings &rarr; Security &rarr; Terminal client tokens); flipping it back off instantly disables every outstanding token. While it's off, only the owner is told about the switch &mdash; for everyone else <span class="cmd">cmd</span> is just a word and files as a task. The token is shown once (only its hash is stored), acts as your account for chat only (never Settings), and expires in 90 days. A DM counts because it's already your vouched-in, authorized surface &mdash; the same proof of identity <span class="cmd">/web</span> uses to sign you in. Manage or revoke tokens in the same Settings section, or on the server box with <span class="cmd">fanad token --list</span> / <span class="cmd">--revoke</span>. A <b>read-only</b> variant (tick <em>Read-only</em> when minting, or <span class="cmd">fanad token --read-only</span>) can only GET &mdash; it's the credential for Home Assistant dashboards and anything else that should read your numbers but never write (see <a href="#adv-homeassistant">Home Assistant</a>).
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">cmd</p>
+        <p class="ex-bot">💻 Your terminal connect command — shown ONCE (only its hash is stored):
+
+fanad https://fanad.example.com fnd1_05qO…Z71o
+
+Run it from a Fanad checkout (or npx fanad …). The token acts as you, chat only — never Settings — and expires in 90 days. Manage or revoke: Settings → Security → Terminal client tokens.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">AUTH_MODE</span></td><td>Env default for the mode before any in-app choice; the dropdown's stored value wins thereafter.</td></tr>
+        <tr><td><span class="cmd">SITE_URL</span></td><td>Env default for the Site URL before any in-app choice; the saved Settings value wins thereafter (same precedence as AUTH_MODE).</td></tr>
+        <tr><td><span class="cmd">AUTH_RESET</span></td><td>Break-glass: set to 1 and restart to force login off (credentials and 2FA preserved) after a lockout — lost phone or lost KEK. Unset it afterwards.</td></tr>
+        <tr><td><span class="cmd">TRUST_PROXY</span></td><td>Set to 1 (or a hop count) behind Coolify/Traefik so the IP allowlist and login rate-limit see the real client address.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-deletion">
+    <h3>Deletion, retention &amp; data</h3>
+    <p>Deletion truly deletes &mdash; unless you first turn on a retention export. Browse and edit
+      your own data anytime.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">/requestdeletion</span></td><td>Confirm-gated full erase of a user's account and data.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/requestdeletion</p>
+        <p class="ex-bot">⚠️ Delete everything?
+
+This permanently erases ALL of your data — every task, note, message, mood, metric, reminder, template, and the preferences I’ve learned about you. It cannot be undone.
+
+Type DELETE to confirm, or anything else to cancel.</p>
+        <p class="ex-you">never mind</p>
+        <p class="ex-bot">Okay — nothing was deleted. Your data is safe. 🌱</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">Data retention toggle</span></td><td>Turns on a full zip export of a user's data before /requestdeletion erases it; OFF by default.</td></tr>
+        <tr><td><span class="cmd">Retention export zip</span></td><td>Snapshots every row (including each notebook) into a timestamped zip before the wipe.</td></tr>
+        <tr><td><span class="cmd">Data Browser ('Your data')</span></td><td>A user-scoped browser over a whitelist of tables (app_settings excluded) for transparency and in-place edit/delete.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-diag">
+    <h3>Diagnostics &amp; logs</h3>
+    <p>Optional panels for the operator. Both expose sensitive content over the unauthenticated local
+      API, so both are off by default.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Endpoint / setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">GET /api/health</span></td><td>Unauthenticated liveness probe — booleans only (ok, secrets encrypted, persist mounted, LLM reachable). Deployment detail (paths, KEK source, impersonation) is logged at startup instead of served here.</td></tr>
+        <tr><td><span class="cmd">AI Activity Log viewer + toggle</span></td><td>Tails every LLM call (purpose/prompt/reply/latency) plus the /whatdo decision; live DB toggle, OFF by default.</td></tr>
+        <tr><td><span class="cmd">DEBUG_LOG</span></td><td>Tees console logs into a ring buffer served to the web debug panel; never enable in production.</td></tr>
+        <tr><td><span class="cmd">Debug Log viewer</span></td><td>Serves the captured server-log ring buffer to the web debug panel, only when DEBUG_LOG is set.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-persist">
+    <h3>Persistence &amp; deployment env</h3>
+    <p>In production Fanad fails fast if its data volume isn't mounted, so the DB and KEK never land
+      on ephemeral storage.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">PERSIST_DATA</span></td><td>Names the persistent volume (default /persist) where the DB + KEK live; prod boot fails fast if unmounted.</td></tr>
+        <tr><td><span class="cmd">DATA_DIR</span></td><td>Explicit override for where the DB + KEK live; the escape hatch that bypasses the persist fail-fast.</td></tr>
+        <tr><td><span class="cmd">NODE_ENV</span></td><td>When 'production', activates the persist fail-fast and force-disables SETUP_MODE.</td></tr>
+        <tr><td><span class="cmd">PORT</span></td><td>TCP port the Express server listens on (default 8787).</td></tr>
+        <tr><td><span class="cmd">SESSION_SECRET</span></td><td>Unused — web login sessions are opaque random tokens stored hashed in the DB, so no signing secret is needed.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-setupmode">
+    <h3>Setup mode &amp; config portability</h3>
+    <p>Move a whole config between servers &mdash; but only in setup mode, because the backup
+      contains decrypted secrets.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">SETUP_MODE</span></td><td>Unlocks settings backup/restore; the backup holds decrypted secrets, so it's force-disabled in production.</td></tr>
+        <tr><td><span class="cmd">Settings backup / restore</span></td><td>Export/import all settings (decrypted, re-encrypted on restore) to move a config; only when SETUP_MODE is on. The web-login config (mode, credentials, IP allowlist) deliberately never rides along, and neither does the Site URL (it names the old server's address).</td></tr>
+        <tr><td><span class="cmd">GET /api/setup</span></td><td>Reports whether SETUP_MODE is active so the UI shows or hides backup/restore controls.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="subsec" id="admin-backup">
+    <h3>Instance backup &amp; migrate (BACKUP_MODE)</h3>
+    <p>Move the <strong>whole installation</strong> &mdash; database (every user's tasks, notes, messages),
+      settings, photos, retention archives &mdash; to another server as one zip, or keep it as a full backup.
+      Unlike the setup-mode settings backup above, this works in production: migrating off a live box is the
+      point. It's gated by an env flag, so exposing it is a deliberate, restart-level decision.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Setting / step</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">BACKUP_MODE</span></td><td>Env flag (default off). When set, <strong>Settings &rarr; Data &amp; privacy &rarr; Backup</strong> offers the download. Turn it on for the migration, then back off &mdash; the backup is your entire database in one file.</td></tr>
+        <tr><td><span class="cmd">Include encryption key</span></td><td>Checkbox (default off) adding the on-box key file (<span class="cmd">data.kek</span>) to the zip so it's self-contained. Excluded, stored secrets (API keys, bot tokens, login 2FA) can't be read on the new server until you move <span class="cmd">data.kek</span> yourself &mdash; the safer default. If your secrets use an env <span class="cmd">KEK</span> instead, the checkbox is moot: set the same <span class="cmd">KEK</span> on the destination (the backup never contains it).</td></tr>
+        <tr><td><span class="cmd">Restore: setup wizard</span></td><td>On a fresh install, drag the zip onto the first-run setup wizard's drop zone before finishing the form. Everything lands before first boot; an existing data dir is renamed aside (<span class="cmd">data.pre-restore-&lt;timestamp&gt;</span>), never deleted. Already ran setup? Delete <span class="cmd">.env</span> and run the wizard again.</td></tr>
+        <tr><td><span class="cmd">Restore: headless / Coolify</span></td><td><span class="cmd">npm run restore -- backup.zip</span> (a wrapper for <span class="cmd">node server/scripts/restore-backup.js</span>) does the same on a server with no wizard. Stop the app first; env (<span class="cmd">DATA_DIR</span> / <span class="cmd">PERSIST_DATA</span> / <span class="cmd">KEK</span>) is respected as at boot.</td></tr>
+        <tr><td><span class="cmd">Version safety</span></td><td>A backup from an older Fanad migrates forward on first boot. A database from a <em>newer</em> Fanad refuses to boot with a clear error (no down-migrations) &mdash; update the destination and start again.</td></tr>
+        <tr><td><span class="cmd">Lockout recovery</span></td><td>If the restored install has web login on but its secrets can't decrypt yet (key not moved), 2FA can't verify &mdash; set <span class="cmd">AUTH_RESET=1</span> to force login off, fix the key, then re-enable.</td></tr>
+      </tbody>
+    </table>
+    <p class="mono-note">Security: while <span class="cmd">BACKUP_MODE</span> is on with web login off, <em>anyone
+      who can reach the server</em> can download the backup (the web layer has no other auth &mdash; the same
+      single-operator trust model as impersonation). Enable web login before exposing a networked deployment,
+      and treat the zip like a password vault: it IS your data, and with the key included, your secrets too.</p>
+  </div>
+
+  <div class="subsec" id="admin-connect">
+    <h3>Connecting your channels &mdash; step by step</h3>
+    <p>Fanad reaches you over Telegram and/or Slack. Both connect <strong>outbound</strong> &mdash; no public URL,
+      no inbound ports &mdash; and you paste the tokens into <strong>web Settings</strong>, where they're stored
+      encrypted (see <a href="#admin-kek">Secret encryption</a>). Here's how to get them.</p>
+
+    <h4>Telegram &mdash; a couple of minutes</h4>
+    <ol class="setup-steps">
+      <li>In Telegram, open a chat with <strong>@BotFather</strong> and send <code>/newbot</code>.</li>
+      <li>Give it a display name, then a username ending in <code>bot</code> (e.g. <code>my_fanad_bot</code>).</li>
+      <li>BotFather replies with an <strong>HTTP API token</strong> like <code>123456789:AA&hellip;</code>. Copy it.</li>
+      <li>In Fanad, open <strong>web Settings &rarr; Telegram</strong>, paste the token, and add your own Telegram
+        <strong>@username</strong> to the allow-list. Save.</li>
+      <li>Fanad validates the token and starts the bot over grammY long-polling. Message your bot and send
+        <code>/howto</code> to begin.</li>
+    </ol>
+    <p class="mono-note">Access is fail-closed &mdash; the owner is claimed on first contact and everyone else stays
+      silent until allow-listed or <code>vouch</code>ed. No webhook or open port is needed; the bot polls Telegram
+      outbound.</p>
+
+    <h4>Slack &mdash; optional, ~5&ndash;10 minutes</h4>
+    <p>Fanad's Slack channel runs in <strong>Socket Mode</strong> (also outbound). You create a small Slack app and
+      hand Fanad two tokens.</p>
+    <ol class="setup-steps">
+      <li>Go to <strong>api.slack.com/apps &rarr; Create New App &rarr; From scratch</strong>; name it and choose
+        your workspace.</li>
+      <li><strong>Socket Mode:</strong> open the <em>Socket Mode</em> page and enable it. When prompted, generate an
+        <strong>app-level token</strong> with the <code>connections:write</code> scope &mdash; this is the
+        <code>xapp-&hellip;</code> token. Copy it.</li>
+      <li><strong>Bot scopes:</strong> under <em>OAuth &amp; Permissions &rarr; Bot Token Scopes</em>, add exactly
+        what Fanad uses: <code>chat:write</code>, <code>files:write</code> (the calendar <code>.ics</code>),
+        <code>reactions:write</code>, <code>im:history</code>, and <code>im:write</code>.</li>
+      <li><strong>Events:</strong> under <em>Event Subscriptions</em>, enable events and subscribe to the bot event
+        <code>message.im</code> so Fanad receives your DMs. Button clicks arrive over Socket Mode automatically.</li>
+      <li><strong>Install:</strong> under <em>Install App</em>, install to your workspace and copy the
+        <strong>Bot User OAuth Token</strong> &mdash; the <code>xoxb-&hellip;</code> token.</li>
+      <li>In Fanad, open <strong>web Settings &rarr; Slack</strong>, paste the <code>xoxb-</code> bot token and the
+        <code>xapp-</code> app-level token, add your Slack user to the allow-list, and save. DM the bot to confirm.</li>
+    </ol>
+
+    <div class="callout" role="note">
+      <span class="label">Tokens live in Settings, encrypted</span>
+      <p>Paste tokens into the web Settings UI rather than <code>.env</code> &mdash; they're encrypted with the KEK.
+        The env vars <span class="cmd">TELEGRAM_BOT_TOKEN</span>, <span class="cmd">SLACK_BOT_TOKEN</span>, and
+        <span class="cmd">SLACK_APP_TOKEN</span> exist only as a first-boot bootstrap fallback.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 5 · COMMON QUESTIONS ==================== -->
+<section id="faq" aria-labelledby="faq-h">
+  <div class="sec-head">
+    <p class="kicker">Part five</p>
+    <h2 id="faq-h">Common questions</h2>
+    <p>Quick answers to the things people actually ask &mdash; each links to the full story above.</p>
+  </div>
+
+  <div class="subsec" id="faq-chart">
+    <h3>How do I get a chart or graph of a metric?</h3>
+    <p>Turn Metrics on (<span class="cmd">optin metrics</span>), log a few values with
+      <span class="cmd">track</span> or <span class="cmd">measure</span>, then send
+      <span class="cmd">chart &lt;name&gt;</span> &mdash; the bot replies with a chart image of the last 30 days.
+      Add one word for another range: <span class="cmd">chart water 7d</span>, <span class="cmd">90d</span>,
+      <span class="cmd">ytd</span>, <span class="cmd">this_week</span>, <span class="cmd">this_month</span>.
+      Tracked metrics draw a bar per day; measured ones a line of readings.
+      See <a href="#adv-metrics">Metrics</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-calendar">
+    <h3>How do I put a task on my calendar?</h3>
+    <p>Any dated task shows a 📅 <span class="cmd">/cal_N</span> link &mdash; tap it (or send
+      <span class="cmd">/cal 3</span>) and Fanad hands you an <span class="cmd">.ics</span> file that drops the
+      task into your own calendar app. See <a href="#core-dates">Deadlines, reminders &amp; calendar</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-recurring">
+    <h3>Can Fanad make a task repeat every week?</h3>
+    <p>No &mdash; on purpose. There are no recurring tasks: recurrence is nagging, and nagging is stress. Instead,
+      export the dated task with <span class="cmd">/cal</span> and set the repeat in your own calendar, on your
+      terms. See <a href="./howto/routines-without-recurrence.html">Routines without recurrence</a>. If you make
+      the same <em>thing</em> over and over (a bread, a brew) and want to track each run, that&rsquo;s
+      <a href="#adv-batches">Batches</a> &mdash; still no reminders, just a record per run.</p>
+  </div>
+
+  <div class="subsec" id="faq-timer">
+    <h3>How do I set a quick kitchen timer?</h3>
+    <p>Turn the Timer module on (<span class="cmd">optin timer</span>) and send
+      <span class="cmd">timer 12 min pasta</span> &mdash; a one-shot ding that never lands on your task list.
+      Bare <span class="cmd">timer</span> lists what's running; <span class="cmd">timer off 1</span> cancels.</p>
+  </div>
+
+  <div class="subsec" id="faq-browser">
+    <h3>Can I use Fanad in a web browser?</h3>
+    <p>Yes &mdash; send <span class="cmd">/web</span> to the bot and it mints a one-time link that opens the web UI
+      already signed in as you. The host has to have web login and a Site URL configured; see
+      <a href="#admin-weblogin">Web login</a>.</p>
+    <p>On a wide screen the web chat floats two quiet side panels in the space beside the column: a
+      <b>shortcut legend</b> on the left (the single-letter commands plus the one-tap commands &mdash; tapping a
+      letter drops it into the message box) and a <b>status panel</b> on the right with your module toggles, the
+      task you&rsquo;re working on, upcoming timers &amp; reminders, and today&rsquo;s notebook / mood / date. Both
+      show only the modules you&rsquo;ve opted into, and a single <span class="cmd">&raquo;</span> button at the top
+      right hides or shows the whole layer.</p>
+  </div>
+
+  <div class="subsec" id="faq-invite">
+    <h3>How do I let a friend or my partner use the bot?</h3>
+    <p>Send <span class="cmd">vouch @their_username</span> (turn the module on with
+      <span class="cmd">optin vouch</span> first). They get their own private account the moment they message the
+      bot &mdash; your tasks stay yours. See <a href="#adv-vouch">Vouching people in</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-numbers">
+    <h3>Why do task numbers change between listings?</h3>
+    <p>Numbers are just positions in the listing you're looking at &mdash; every fresh listing renumbers from 1.
+      Act on the numbers (or buttons) of the <em>latest</em> listing rather than one from earlier in the chat.</p>
+  </div>
+
+  <div class="subsec" id="faq-onetask">
+    <h3>Why did starting a task pause my other one?</h3>
+    <p>Deliberate: one thing at a time. Starting a task automatically pauses whatever else was started, so
+      "started" always means <em>the</em> thing you're doing now, not a pile of half-open threads. Changed your
+      mind? <span class="cmd">unstart</span> puts the started task back without finishing it.</p>
+  </div>
+
+  <div class="subsec" id="faq-disappeared">
+    <h3>Where did my old tasks go?</h3>
+    <p>Anything untouched for about three weeks quietly goes to sleep &mdash; out of your listings and your
+      suggestions, but never deleted. <span class="cmd">/sleeping</span> shows them;
+      <span class="cmd">/revive 1</span> brings one back. Snoozed something and want it back early?
+      <span class="cmd">/snoozed</span> shows what's tucked away; <span class="cmd">/unsnooze 1</span> wakes it.
+      See <a href="#core-sleep">Snoozing, sleeping &amp; reviving</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-spaces">
+    <h3>How do I keep work and home separate?</h3>
+    <p>Notebooks: <span class="cmd">notebook work</span> switches you into a separate space with its own tasks,
+      notes, and lists; <span class="cmd">notebook main</span> takes you home. (Opt-in:
+      <span class="cmd">optin notebook</span>.) See <a href="#adv-notebooks">Notebooks</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-food">
+    <h3>What's the fastest way to log what I ate?</h3>
+    <p>With Diet on (<span class="cmd">optin diet</span>): <span class="cmd">eat skyr 140cal</span> logs it
+      <em>and</em> teaches Fanad that a typical serving of skyr is 140 &mdash; from then on plain
+      <span class="cmd">eat skyr</span> is enough. Whole meals work too: <span class="cmd">save meal</span> /
+      <span class="cmd">eat meal breakfast</span>. See <a href="#adv-diet">Diet &amp; foods</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-erase">
+    <h3>How do I delete everything I've ever told it?</h3>
+    <p>Send <span class="cmd">/requestdeletion</span> &mdash; after a confirmation, your account and everything in
+      it is erased. See <a href="#admin-deletion">Deletion, retention &amp; data</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-ailog">
+    <h3>How can I see what the AI is actually doing?</h3>
+    <p>Turn on the AI activity log (web Settings &rarr; AI connection) &mdash; it records every model call's
+      purpose, prompt, raw reply, and timing so you can watch the thinking. Off by default; see
+      <a href="#admin-diag">Diagnostics &amp; logs</a>.</p>
+  </div>
+
+  <div class="subsec" id="faq-ask">
+    <h3>How do I ask the manual a question from chat?</h3>
+    <p>Send <span class="cmd">/manual &lt;your question&gt;</span> (or lead with the single letter
+      <span class="cmd">h</span>) and Fanad answers strictly from this book &mdash; if the answer isn't in here,
+      it says so instead of guessing.</p>
+  </div>
+</section>
+
+</div><!-- /content -->
+</div><!-- /manual-layout -->
+</div><!-- /shell -->
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./index.html">&larr; Back to Fanad</a> &nbsp;&middot;&nbsp; <a href="#quickstart">Quickstart</a> &nbsp;&middot;&nbsp; <a href="#core">Core</a> &nbsp;&middot;&nbsp; <a href="#advanced">Advanced</a> &nbsp;&middot;&nbsp; <a href="#admin">Admin &amp; setup</a> &nbsp;&middot;&nbsp; <a href="#faq">Common questions</a> &nbsp;&middot;&nbsp; <a href="./happy-path-installer.html">Install walkthrough</a> &nbsp;&middot;&nbsp; <a href="./howto/index.html">How-tos</a> &nbsp;&middot;&nbsp; <a href="./cheatsheet.html">Cheat sheet</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. The brain-state framing is an educational metaphor, not a clinical assessment. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+// TOC scrollspy: highlight the section you're reading and expand only its part.
+// Progressive enhancement — with JS off, the parts still open/close by hand.
+(function () {
+  var toc = document.querySelector('.toc'); if (!toc) return;
+  // On phones, start the whole TOC collapsed — it otherwise pushes the content a screen down.
+  var outer = toc.querySelector('details');
+  if (outer && window.matchMedia('(max-width:959px)').matches) outer.open = false;
+  var links = Array.prototype.slice.call(toc.querySelectorAll('a[href^="#"]'));
+  var targets = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  // data-static parts (e.g. the How-tos links) are left alone — they point at other pages,
+  // so the scrollspy never activates them and would otherwise force them closed on scroll.
+  var parts = Array.prototype.slice.call(toc.querySelectorAll('details.toc-part:not([data-static])'));
+  var current = null;
+  function setActive(i) {
+    var a = links[i]; if (!a || a === current) return;
+    if (current) current.classList.remove('active');
+    a.classList.add('active'); current = a;
+    var p = a.closest('details.toc-part');
+    parts.forEach(function (d) { d.open = (d === p); });
+    // keep the active row visible when the sticky TOC itself scrolls
+    var r = a.getBoundingClientRect(), t = toc.getBoundingClientRect();
+    if (r.top < t.top || r.bottom > t.bottom) a.scrollIntoView({ block: 'nearest' });
+  }
+  var ticking = false;
+  function spy() {
+    ticking = false;
+    var best = -1;
+    for (var i = 0; i < targets.length; i++) {   // targets are in document order
+      var el = targets[i]; if (!el) continue;
+      if (el.getBoundingClientRect().top <= 130) best = i; else break;
+    }
+    if (best >= 0) setActive(best);
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(spy); } }
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('hashchange', function () { setTimeout(spy, 0); });
+  spy();
+})();
+
+// Scroll reveals: tag the readable blocks and fade each in the first time it enters the viewport.
+// Progressive enhancement — the .reveal styles only exist under html.js + prefers-reduced-motion:
+// no-preference, so no-JS and reduced-motion readers always see everything.
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.sec-head, .subsec, .callout, .card, .cmd-table, .privacy-wrap');
+  // threshold 0 (any pixel), not a ratio — a section taller than the viewport never reaches a 12%
+  // visibility ratio and would stay hidden forever. Blocks already ABOVE the viewport (a TOC anchor
+  // jump landed past them) reveal immediately too, so scrolling back up never meets blank space.
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

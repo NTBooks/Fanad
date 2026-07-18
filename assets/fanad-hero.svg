@@ -1,0 +1,72 @@
+<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fanad lighthouse on a green headland by the sea">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9cfe6"/><stop offset="1" stop-color="#e9f4fa"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6fa6bd"/><stop offset="0.5" stop-color="#3d83a0"/><stop offset="1" stop-color="#235f78"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#74ad5f"/><stop offset="1" stop-color="#4a823f"/>
+    </linearGradient>
+    <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a8478"/><stop offset="1" stop-color="#5d564b"/>
+    </linearGradient>
+    <linearGradient id="beamL" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0" stop-color="#f6d27f" stop-opacity="0.85"/><stop offset="1" stop-color="#f6d27f" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="beamR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f6d27f" stop-opacity="0.7"/><stop offset="1" stop-color="#f6d27f" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff7e6" stop-opacity="0.9"/><stop offset="1" stop-color="#fff7e6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="300" fill="url(#sky)"/>
+  <circle cx="178" cy="108" r="120" fill="url(#sun)"/>
+  <circle cx="178" cy="108" r="24" fill="#fff7e6" opacity="0.9"/>
+
+  <path d="M0,288 L120,262 L240,278 L360,258 L470,276 L560,266 L800,284 L800,300 L0,300 Z" fill="#9ab9c8"/>
+  <path d="M0,294 L150,276 L300,288 L430,272 L600,286 L800,278 L800,300 L0,300 Z" fill="#b3ccd7" opacity="0.85"/>
+
+  <rect x="0" y="292" width="800" height="168" fill="url(#sea)"/>
+  <line x1="0" y1="293" x2="800" y2="293" stroke="#eaf5fa" stroke-width="1.2" opacity="0.7"/>
+  <path d="M40,332 q30,-7 60,0 t60,0 t60,0" fill="none" stroke="#bfe0ec" stroke-width="1.4" opacity="0.5"/>
+  <path d="M520,362 q34,-8 68,0 t68,0" fill="none" stroke="#bfe0ec" stroke-width="1.4" opacity="0.45"/>
+  <path d="M120,402 q40,-9 80,0 t80,0" fill="none" stroke="#cfe9f2" stroke-width="1.6" opacity="0.4"/>
+
+  <path d="M300,300 C330,280 360,300 392,232 C410,210 470,206 540,214 C600,222 628,300 660,330 L700,460 L300,460 Z" fill="url(#rock)"/>
+  <path d="M392,232 L360,360 L300,300 Z" fill="#000" opacity="0.08"/>
+  <path d="M540,214 L600,360 L660,330 Z" fill="#000" opacity="0.10"/>
+  <path d="M470,250 L450,460 L520,460 L540,260 Z" fill="#fff" opacity="0.05"/>
+
+  <path d="M360,238 C390,214 470,206 540,214 C575,219 596,236 606,250 C560,236 470,230 420,244 C398,250 376,250 360,238 Z" fill="url(#grass)"/>
+  <ellipse cx="470" cy="234" rx="118" ry="19" fill="url(#grass)"/>
+
+  <g>
+    <rect x="496" y="214" width="62" height="22" rx="2" fill="#fbfbf8"/>
+    <path d="M494,214 L527,202 L560,214 Z" fill="#3c5562"/>
+    <rect x="502" y="221" width="8" height="9" fill="#3c5562" opacity="0.5"/>
+    <rect x="540" y="221" width="8" height="9" fill="#3c5562" opacity="0.5"/>
+  </g>
+
+  <polygon points="470,108 150,52 196,150" fill="url(#beamL)"/>
+  <polygon points="470,108 720,150 690,210" fill="url(#beamR)"/>
+
+  <path d="M457,232 L461,120 L479,120 L483,232 Z" fill="#fdfdfb"/>
+  <path d="M472,120 L479,120 L483,232 L474,232 Z" fill="#dfe6e8"/>
+  <rect x="458" y="172" width="24" height="3" fill="#e7edee"/>
+  <rect x="452" y="114" width="36" height="7" rx="1.5" fill="#f4f6f4"/>
+  <rect x="452" y="118" width="36" height="3" fill="#b5462f"/>
+  <rect x="459" y="96" width="22" height="20" fill="#f6d489"/>
+  <line x1="464" y1="96" x2="464" y2="116" stroke="#1f4a5c" stroke-width="1"/>
+  <line x1="470" y1="96" x2="470" y2="116" stroke="#1f4a5c" stroke-width="1"/>
+  <line x1="476" y1="96" x2="476" y2="116" stroke="#1f4a5c" stroke-width="1"/>
+  <path d="M456,96 L470,82 L484,96 Z" fill="#1f4a5c"/>
+  <circle cx="470" cy="80" r="2.6" fill="#1f4a5c"/>
+  <circle cx="470" cy="106" r="16" fill="#f6d489" opacity="0.35"/>
+
+  <path d="M120,88 q8,-7 16,0 q8,-7 16,0" fill="none" stroke="#3c5562" stroke-width="1.6" opacity="0.55"/>
+  <path d="M236,68 q7,-6 14,0 q7,-6 14,0" fill="none" stroke="#3c5562" stroke-width="1.4" opacity="0.45"/>
+</svg>

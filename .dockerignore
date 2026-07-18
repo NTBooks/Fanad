@@ -1,0 +1,48 @@
+# Nixpacks (and Docker) honor this when building the image context. On Coolify the build is from a
+# git clone, so gitignored files (.env, data/, *.kek) aren't present anyway — this is defense-in-depth
+# plus a smaller/faster build context.
+
+# Dependencies — reinstalled in the image
+node_modules
+**/node_modules
+
+# Secrets & local runtime data — MUST NOT be baked into the image
+.env
+.env.*
+!.env.example
+data/
+*.kek
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Build output (rebuilt in-image) & caches
+web/dist
+dist/
+build/
+.vite/
+.cache/
+
+# VCS / CI / editor / local AI tooling
+.git/
+.github/
+.gitattributes
+.claude/
+.vscode/
+.idea/
+
+# Browser-automation / test artifacts
+.playwright-mcp/
+test-results/
+playwright-report/
+coverage/
+
+# Logs & OS cruft
+*.log
+logs/
+.DS_Store
+Thumbs.db
+desktop.ini

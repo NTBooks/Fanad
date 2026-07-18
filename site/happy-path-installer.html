@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>The happy path — install Fanad from download to first task</title>
+<meta name="description" content="A friendly, start-to-finish Windows walkthrough: download the installer, point Fanad at a local model, run the setup wizard, get a Telegram bot from BotFather, and reach it from anywhere with a Cloudflare Tunnel or your local network.">
+<link rel="stylesheet" href="./howto/howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the walkthrough</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="./index.html">Fanad</a>
+    <a class="header-back" href="./manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">Get started</p>
+    <h1 id="page-title">The happy path: from download to your first task</h1>
+    <p class="hero-lead">One straight line from a fresh Windows PC to a working Fanad you can text.
+      No prior setup, no command line required &mdash; download, click through, done.</p>
+    <p>Fanad runs on your own machine. This guide walks the easiest route end to end: install the
+      Windows app, give it a brain (a hosted model to start, or a private local one), run the
+      one-time setup, hook up a Telegram bot, and &mdash; if you want it on your phone from anywhere
+      &mdash; put it behind your own domain. Every step below is optional to skip except installing
+      and giving it a brain; take the ones you need and ignore the rest.</p>
+    <p style="margin-top:var(--space-5)"><a class="btn" href="#install">Start at step one</a>
+      <a class="btn btn-ghost" href="./manual.html" style="margin-left:var(--space-3)">Full manual</a>
+      <a class="btn btn-ghost" href="./cheatsheet.html" style="margin-left:var(--space-3)">Cheat sheet</a></p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<nav class="toc" aria-label="On this page">
+  <details open>
+    <summary>On this page</summary>
+    <div>
+      <h2>The happy path</h2>
+      <ul>
+        <li><a href="#before">0 &middot; Before you start</a></li>
+        <li><a href="#install">1 &middot; Download &amp; run the installer</a></li>
+        <li><a href="#brain">2 &middot; Give Fanad a brain</a></li>
+        <li><a href="#wizard">3 &middot; Run the setup wizard</a></li>
+        <li><a href="#start">4 &middot; Start Fanad &amp; open the app</a></li>
+        <li><a href="#telegram">5 &middot; Get a Telegram bot</a></li>
+        <li><a href="#remote">6 &middot; Reach it from anywhere</a></li>
+        <li><a href="#races">7 &middot; Off to the races</a></li>
+      </ul>
+      <a class="toc-back" href="./manual.html">&larr; Back to the manual</a>
+    </div>
+  </details>
+</nav>
+
+<article>
+
+<div class="callout" role="note">
+  <span class="label">Just want to try Fanad?</span>
+  <p>You don't have to install anything to see what Fanad is &mdash; start with the
+    <a href="https://fanad-demo.chaincart.io/demo">live demo</a>. This page is for the next step:
+    running your <strong>own private copy</strong> on your own machine.</p>
+</div>
+
+<div class="subsec" id="before">
+  <h3>0 &middot; Before you start</h3>
+  <p>You'll need a <strong>Windows 10 or 11</strong> PC and about <strong>10&ndash;15 minutes</strong>.
+    No admin rights, and nothing gets added to your system PATH &mdash; the installer is fully
+    self-contained. A Telegram account is optional (only if you want the phone bot); the web app works
+    on its own.</p>
+  <div class="callout" role="note">
+    <span class="label">The one real prerequisite</span>
+    <p>Fanad thinks with an AI model that <em>you</em> point it at, and the one thing that trips up a
+      fresh install is not having that model ready. <a href="#brain">Step&nbsp;2</a> sorts it out: most
+      people start with a quick <strong>hosted model</strong> (one API key &mdash; fast, cheap, works on
+      any machine), and you can move to a fully private <strong>local model</strong> whenever you're
+      ready. You only need one.</p>
+  </div>
+</div>
+
+<div class="subsec" id="install">
+  <h3>1 &middot; Download &amp; run the installer</h3>
+  <p>The easiest start is the Windows installer &mdash; it bundles its own Node runtime, so there's
+    nothing to install first.</p>
+  <ol class="setup-steps">
+    <li>Go to the <strong>Releases</strong> page at
+      <a href="https://github.com/NTBooks/Fanad/releases">github.com/NTBooks/Fanad/releases</a> and
+      download the latest <code>FanadSetup-&lt;version&gt;.exe</code>.</li>
+    <li>Double-click it. It isn't code-signed yet, so Windows SmartScreen shows an
+      <strong>&ldquo;unknown publisher&rdquo;</strong> warning &mdash; click
+      <strong>More info &rarr; Run anyway</strong>. (You only see this once.)</li>
+    <li>Let it install. It goes under <code>%LOCALAPPDATA%\Fanad</code> for just your user &mdash; no
+      admin prompt, its own private Node runtime, nothing added to PATH.</li>
+    <li>It adds two Start-Menu shortcuts: <strong>Fanad Setup</strong> and
+      <strong>Start Fanad Server</strong>. When install finishes, the setup wizard opens on its own
+      (that's <a href="#wizard">step&nbsp;3</a>).</li>
+  </ol>
+  <p class="mono-note">Uninstalling later keeps your data and your encryption key &mdash; they live in
+    <code>data\</code> and <code>.env</code> beside the app, and the uninstaller tells you where.</p>
+  <div class="callout" role="note">
+    <span class="label">Prefer the command line?</span>
+    <p>On any platform with Node&nbsp;24+ you can instead run
+      <span class="cmd">npx github:NTBooks/Fanad</span> &mdash; it copies the app into
+      <code>./fanad</code>, opens the same wizard, then installs, builds, and starts. The Windows
+      installer above needs none of that.</p>
+  </div>
+</div>
+
+<div class="subsec" id="brain">
+  <h3>2 &middot; Give Fanad a brain</h3>
+  <p>Fanad needs an AI model to do its thinking, and you point it at one you choose. There are two
+    ways, and you only need one. For most people starting out, a <strong>hosted model</strong> is the
+    easiest and fastest; running one <strong>locally</strong> is the fully private route you can grow
+    into.</p>
+
+  <h4>Recommended for most: a hosted model (OpenAI or Gemini)</h4>
+  <p>It's fast, cheap, and works on <em>any</em> computer &mdash; no graphics card or powerful machine
+    required. You paste one API key and you're done. The trade-off: your notes are sent to the provider
+    to be processed (it's still your key and your account). For most people that's a fair deal for how
+    much smoother it makes the first run &mdash; which is why it's the recommended starting point.</p>
+  <ol class="setup-steps">
+    <li>Pick <strong>OpenAI</strong> or <strong>Google Gemini</strong>. Either one covers both halves
+      of Fanad's brain &mdash; chatting <em>and</em> remembering &mdash; from a single key.</li>
+    <li>Create an API key:
+      <ul>
+        <li><strong>Gemini</strong> &mdash; <a href="https://aistudio.google.com/apikey">Google AI
+          Studio</a> &rarr; <em>Get API key</em>. Has a free tier, so it's the cheapest place to
+          start.</li>
+        <li><strong>OpenAI</strong> &mdash;
+          <a href="https://platform.openai.com/api-keys">platform.openai.com/api-keys</a> &rarr;
+          <em>Create new secret key</em>. Pay-as-you-go, but the fast model below costs fractions of a
+          cent per message.</li>
+      </ul>
+    </li>
+    <li>You'll paste that key into the setup wizard's <strong>AI brain</strong> step
+      (<a href="#wizard">step&nbsp;3</a>): choose the same provider for <strong>both</strong> chat and
+      embeddings &mdash; picking a cloud provider flips the cloud gate on for you &mdash; and leave the
+      <strong>model</strong> fields blank for the cheap, fast defaults (<code>gpt-4o-mini</code> for
+      OpenAI, <code>gemini-2.5-flash</code> for Gemini).</li>
+  </ol>
+
+  <h4>For full privacy &mdash; and where things are heading: a local model (LM Studio)</h4>
+  <p>Run the model on your own machine and <strong>nothing ever leaves your box</strong> &mdash; the
+    purest version of Fanad's privacy promise. It asks more of your hardware (a recent GPU, plenty of
+    RAM, or Apple Silicon) and can feel slow without it, which is why it isn't the default <em>today</em>.
+    But local models keep getting better and lighter, so this is the route to grow into &mdash; and you
+    can switch over any time. <a href="https://lmstudio.ai">LM Studio</a> is the simplest way in.</p>
+  <ol class="setup-steps">
+    <li>Download and install <strong>LM Studio</strong> from
+      <a href="https://lmstudio.ai">lmstudio.ai</a>.</li>
+    <li>In its search, download <strong>two</strong> models: a <strong>chat model</strong> (something
+      small like Llama&nbsp;3.2 is fine to start) <em>and</em> an <strong>embedding model</strong>
+      (e.g. <code>nomic-embed-text</code>).</li>
+    <li>Open the <strong>Developer</strong> tab, load <strong>both</strong> models, and click
+      <strong>Start Server</strong>. It listens at <code>http://127.0.0.1:1234</code> &mdash; exactly
+      where Fanad looks by default. In the wizard, just leave the provider on <strong>LM Studio</strong>.</li>
+  </ol>
+  <div class="callout" role="note">
+    <span class="label">Two models, not one</span>
+    <p>A local setup needs <em>both</em> a chat model and an embedding model loaded: Fanad uses the chat
+      model to talk and the embedding model to remember and recall by meaning. If only the chat model is
+      loaded, capture and recall will error.</p>
+  </div>
+  <p class="mono-note">Not sure which to pick? Start hosted &mdash; it's the smoothest first run &mdash;
+    and move to a local model later from <strong>web Settings</strong> whenever you want. You're never
+    locked in.</p>
+</div>
+
+<div class="subsec" id="wizard">
+  <h3>3 &middot; Run the setup wizard</h3>
+  <p>The wizard opens in your browser right after install (or launch it any time from Start Menu
+    &rarr; <strong>Fanad Setup</strong>). It's a one-time form that writes your config file; it runs
+    only on your own machine (<code>127.0.0.1:8899</code>) because it collects secrets. Work down the
+    four sections:</p>
+  <ol class="setup-steps">
+    <li><strong>Server</strong> &mdash; the <strong>Web UI port</strong>. Leave it at
+      <code>8787</code> unless that's taken.</li>
+    <li><strong>Telegram bot</strong> &mdash; optional. Paste a bot token here if you already have one,
+      or leave it blank and add it later (<a href="#telegram">step&nbsp;5</a> shows how to get one).</li>
+    <li><strong>AI brain</strong> &mdash; going hosted (the usual choice)? Pick <strong>OpenAI</strong>
+      or <strong>Gemini</strong> for both chat and embeddings and paste the key from
+      <a href="#brain">step&nbsp;2</a>, leaving the model fields blank for the fast defaults. Running
+      local instead? Leave <strong>LM Studio</strong> selected for both and the fields blank.</li>
+    <li><strong>Encryption</strong> &mdash; an encryption key (<strong>KEK</strong>) is generated for
+      you. Don't clear it.</li>
+  </ol>
+  <p>Then click <strong>Save &amp; finish setup</strong>. That writes your <code>.env</code> file.</p>
+  <div class="callout" role="note">
+    <span class="label">Save your key</span>
+    <p>Keep a copy of that <code>.env</code> (or at least the <strong>KEK</strong>) somewhere safe, like
+      a password manager. It encrypts every secret Fanad stores &mdash; bot tokens, API keys &mdash;
+      and it's the only thing protecting them if the machine is ever lost.</p>
+  </div>
+</div>
+
+<div class="subsec" id="start">
+  <h3>4 &middot; Start Fanad &amp; open the app</h3>
+  <p>From the Start Menu, click <strong>Start Fanad Server</strong>. It launches, then open your
+    browser to:</p>
+  <div class="ex-chat">
+    <p class="ex-bot">http://localhost:8787</p>
+  </div>
+  <p>You'll land in the Fanad web chat. Say hello &mdash; type anything and it becomes your first task.
+    That's the whole grammar: a statement files a task, a question runs a command.</p>
+  <p class="mono-note">By default the web app has no login &mdash; it trusts whoever's at the keyboard,
+    which is right for a personal machine. If you'll reach it over a network, turn on web login first
+    (see <a href="#remote">step&nbsp;6</a>).</p>
+</div>
+
+<div class="subsec" id="telegram">
+  <h3>5 &middot; Get a Telegram bot (BotFather)</h3>
+  <p>Want Fanad in your pocket? Give it a Telegram bot &mdash; then you just text yourself. It takes a
+    couple of minutes, and no public URL or open port is ever needed (the bot reaches out to Telegram,
+    not the other way around).</p>
+  <ol class="setup-steps">
+    <li>In Telegram, open a chat with <strong>@BotFather</strong> and send <code>/newbot</code>.</li>
+    <li>Give it a display name, then a username ending in <code>bot</code> (e.g.
+      <code>my_fanad_bot</code>).</li>
+    <li>BotFather replies with an <strong>HTTP API token</strong> like <code>123456789:AA&hellip;</code>.
+      Copy it.</li>
+    <li>In Fanad, open <strong>web Settings &rarr; Telegram</strong>, paste the token, and add your own
+      Telegram <strong>@username</strong> to the allow-list. Save. (You can also paste the token into
+      the wizard's Telegram field back in step&nbsp;3 &mdash; either works.)</li>
+    <li>Message your bot and send <code>/howto</code> to begin.</li>
+  </ol>
+  <p class="mono-note">Access is fail-closed: the first person to message the bot is claimed as the
+    owner, and everyone else stays silent until you allow-list or <code>vouch</code> them. Tokens are
+    stored encrypted with your KEK.</p>
+</div>
+
+<div class="subsec" id="remote">
+  <h3>6 &middot; Reach it from anywhere (optional)</h3>
+  <p>The Telegram bot already works from anywhere. This step is only for reaching the <strong>web
+    app</strong> in a browser away from your desk. Three ways, easiest first.</p>
+
+  <h4>On your home network &mdash; the local IP</h4>
+  <p>Fanad listens on every network interface, so any device on the same Wi-Fi can already reach it.
+    Find your PC's local IP with <code>ipconfig</code> (look for the IPv4 address, e.g.
+    <code>192.168.1.42</code>), then on your phone or laptop open:</p>
+  <div class="ex-chat">
+    <p class="ex-bot">http://192.168.1.42:8787</p>
+  </div>
+  <div class="callout" role="note">
+    <span class="label">Turn on a login first</span>
+    <p>The web app has no password by default, so anyone on your network is treated as you. Before
+      exposing it beyond <code>localhost</code>, open <strong>Settings &rarr; Security</strong> and set
+      the login mode to <strong>simple</strong> (username + password + a mandatory authenticator code).
+      And <strong>do not port-forward 8787</strong> to the public internet &mdash; use Tailscale or a
+      Cloudflare Tunnel (both below) for that.</p>
+  </div>
+
+  <h4>Any of your devices, anywhere &mdash; Tailscale</h4>
+  <p>Want Fanad on your phone when you're out, without ever putting it on the public internet?
+    <a href="https://tailscale.com">Tailscale</a> is a private mesh network (a WireGuard VPN with the
+    hard parts done for you): install it on the Fanad PC and on your other devices, sign them into the
+    same account, and they form their own private network &mdash; no public URL, no open ports, nothing
+    exposed to the internet.</p>
+  <ol class="setup-steps">
+    <li>Install <strong>Tailscale</strong> from <a href="https://tailscale.com">tailscale.com</a> on
+      the Fanad PC and on each device you want to reach it from, and sign them all into the same
+      account.</li>
+    <li>On the Fanad PC, note its Tailscale address &mdash; a <code>100.x.y.z</code> IP or its MagicDNS
+      name (e.g. <code>fanad-pc</code>).</li>
+    <li>From any of your other signed-in devices, open <code>http://fanad-pc:8787</code> (or
+      <code>http://100.x.y.z:8787</code>). It works from anywhere, over the private network.</li>
+  </ol>
+  <div class="callout" role="note">
+    <span class="label">Private by design</span>
+    <p>Only your own signed-in devices can reach the box, so this is about as safe as your home network
+      &mdash; and the simplest way to get Fanad on your phone from anywhere. A login is still worth
+      turning on, but there's no public surface to attack. Prefer this over a Cloudflare Tunnel unless
+      you need a public URL you can reach from devices that don't run Tailscale.</p>
+  </div>
+
+  <h4>A custom domain &mdash; Cloudflare Tunnel</h4>
+  <p>To reach Fanad from the wider internet with a real HTTPS address like
+    <code>https://fanad.yourdomain.com</code> &mdash; and without opening any ports on your router
+    &mdash; put it behind a <strong>Cloudflare Tunnel</strong>. You'll need a domain on a
+    Cloudflare account.</p>
+  <ol class="setup-steps">
+    <li>Install <strong>cloudflared</strong> (the tunnel client) from Cloudflare's downloads.</li>
+    <li>Authorize it against your Cloudflare account:
+      <code>cloudflared tunnel login</code>.</li>
+    <li>Create a named tunnel: <code>cloudflared tunnel create fanad</code>.</li>
+    <li>Point your domain at it:
+      <code>cloudflared tunnel route dns fanad fanad.yourdomain.com</code>.</li>
+    <li>Create a small config file telling the tunnel to forward to Fanad:
+      <pre>tunnel: fanad
+credentials-file: C:\Users\you\.cloudflared\&lt;tunnel-id&gt;.json
+
+ingress:
+  - hostname: fanad.yourdomain.com
+    service: http://localhost:8787
+  - service: http_status:404</pre></li>
+    <li>Run it: <code>cloudflared tunnel run fanad</code>. Your domain now reaches Fanad over
+      HTTPS.</li>
+  </ol>
+  <p>Then lock down the Fanad side &mdash; the tunnel puts the otherwise-open web app on the public
+    internet, so don't stop at the tunnel:</p>
+  <ul>
+    <li><strong>Set the Site URL.</strong> In <strong>Settings &rarr; Security</strong>, set the
+      <strong>Site URL</strong> to <code>https://fanad.yourdomain.com</code> so the one-time
+      <code>/web</code> sign-in links point at your domain.</li>
+    <li><strong>Best for a single user &mdash; lock it to your own IP.</strong> In the Cloudflare
+      dashboard, add a <strong>Cloudflare Access</strong> application (Zero&nbsp;Trust &rarr; Access
+      &rarr; Applications) in front of <code>fanad.yourdomain.com</code> with a policy that allows only
+      your IP address(es). Then turn on Fanad's own <strong>Web IP allow-list</strong> (Settings &rarr;
+      Security) restricted to the same addresses, and set <code>TRUST_PROXY=1</code> so Fanad sees your
+      real IP through the tunnel. With the box reachable only from your addresses, running single-user
+      (login mode <em>none</em>) is fine.</li>
+    <li><strong>Otherwise &mdash; require a login.</strong> If you can't pin your IPs (you roam, or your
+      address changes), turn on <strong>web login</strong> (mode <em>simple</em> + a mandatory
+      authenticator code) before exposing the UI. Never put the open, no-login web app on a public URL
+      &mdash; anyone who reaches it is treated as you.</li>
+  </ul>
+  <div class="callout" role="note">
+    <span class="label">Pick a tunnel you trust</span>
+    <p>A tunnel that terminates TLS can see the traffic passing through it, so choose your provider
+      deliberately. Telegram and Slack need none of this &mdash; they connect outbound and work behind
+      any NAT.</p>
+  </div>
+</div>
+
+<div class="subsec" id="races">
+  <h3>7 &middot; Off to the races</h3>
+  <p>That's it &mdash; Fanad is yours. The whole tool fits in three rules: a statement becomes a task,
+    a question runs a command, and answering Fanad's own question counts as that answer. A leading
+    slash is always optional. Here are the first moves worth knowing:</p>
+  <table class="cmd-table">
+    <thead><tr><th scope="col">Say</th><th scope="col">What happens</th></tr></thead>
+    <tbody>
+      <tr><td>(just type a thought)</td><td>It's filed as a task on your list.</td></tr>
+      <tr><td><span class="cmd">list</span></td><td>See and clear your list.</td></tr>
+      <tr><td><span class="cmd">whatdo</span></td><td>Fanad suggests one thing to do now, grounded in your own tasks.</td></tr>
+      <tr><td><span class="cmd">mood 🙂</span></td><td>Tell it how you feel; it sizes suggestions to match.</td></tr>
+      <tr><td><span class="cmd">x call the bank</span></td><td>File a task due by the end of today.</td></tr>
+      <tr><td><span class="cmd">howto</span></td><td>A guided tour of the everyday moves.</td></tr>
+      <tr><td><span class="cmd">manual</span></td><td>Ask the manual a question in plain words.</td></tr>
+    </tbody>
+  </table>
+  <p>When you want more, the full <a href="./manual.html">manual</a> covers every command and the
+    opt-in modules (notes, lists, diet, journal, timers, and more); the
+    <a href="./cheatsheet.html">printable cheat sheet</a> is a one-page reference; and the
+    <a href="./howto/index.html">how-tos</a> show real ways people use it. Get it out of your head.</p>
+</div>
+
+</article>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="./cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="./howto/index.html">How-tos</a> &nbsp;&middot;&nbsp; <a href="./index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var d = document.querySelector('.toc > details');
+  if (d && window.matchMedia('(max-width:959px)').matches) d.open = false;
+})();
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.subsec, .callout, .cmd-table, .ex-chat');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Reminders &amp; deadlines — Fanad how-to</title>
+<meta name="description" content="Putting time on tasks in plain words — by, on, remind me — plus today-scoping, .ics calendar handoff, and the at-most-one-ping promise.">
+<link rel="stylesheet" href="./howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the article</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="../index.html">Fanad</a>
+    <a class="header-back" href="../manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">How-to</p>
+    <h1 id="page-title">Reminders and deadlines: dates that help without hounding</h1>
+    <p class="hero-lead">A date in Fanad is information, not a tripwire: it lifts a task's ranking as
+      the day approaches, pings you at most once, and then gets out of the way.</p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<nav class="toc" aria-label="All how-tos">
+  <details open>
+    <summary>All how-tos</summary>
+    <div>
+      <h2>All how-tos</h2>
+      <ul>
+        <li><a href="./index.html">Overview</a></li>
+        <li><a href="./getting-it-out-of-your-head.html">Getting it out of your head</a></li>
+        <li><a href="./diet-and-meal-tracking.html">Diet &amp; meal tracking</a></li>
+        <li><a href="./problem-solving-journal.html">The problem-solving journal</a></li>
+        <li><a href="./nested-lists-and-groceries.html">Nested lists &amp; groceries</a></li>
+        <li><a href="./planning-a-party-with-steps.html">Planning a party with steps</a></li>
+        <li><a href="./household-memory.html">Household memory</a></li>
+        <li><a class="active" href="./reminders-and-deadlines.html">Reminders &amp; deadlines</a></li>
+        <li><a href="./kitchen-timers.html">Kitchen timers</a></li>
+        <li><a href="./routines-without-recurrence.html">Routines without recurrence</a></li>
+        <li><a href="./notebooks-separate-spaces.html">Notebooks: separate spaces</a></li>
+      </ul>
+      <a class="toc-back" href="../manual.html">&larr; Back to the manual</a>
+    </div>
+  </details>
+</nav>
+
+<article>
+
+<div class="subsec">
+  <h3><span class="cmd">by</span> &mdash; a deadline</h3>
+  <p>There are only three ways to put time on a task, and you say all of them in plain words at the
+    moment of capture. End a task with <span class="cmd">by &lt;when&gt;</span> and it gets a due date:</p>
+  <div class="ex-chat">
+    <p class="ex-you">renew the passport by friday</p>
+    <p class="ex-bot">✓ Filed: “renew the passport” · Admin · medium · ⏳ due friday</p>
+  </div>
+  <p>What a deadline does: it gently lifts the task in rankings and suggestions as friday approaches &mdash;
+    <span class="cmd">whatdo</span> gets more likely to offer it. What it doesn't do: ping you, turn
+    red, or scold. Once the date passes, it quietly retires rather than haunting the list as
+    &ldquo;overdue.&rdquo;</p>
+</div>
+
+<div class="subsec">
+  <h3><span class="cmd">on</span> &mdash; a deadline plus one ping</h3>
+  <p><span class="cmd">on &lt;when&gt;</span> sets the due date <em>and</em> a one-time reminder at
+    that exact moment:</p>
+  <div class="ex-chat">
+    <p class="ex-you">call mom on sunday 6pm</p>
+    <p class="ex-bot">✓ Filed: “call mom” · Social · trivial · 🔔 sunday 6pm</p>
+  </div>
+  <p>Sunday at 6, you get one message. That's the whole contract. Use <span class="cmd">on</span> for
+    things with a real appointment-shaped moment; use <span class="cmd">by</span> for things that just
+    need to happen before one.</p>
+</div>
+
+<div class="subsec">
+  <h3><span class="cmd">remind me</span> &mdash; a ping without ceremony</h3>
+  <p>The most natural version needs no syntax at all:</p>
+  <div class="ex-chat">
+    <p class="ex-you">remind me to take the bins out at 8pm</p>
+    <p class="ex-bot">✓ Filed: “take the bins out” · Home · trivial · 🔔 8pm
+
+…then, at 8:00 pm:
+🔔 Reminder: “take the bins out” — it’s time.</p>
+  </div>
+  <p>It pings once and leaves the task on your list until you <span class="cmd">done</span> it. There
+    is no snooze, no re-ping, no escalation &mdash; Fanad's position is that a reminder is a courtesy,
+    and a second reminder is a nag.</p>
+</div>
+
+<div class="subsec">
+  <h3>Today: the short fence</h3>
+  <p>For the &ldquo;this must not survive the day&rdquo; category:</p>
+  <ul>
+    <li><span class="cmd">x call the pharmacy</span> &mdash; the shortcut files a task due by the end of today</li>
+    <li><span class="cmd">tasks today</span> &mdash; just what's due today</li>
+    <li><span class="cmd">whatdo today</span> &mdash; the one-thing suggestion, scoped to today's dues</li>
+  </ul>
+  <p>A nice detail: the day ends at <strong>2:00&nbsp;am</strong>, not midnight. Finishing something at
+    12:30 still counts as tonight, because that's how evenings actually work.</p>
+</div>
+
+<div class="subsec">
+  <h3><span class="cmd">/cal</span> &mdash; hand the date to your real calendar</h3>
+  <p>Any dated task shows a 📅 link. <span class="cmd">cal 3</span> hands you an .ics file that drops
+    the task onto your own calendar &mdash; Google, Apple, Outlook, whatever you already live in:</p>
+  <div class="ex-chat">
+    <p class="ex-you">/cal 3</p>
+    <p class="ex-bot">📅 Add “renew the passport” to your calendar
+(hands you an .ics file to open — recur it there if you like)</p>
+  </div>
+  <p>This is also the official answer for anything recurring: Fanad will never re-add a task on a
+    schedule, but your calendar is <em>built</em> for repeats &mdash; set it to recur there, on your
+    terms. (More on that philosophy in
+    <a href="./routines-without-recurrence.html">routines without recurrence</a>.)</p>
+</div>
+
+<div class="subsec">
+  <h3><span class="cmd">/wake</span> &mdash; the standing exception</h3>
+  <p>One kind of scheduled ping exists, because it's an invitation rather than a demand:
+    <span class="cmd">wake 8:30</span> sets a daily check-in where Fanad offers a single suggestion
+    each morning. <span class="cmd">wakelist</span> shows your check-ins;
+    <span class="cmd">wake off 1</span> removes one. You can ignore it forever without consequence &mdash;
+    it never accumulates.</p>
+</div>
+
+<div class="subsec">
+  <h3>Which one, when</h3>
+  <table class="cmd-table">
+    <thead><tr><th scope="col">You're thinking</th><th scope="col">Say</th></tr></thead>
+    <tbody>
+      <tr><td>&ldquo;&hellip;sometime before friday&rdquo;</td><td><span class="cmd">…by friday</span></td></tr>
+      <tr><td>&ldquo;&hellip;at that specific moment&rdquo;</td><td><span class="cmd">…on sunday 6pm</span></td></tr>
+      <tr><td>&ldquo;just ping me tonight&rdquo;</td><td><span class="cmd">remind me to … at 8pm</span></td></tr>
+      <tr><td>&ldquo;today, no matter what&rdquo;</td><td><span class="cmd">x …</span></td></tr>
+      <tr><td>&ldquo;every first of the month&rdquo;</td><td><span class="cmd">cal N</span> &rarr; recur it in your calendar</td></tr>
+      <tr><td>&ldquo;nudge me each morning&rdquo;</td><td><span class="cmd">wake 8:30</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout" role="note">
+    <span class="label">At most one ping, ever</span>
+    <p>The through-line: every date in Fanad results in at most one ping. If you're used to apps that
+      badger, the silence feels strange for about a week &mdash; and then it's the reason you still
+      trust the list.</p>
+  </div>
+</div>
+
+</article>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./index.html">&larr; All how-tos</a> &nbsp;&middot;&nbsp; <a href="../manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="../cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="../index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var d = document.querySelector('.toc > details');
+  if (d && window.matchMedia('(max-width:959px)').matches) d.open = false;
+})();
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.subsec, .callout, .cmd-table, .ex-chat');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

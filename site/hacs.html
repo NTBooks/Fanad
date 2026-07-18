@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Fanad for Home Assistant — the no-nag scratchpad, on steroids</title>
+<meta name="description" content="Fanad is the no-nag scratchpad on steroids: it fills the gap so Home Assistant can store personal tasks and memories without becoming a full-on LLM assistant. Telegram bot for the road (no open ports), rich web UI at home. A local LLM parses what you type — it never invents, and it never acts on your house.">
+<style>
+/* ============================================================
+   Fanad — shared design system (brochure + manual + hacs)
+   "Assignment pad" — ink on paper. Sharp, editorial, calm.
+   ============================================================ */
+:root{
+  --paper:#F6F1E3; --paper-alt:#EFE8D6; --card:#FDFBF5;
+  --ink:#211E17; --ink-2:#4C463A; --ink-3:#6B6353;
+  --rule:rgba(33,30,23,.14); --rule-2:rgba(33,30,23,.32);
+  --accent:#C0392B; --accent-ink:#8F2A1F; --accent-wash:#F5E3DB;
+  --bg:var(--paper); --bg-alt:var(--paper-alt); --surface:var(--card);
+  --text:var(--ink); --text-muted:var(--ink-2); --link:var(--accent-ink);
+  --accent-strong:var(--accent); --border:var(--rule); --focus:var(--accent);
+  --font-display:"Fraunces","Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+  --font-body:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,ui-sans-serif,sans-serif;
+  --font-mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --fs-h1:clamp(2.3rem,1.55rem+3.3vw,3.3rem); --fs-h2:clamp(1.7rem,1.3rem+1.9vw,2.3rem);
+  --fs-h3:clamp(1.3rem,1.1rem+.9vw,1.6rem); --fs-h4:1.16rem;
+  --fs-body:1.06rem; --fs-small:.9rem; --fs-caption:.78rem;
+  --lh-tight:1.08; --lh-snug:1.3; --lh-body:1.62; --tracking-kicker:.16em;
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.5rem;
+  --space-6:2rem;--space-7:3rem;--space-8:4rem;--space-9:6rem;
+  --section-y:clamp(3.25rem,2rem+5vw,5.5rem);
+  --measure:64ch; --shell:70rem; --gutter:clamp(1.25rem,5vw,3rem); --margin-x:2.75rem;
+  --r-sm:0;--r-md:0;--r-lg:0;--r-xl:0;--r-2xl:0;--r-pill:0;
+  --shadow-1:0 1px 0 var(--rule);
+  --shadow-2:3px 3px 0 rgba(33,30,23,.06),0 0 0 1px var(--rule);
+  --rule-line:30px; --ring:0 0 0 2px var(--paper),0 0 0 4px var(--accent);
+  --dur:200ms; --ease:cubic-bezier(.2,.6,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--font-body);font-size:var(--fs-body);line-height:var(--lh-body);
+  color:var(--text);background:var(--paper);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%;height:auto} p{max-width:var(--measure)}
+h1,h2,h3,h4,h5{font-family:var(--font-display);font-weight:600;line-height:var(--lh-tight);color:var(--ink);
+  margin:0 0 var(--space-4);text-wrap:balance;letter-spacing:-.011em}
+h1{font-size:var(--fs-h1)} h2{font-size:var(--fs-h2)} h3{font-size:var(--fs-h3);line-height:var(--lh-snug)} h4{font-size:var(--fs-h4)}
+.kicker{font-family:var(--font-mono);font-size:var(--fs-caption);font-weight:600;letter-spacing:var(--tracking-kicker);
+  text-transform:uppercase;color:var(--accent-ink);margin:0 0 var(--space-3);display:inline-flex;align-items:center;gap:.6em}
+.kicker::before{content:"";width:1.6em;height:2px;background:var(--accent);display:inline-block}
+a{color:var(--link);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;transition:color var(--dur) var(--ease)}
+a:hover{color:var(--accent);text-decoration-thickness:2px}
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{outline:none;box-shadow:var(--ring)}
+code,kbd,samp{font-family:var(--font-mono);font-size:.9em}
+:not(pre)>code{background:var(--card);border:1px solid var(--rule-2);color:var(--ink);padding:.12em .45em}
+pre{background:var(--ink);color:var(--paper);padding:var(--space-5);overflow-x:auto;line-height:1.55;border:1px solid var(--ink)}
+hr{border:0;border-top:1px solid var(--rule-2);margin:var(--space-6) 0}
+.shell{max-width:var(--shell);margin-inline:auto;padding-inline:var(--gutter);width:100%}
+section{padding-block:var(--section-y)}
+.section-alt{background:var(--paper-alt);border-block:1px solid var(--rule-2)}
+.pad{position:relative}
+@media(min-width:860px){
+  .pad::before{content:"";position:fixed;top:0;bottom:0;left:max(calc((100vw - var(--shell))/2 + var(--margin-x)),var(--margin-x));width:2px;background:var(--accent);opacity:.45;pointer-events:none;z-index:1}
+  .pad .shell{padding-left:calc(var(--margin-x) + 1.75rem)}
+}
+.ruled{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--rule-line) - 1px),var(--rule) calc(var(--rule-line) - 1px),var(--rule) var(--rule-line))}
+.card{background:var(--card);border:1px solid var(--rule-2);border-top:3px solid var(--accent);padding:var(--space-5);box-shadow:var(--shadow-2)}
+.card>:first-child{margin-top:0}.card>:last-child{margin-bottom:0}
+.grid{display:grid;gap:var(--space-5)}
+@media(min-width:720px){.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:repeat(3,1fr)}}
+.callout{background:var(--card);border:1px solid var(--rule-2);border-left:4px solid var(--accent);padding:var(--space-4) var(--space-5);margin-block:var(--space-5)}
+.callout .label{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.12em;font-size:var(--fs-caption);color:var(--accent-ink);font-weight:700;display:block;margin-bottom:var(--space-2)}
+.callout>:last-child{margin-bottom:0}
+.cmd-table{width:100%;border-collapse:collapse;margin-block:var(--space-4);font-size:var(--fs-small)}
+.cmd-table th{text-align:left;font-family:var(--font-mono);text-transform:uppercase;font-size:var(--fs-caption);letter-spacing:.1em;color:var(--ink-3);border-bottom:2px solid var(--rule-2);padding:.55rem .75rem}
+.cmd-table td{border-bottom:1px solid var(--rule);padding:.65rem .75rem;vertical-align:top}
+.cmd-table tr:hover td{background:var(--accent-wash)}
+.cmd-table td:first-child{white-space:nowrap;width:1%}
+.cmd{font-family:var(--font-mono);font-size:.92em;color:var(--ink);background:var(--paper);border:1px solid var(--rule-2);padding:.14em .5em;display:inline-block}
+.checklist{list-style:none;padding:0;margin:var(--space-4) 0}
+.checklist li{position:relative;padding-left:2rem;margin-block:var(--space-3)}
+.checklist li::before{content:"☐";position:absolute;left:0;top:-.06em;color:var(--accent);font-size:1.15em;line-height:1}
+.btn{display:inline-block;font-family:var(--font-body);font-weight:600;font-size:1rem;padding:.72rem 1.4rem;border:2px solid var(--ink);background:var(--ink);color:var(--paper);text-decoration:none;transition:background var(--dur),color var(--dur),border-color var(--dur)}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.site-header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--rule-2)}
+.site-header .shell{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding-block:var(--space-3)}
+.brandmark{font-family:var(--font-display);font-weight:600;font-size:1.3rem;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.brandmark:hover{color:var(--ink)}
+.site-footer{background:var(--ink);color:var(--paper);border-top:3px solid var(--accent);padding-block:var(--space-7);margin-top:var(--space-8)}
+.site-footer a{color:var(--paper)}
+.disclaimer{font-size:var(--fs-small);color:#D8D2C4;max-width:62ch;line-height:1.6}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+/* ---- page-specific (hacs) ---- */
+.skip-link{position:absolute;top:-3rem;left:var(--space-3);background:var(--ink);color:var(--paper);
+  padding:var(--space-2) var(--space-4);font-weight:600;z-index:100;transition:top var(--dur) var(--ease);text-decoration:none}
+.skip-link:focus{top:var(--space-2)}
+.header-back{font-family:var(--font-mono);font-size:var(--fs-small);text-decoration:none;color:var(--accent-ink)}
+.header-back:hover{color:var(--accent)}
+.hero-tagline{font-family:var(--font-display);font-weight:600;font-size:var(--fs-h2);color:var(--ink);
+  line-height:var(--lh-snug);margin:0 0 var(--space-4);letter-spacing:-.011em;text-wrap:balance}
+.hero-lead{font-size:1.15rem;color:var(--ink-2);margin:0 0 var(--space-6);max-width:58ch}
+.hero-actions{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center}
+.lede{font-size:1.12rem;color:var(--ink-2);max-width:60ch}
+.card h3{margin-bottom:var(--space-2)}
+.card p{color:var(--ink-2)}
+.card .card-mark{font-size:1.5rem;display:block;margin-bottom:var(--space-2);line-height:1}
+.section-lead{max-width:60ch;color:var(--ink-2)}
+.section-head{margin-bottom:var(--space-6)}
+.steps{list-style:none;counter-reset:step;padding:0;margin:var(--space-5) 0 0}
+.steps>li{position:relative;padding-left:3.25rem;margin-block:var(--space-5)}
+.steps>li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:-.15em;
+  width:2.1rem;height:2.1rem;display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:600;font-size:1.15rem;color:#fff;background:var(--accent);border:2px solid var(--accent)}
+.steps h3{font-size:var(--fs-h4);line-height:var(--lh-tight);margin:0 0 var(--space-1)}
+.steps p{color:var(--ink-2);margin:0;max-width:60ch}
+.badge-row{display:flex;flex-wrap:wrap;gap:var(--space-2);margin:0 0 var(--space-5);font-family:var(--font-mono);font-size:var(--fs-caption)}
+.badge-row span{border:1px solid var(--rule-2);background:var(--card);padding:.25em .7em;color:var(--ink-2);text-transform:uppercase;letter-spacing:.08em}
+.badge-row span strong{color:var(--accent-ink)}
+.faq details{border:1px solid var(--rule-2);background:var(--card);margin-block:var(--space-3)}
+.faq summary{cursor:pointer;font-family:var(--font-display);font-weight:600;font-size:1.05rem;padding:var(--space-3) var(--space-4);list-style-position:inside}
+.faq details[open] summary{border-bottom:1px solid var(--rule)}
+.faq details p{padding:0 var(--space-4);color:var(--ink-2)}
+.faq details p:last-child{padding-bottom:var(--space-4)}
+section[id]{scroll-margin-top:5rem}
+</style>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="./index.html">Fanad</a>
+    <a class="header-back" href="./manual.html">Read the manual &rarr;</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- HERO -->
+  <section class="ruled" aria-labelledby="hero-title">
+    <div class="shell">
+      <p class="kicker">Fanad for Home Assistant</p>
+      <h1 id="hero-title">The no-nag scratchpad, on steroids</h1>
+      <p class="hero-tagline">Home Assistant finally stores personal tasks and memories &mdash; without
+        becoming a full-on LLM assistant.</p>
+      <p class="hero-lead">Fanad fills the gap: private, local-first tasks, notes, lists and server timers,
+        with a bot in your Telegram for the road and a rich web UI in your sidebar at home. No nagging, no
+        guilt streaks &mdash; a pad that empties. Your dings can ring the house. Your house never leaves
+        the house.</p>
+      <div class="badge-row" aria-label="At a glance">
+        <span><strong>Local</strong> · no cloud by default</span>
+        <span>No telemetry</span>
+        <span>aarch64 + amd64</span>
+        <span>1,000+ tests</span>
+        <span>Open source</span>
+      </div>
+      <div class="hero-actions">
+        <a class="btn" href="#install">Install</a>
+        <a class="btn btn-ghost" href="#privacy">The privacy part</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section id="why" aria-labelledby="why-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">Why it exists</p>
+        <h2 id="why-title">Built to fill the gaps in my own Home Assistant</h2>
+      </div>
+      <p class="lede">I run Home Assistant OS at home. It's brilliant at devices and terrible at remembering
+        things <em>for me</em>. I also wanted remote control without exposing anything to the public
+        internet. So: I text a bot on Telegram &mdash; <span class="cmd">remind me to take the bins out at 7</span>,
+        <span class="cmd">timer 12 min</span>, <span class="cmd">ha turn off the kitchen lights</span> &mdash;
+        and it just works, because Telegram is an <strong>outbound connection</strong>. No open ports, no reverse
+        proxy, no cloud tunnel. At home, the full web UI. A lightweight <strong>local LLM</strong> you already
+        run (LM&nbsp;Studio or Ollama) does the parsing and summarizing.</p>
+    </div>
+  </section>
+
+  <!-- WHAT YOU GET -->
+  <section id="features" class="section-alt" aria-labelledby="features-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">What you get</p>
+        <h2 id="features-title">Timers, tasks, and remote control &mdash; from Telegram or your sidebar</h2>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <span class="card-mark" aria-hidden="true">⏲️</span>
+          <h3>Server timers</h3>
+          <p>&ldquo;timer 20 min for the oven&rdquo; from any phone in the family. The ding can announce on
+            your Voice&nbsp;PE or media players, fire a script, or send a notify.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark" aria-hidden="true">✅</span>
+          <h3>Tasks &amp; reminders</h3>
+          <p>Natural language in &mdash; &ldquo;call the dentist on tuesday&rdquo; &mdash; deadlines, snooze,
+            one-task-at-a-time focus. Dated tasks push straight to your HA calendar.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark" aria-hidden="true">🏠</span>
+          <h3><code>ha</code> from anywhere</h3>
+          <p><span class="cmd">ha turn on porch light</span>, <span class="cmd">ha run goodnight</span> from
+            Telegram &mdash; routed to your own Assist agent. Remote control, zero exposed ports.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark" aria-hidden="true">📝</span>
+          <h3>Notes &amp; nested lists</h3>
+          <p>Packing lists, shopping, project outlines. A pad that empties, not a notes app that fills up.
+            Get it out of your head.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark" aria-hidden="true">💬</span>
+          <h3>Three surfaces</h3>
+          <p>Telegram and Slack on the road, a rich web UI in your HA sidebar at home. Same data, same
+            brain, everywhere.</p>
+        </div>
+        <div class="card">
+          <span class="card-mark" aria-hidden="true">🧩</span>
+          <h3>Opt-in modules</h3>
+          <p>Journal with daily and weekly summaries, diet logging, process batches, sub-notebooks, metrics
+            &mdash; all off by default. Turn on only what you'll use.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section id="privacy" aria-labelledby="privacy-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">The privacy part</p>
+        <h2 id="privacy-title">What the LLM does &mdash; and deliberately doesn't</h2>
+      </div>
+      <div class="callout">
+        <span class="label">The one-sentence version</span>
+        <p>The LLM only parses and ranks what you typed &mdash; it never invents data, and it never acts on
+          your house.</p>
+      </div>
+      <ul class="checklist">
+        <li><strong>Parsing, not agency.</strong> House commands (<span class="cmd">ha &hellip;</span>) are handed
+          to your own Home Assistant Assist agent verbatim &mdash; deterministic passthrough, not model output.
+          Dings ringing your speakers are plain code you opt into.</li>
+        <li><strong>Local by default.</strong> Point Fanad at the LM&nbsp;Studio or Ollama box you already run.
+          A <code>mock</code> provider works with no model at all, so you can try it before wiring anything.</li>
+        <li><strong>Cloud is triple-locked.</strong> BYO cloud keys (for people without local-model hardware)
+          only work behind an explicit <code>LLM_ALLOW_CLOUD</code> flag &mdash; off by default, hard-blocked at
+          runtime, hidden in the UI when off.</li>
+        <li><strong>Your data stays put.</strong> SQLite on your box, secrets encrypted (AES-256-GCM), no
+          telemetry, no phone-home. Everything lives in <code>/data</code> and rides along in HA backups.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="install" class="section-alt" aria-labelledby="install-title">
+    <div class="shell">
+      <div class="section-head">
+        <p class="kicker">Install</p>
+        <h2 id="install-title">Five minutes on Home Assistant OS</h2>
+      </div>
+      <ol class="steps">
+        <li>
+          <h3>Add the repository</h3>
+          <p>Settings &rarr; Apps &rarr; App store &rarr; &#8942; &rarr; Repositories &rarr; add
+            <code>https://github.com/NTBooks/fanad-ha</code></p>
+        </li>
+        <li>
+          <h3>Install &amp; start Fanad</h3>
+          <p>It appears in the sidebar via ingress &mdash; no ports to open, no reverse proxy.</p>
+        </li>
+        <li>
+          <h3>Point it at your model</h3>
+          <p>LM&nbsp;Studio or Ollama URL in Settings &mdash; or start with the <code>mock</code> provider and
+            wire the model later.</p>
+        </li>
+        <li>
+          <h3>Optional: the Telegram surface</h3>
+          <p>Paste a bot token from @BotFather and text your house from anywhere.</p>
+        </li>
+      </ol>
+      <div class="callout">
+        <span class="label">Running Container instead of HA OS?</span>
+        <p>Same image, plain Docker: <code>docker run -p 8787:8787 -v fanad_data:/persist
+          ghcr.io/ntbooks/fanad-app</code> &mdash; then add it to your sidebar as a Webpage dashboard.</p>
+      </div>
+      <div class="callout">
+        <span class="label">Hardware honesty</span>
+        <p>Fanad itself is light &mdash; Node + SQLite, fine on a Pi&nbsp;4. The LLM should live on a real box.
+          Fanad-on-the-Pi, model-on-your-desktop is the expected setup.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" aria-labelledby="faq-title">
+    <div class="shell faq">
+      <div class="section-head">
+        <p class="kicker">Fair questions</p>
+        <h2 id="faq-title">The things you're right to ask</h2>
+      </div>
+      <details>
+        <summary>Does it need the cloud?</summary>
+        <p>No. Default is fully local. Cloud API keys exist for people without local-model hardware, and
+          they're behind an explicit opt-in flag that's off by default and hard-blocked at runtime.</p>
+      </details>
+      <details>
+        <summary>Does the AI control my house?</summary>
+        <p>No. The LLM parses your scratchpad text. House commands go through <em>your</em> Assist agent as
+          deterministic passthrough. Fanad never originates house actions except the dings you explicitly
+          configure &mdash; and those are plain code, not model output.</p>
+      </details>
+      <details>
+        <summary>Is this AI-generated slop that'll be abandoned in a month?</summary>
+        <p>Fair. The codebase is heavily AI-assisted &mdash; the commit trailers say so. That's also why it
+          ships with 1,000+ tests, a versioned migration chain, and a changelog, and why my own family runs
+          it every day. Judge the code; it's all open.</p>
+      </details>
+      <details>
+        <summary>Why not just HA todo lists + Assist?</summary>
+        <p>Those are great for &ldquo;add milk to the list.&rdquo; Fanad is for everything durable about
+          <em>you</em>: the loops in your head, deadlines, journals, the timer your spouse set from Telegram
+          while you're both cooking. HA runs the house; Fanad remembers the humans &mdash; and they ring
+          each other.</p>
+      </details>
+      <details>
+        <summary>What happens to my data if I uninstall?</summary>
+        <p>Everything lives in <code>/data</code>, which Home Assistant deletes on uninstall &mdash; so back up
+          first. HA's native backups cover it (database and encryption key together).</p>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p class="disclaimer">Fanad is open source, local-first, and telemetry-free. The LLM only parses what
+      you typed &mdash; it never invents, and it never acts on your house.
+      <a href="./index.html">About Fanad</a> &middot; <a href="./manual.html">Manual</a> &middot;
+      <a href="./cheatsheet.html">Cheatsheet</a> &middot;
+      <a href="https://github.com/NTBooks/Fanad">Source on GitHub</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,534 @@
+:root{
+  --navy:#123b4f; --teal:#1d6b86; --tealtint:#eaf3f6; --amber:#d9912e;
+  --ambertint:#fbf2e1; --cream:#fffdf8; --ink:#22303a; --soft:#5a6b76; --line:#e1e8ec;
+  --bg:#eef2f4; --surface:#ffffff; --code-bg:#eef3f5;
+  color-scheme: light;
+}
+/* Night mode — soothing deep slate/navy with a softened accent. */
+[data-theme="night"]{
+  --navy:#cfe3ec; --teal:#56a6c4; --tealtint:#1c3742; --amber:#e0a955; --ambertint:#2c2718;
+  --cream:#15252e; --ink:#dde7ec; --soft:#90a4ae; --line:#273a44;
+  --bg:#0f1c24; --surface:#16262f; --code-bg:#1b2e38;
+  color-scheme: dark;
+}
+/* Ocean (internal key "bokeh", label 🌊 Ocean) — the opt-in animated theme (never auto-selected).
+   Night-derived glass palette over a retro-pixel top-down sea drawn by OceanBackdrop.jsx (the SEA
+   follows the clock — day lagoon / golden hour / moonlit night — but the UI chrome stays this dark
+   glass in all of them, which reads fine over the brightened day water): one tiny 96×160
+   canvas stretched full-screen. No filter/backdrop-filter anywhere — those re-run on the GPU every
+   composited frame at monitor resolution and chugged on high-res/old machines; the "glass" below is
+   faked with translucency + a 1px inset highlight instead. */
+[data-theme="bokeh"]{
+  --navy:#d3e6f0; --teal:#5fb5d6; --tealtint:rgba(38,70,86,.62); --amber:#e8b060; --ambertint:rgba(60,50,26,.6);
+  --cream:rgba(18,32,42,.85); --ink:#e4eef3; --soft:#9db4c0; --line:rgba(130,180,210,.22);
+  --bg:#08101a; --surface:rgba(22,38,50,.78); --code-bg:rgba(27,46,60,.8);
+  --glow:0 0 18px rgba(95,181,214,.35);
+  color-scheme: dark;
+}
+/* The sea: pinned to the app COLUMN (not the viewport — the body's uniform --bg shows at the sides),
+   which also shrinks the composited/upscaled area to ≤720px wide on any monitor. Nearest-neighbor
+   upscale keeps the chunky-pixel look AND caps the cost at the canvas's tiny backing store. The
+   element itself never animates — all motion lives inside the bitmap. */
+.ocean-bg{ position:absolute; inset:0; z-index:-1; pointer-events:none; border-inline:1px solid rgba(130,180,210,.10); }
+.ocean-bg canvas{ width:100%; height:100%; display:block; image-rendering:pixelated; }
+/* Glass without backdrop-filter: translucent fill + a faint top highlight reads as glazing. */
+[data-theme="bokeh"] :is(.emoji-panel, .kan-col, .metric-card, .composer-field, .setup-nudge){
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+/* The overlay cards keep their lift shadow (this scoped rule outranks their base box-shadow). */
+[data-theme="bokeh"] :is(.settings, .task-editor){
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.45);
+}
+[data-theme="bokeh"] .bubble.me{ box-shadow:var(--glow); }
+[data-theme="bokeh"] .llm-pill.ok .dot{ box-shadow:0 0 8px rgba(47,158,111,.8); }
+[data-theme="bokeh"] .quick-replies button:hover,
+[data-theme="bokeh"] .composer button[type="submit"]:not(:disabled){ box-shadow:var(--glow); }
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{ margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; transition:background-color .5s ease, color .5s ease; }
+/* overflow:clip — the app column is the containing block (position:relative) for every absolutely
+   positioned descendant, and framer-motion popLayout exits leave their element absolute at its static
+   position: mid-animation that can land chat-backlog-height below the fold, growing the DOCUMENT and
+   blinking the body scrollbar (seen on reaction swaps, notebook-switch reloads). Nothing is ever meant
+   to paint outside the column — the gutter panels/toggle and all overlays are position:fixed, which
+   clip doesn't touch — so clip the escape hatch once instead of chasing each animation. */
+.app{ position:relative; max-width:720px; margin:0 auto; height:100vh; display:flex; flex-direction:column; padding:14px 14px 12px; overflow:clip; }
+/* The client build tag (vN.M, schema.commitsSinceMigration) — deploy-staleness at a glance. Fixed to
+   the window corner (exempt from the .app overflow clip), whisper-quiet, and inert to clicks. */
+.build-tag{ position:fixed; right:8px; bottom:5px; z-index:4; font-size:10.5px; line-height:1;
+  color:var(--soft); opacity:.35; pointer-events:none; user-select:none; }
+/* A soft weather wash at the top of the view — subtle, layered over either theme. */
+.app[data-weather="clear"]{ background:linear-gradient(180deg, rgba(240,190,90,.10), transparent 28%); }
+.app[data-weather="clouds"]{ background:linear-gradient(180deg, rgba(150,165,175,.12), transparent 28%); }
+.app[data-weather="rain"]{ background:linear-gradient(180deg, rgba(90,130,160,.15), transparent 28%); }
+.app[data-weather="snow"]{ background:linear-gradient(180deg, rgba(200,220,235,.17), transparent 28%); }
+.app[data-weather="storm"]{ background:linear-gradient(180deg, rgba(80,90,120,.17), transparent 28%); }
+.app[data-weather="fog"]{ background:linear-gradient(180deg, rgba(180,185,190,.14), transparent 28%); }
+
+.hdr{ position:relative; display:flex; align-items:center; gap:12px; flex-wrap:wrap; row-gap:10px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+.hdr-title{ flex:0 0 auto; }
+.hdr .tag{ white-space:nowrap; }
+/* All header controls (pill, impersonation/notebook selects, module icons, gears) live in one right-aligned
+   cluster that wraps WITHIN itself — so the title block is never squeezed no matter how many controls appear.
+   The pill's old margin-left:auto (a single-row hack) is neutralised; the cluster owns the alignment now. */
+.hdr-controls{ flex:1 1 auto; min-width:0; margin-left:auto; display:flex; align-items:center; justify-content:flex-end; gap:6px; row-gap:6px; flex-wrap:wrap; }
+.hdr-controls > *{ margin-left:0; }
+.hdr-controls .llm-pill{ margin-left:0; }
+/* The advanced-module icons are more compact than the utility gears so the full cluster fits one row in the
+   common cases (pill + selects + a couple icons); it wraps cleanly when many modules + both selects are on. */
+.gear.module-icon{ padding:4px 7px; font-size:15px; }
+.hdr .logo{ width:34px; height:34px; display:block; flex:0 0 auto; }
+.hdr h1{ margin:0; color:var(--navy); font-size:22px; }
+.hdr .tag{ margin:0; color:var(--teal); font-style:italic; font-size:13px; }
+.gear{ margin-left:8px; background:transparent; border:1px solid var(--line); color:var(--soft); border-radius:10px; padding:5px 11px; font-size:18px; cursor:pointer; line-height:1; }
+.gear:hover{ color:var(--teal); border-color:var(--teal); }
+a.gear{ text-decoration:none; display:inline-block; }
+.llm-pill{ margin-left:auto; display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); color:var(--soft); border-radius:999px; padding:4px 11px; font-size:12px; cursor:pointer; }
+.llm-pill .dot{ width:8px; height:8px; border-radius:50%; background:var(--soft); flex:0 0 auto; }
+.llm-pill.ok{ color:#2f6b46; border-color:#bfe3cf; } .llm-pill.ok .dot{ background:#2f9e6f; }
+.llm-pill.warn{ color:#a8722a; border-color:#ecd9ac; } .llm-pill.warn .dot{ background:var(--amber); }
+.llm-pill.off{ color:#a8432c; border-color:#eccac7; } .llm-pill.off .dot{ background:#c0504a; }
+/* The connected Telegram bot's handle — a quiet pill at the far right that deep-links into Telegram. */
+.bot-name{ display:inline-flex; align-items:center; background:var(--surface); border:1px solid var(--line); color:var(--soft); border-radius:999px; padding:4px 11px; font-size:12px; text-decoration:none; white-space:nowrap; }
+.bot-name:hover{ color:var(--teal); border-color:var(--teal); }
+/* Host-only impersonation picker — matches the .gear chrome, theme-aware via the shared variables. */
+.user-switch{ margin-left:8px; max-width:140px; background:var(--surface); border:1px solid var(--line); color:var(--soft); border-radius:10px; padding:5px 8px; font-size:12.5px; cursor:pointer; }
+.user-switch:hover{ color:var(--teal); border-color:var(--teal); }
+
+/* Mobile hamburger — desktop shows the full cluster; ≤640px collapses the header to pill + ☰.
+   The :not() rule auto-hides any future header control on mobile — give it a .hdr-menu row too. */
+.hamburger{ display:none; position:relative; z-index:41; } /* above the backdrop so ☰ re-tap toggles, not just backdrop-closes */
+.hdr-menu-backdrop{ position:fixed; inset:0; z-index:39; }
+.hdr-menu{ position:absolute; top:100%; right:0; z-index:40; min-width:230px;
+  background:var(--cream); border:1px solid var(--line); border-radius:14px;
+  box-shadow:0 14px 40px rgba(18,59,79,.25); padding:8px; display:flex; flex-direction:column; gap:2px; }
+.hdr-menu-item{ display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  background:transparent; border:0; border-radius:9px; padding:9px 12px;
+  font:inherit; font-size:14px; font-weight:600; color:var(--soft); cursor:pointer; text-decoration:none; }
+.hdr-menu-item:hover{ background:var(--tealtint); color:var(--teal); }
+.hdr-menu .user-switch{ width:100%; max-width:none; margin:0 0 4px; }
+.hdr-menu-sep{ border:0; border-top:1px solid var(--line); margin:4px 0; }
+/* Ocean's --cream is translucent glass; a floating menu over chat text must be opaque (no backdrop-filter
+   in this theme by design), so use the solid equivalent of its cream + the shared inset highlight. */
+[data-theme="bokeh"] .hdr-menu{ background:#12202a; box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 14px 40px rgba(0,0,0,.45); }
+
+@media (max-width:640px){
+  .hdr-controls > *:not(.llm-pill):not(.hamburger){ display:none; }
+  .hamburger{ display:inline-block; }
+}
+
+/* ── Gutter panels: the wide-screen letterbox space beside the 720px column (the file's FIRST min-width
+   query — everything else stays mobile-first). Math: half-column 360 + 20 gap + 240 panel per side
+   (= 1240 + edge margins) → gate at 1280. position:fixed so the panels never affect the column's layout
+   and clicks outside their own boxes pass through untouched. App.jsx gates rendering on the same
+   matchMedia, so below 1280 the panels aren't even mounted (no polling). Resting at partial opacity —
+   reference chrome, not content — and waking on hover/focus. One .gutter-toggle hides the whole layer. ── */
+.gutter, .gutter-toggle{ display:none; }
+@media (min-width:1280px){
+  .gutter{ position:fixed; top:64px; display:flex; flex-direction:column; gap:12px; width:240px;
+    max-height:calc(100vh - 84px); overflow-y:auto; z-index:5;
+    font-size:13px; color:var(--soft);
+    opacity:.72; transition:opacity .25s ease; }
+  .gutter:hover, .gutter:focus-within{ opacity:1; }
+  .gutter-left{ right:calc(50% + 380px); }
+  .gutter-right{ left:calc(50% + 380px); }
+  .gutter-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:10px 12px; }
+  .gutter-card h4{ margin:0 0 6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--soft); }
+  /* The one-button show/hide for the whole layer — a quiet tab at the top of the right gutter. */
+  .gutter-toggle{ display:inline-block; position:fixed; top:18px; left:calc(50% + 380px); z-index:5;
+    background:var(--surface); border:1px solid var(--line); color:var(--soft); border-radius:10px;
+    padding:4px 10px; font-size:14px; line-height:1.2; cursor:pointer; opacity:.6; transition:opacity .25s ease; }
+  .gutter-toggle:hover{ opacity:1; color:var(--teal); border-color:var(--teal); }
+  /* Legend rows: <kbd> letter + label. A with-text row inserts into the composer; a bare row runs. */
+  .legend-row{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent;
+    border:0; border-radius:8px; padding:4px 6px; font:inherit; font-size:12.5px; color:var(--soft); cursor:pointer; }
+  .legend-row:hover{ background:var(--tealtint); color:var(--teal); }
+  .legend-row kbd{ flex:0 0 auto; min-width:18px; text-align:center; background:var(--code-bg); border:1px solid var(--line);
+    border-radius:5px; padding:1px 4px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11px; color:var(--ink); }
+  .legend-label{ flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .legend-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+  .legend-chip{ background:var(--code-bg); border:1px solid var(--line); color:var(--soft); border-radius:999px;
+    padding:2px 9px; font:inherit; font-size:11.5px; cursor:pointer; }
+  .legend-chip:hover{ color:var(--teal); border-color:var(--teal); }
+  /* Status panel: the started task, upcoming rings, and the context line. */
+  .gutter-task{ font-size:13px; color:var(--ink); margin-bottom:6px; }
+  .gutter-actions{ display:flex; gap:6px; }
+  .gutter-actions button{ background:var(--surface); border:1px solid var(--line); color:var(--soft); border-radius:8px;
+    padding:3px 9px; font:inherit; font-size:12px; cursor:pointer; }
+  .gutter-actions button:hover{ color:var(--teal); border-color:var(--teal); }
+  .gutter-row{ display:flex; align-items:baseline; gap:6px; padding:2px 0; font-size:12.5px; }
+  .gutter-row-icon{ flex:0 0 auto; }
+  .gutter-row-label{ flex:1 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gutter-row-time{ flex:0 0 auto; color:var(--teal); font-size:11.5px; }
+  .gutter-empty{ margin:0; font-size:12px; font-style:italic; color:var(--soft); opacity:.8; }
+  .gutter-context{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; }
+  /* Compact ModulesSection (the gutter reuses the Settings component; hide its prose, keep the rows).
+     The base .tg-section chrome and label.check layout are scoped to .settings, so restate them here. */
+  .tg-section.compact{ margin:0; padding:0; border:0; }
+  .tg-section.compact h3, .tg-section.compact .hint, .tg-section.compact .sub{ display:none; }
+  .tg-section.compact label.check{ display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; margin:2px 0; cursor:pointer; }
+  .tg-section.compact .ok{ font-size:11px; color:var(--teal); }
+}
+[data-theme="bokeh"] :is(.gutter-card, .gutter-toggle){ box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
+
+.setup-nudge{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:10px; background:var(--ambertint); border:1px solid #ecd9ac; border-left:5px solid var(--amber); border-radius:12px; padding:10px 14px; font-size:14px; }
+.nudge-actions{ display:flex; gap:8px; }
+.setup-nudge button{ font-size:13px; border:1px solid var(--amber); color:#a8722a; background:var(--surface); border-radius:8px; padding:5px 12px; cursor:pointer; }
+.setup-nudge button.ghost{ border-color:var(--line); color:var(--soft); }
+/* The Diet view's "you're in a notebook" bar — same amber chrome as .setup-nudge: stats logged here
+   land in the notebook's own record, not Main, so the warning stays up until the user switches. */
+.nb-warn{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:8px 0 2px; background:var(--ambertint); border:1px solid #ecd9ac; border-left:5px solid var(--amber); border-radius:12px; padding:9px 14px; font-size:13.5px; }
+.nb-warn button{ font-size:13px; border:1px solid var(--amber); color:#a8722a; background:var(--surface); border-radius:8px; padding:5px 12px; cursor:pointer; white-space:nowrap; }
+
+.chat{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:14px 2px; }
+.chat-top{ align-self:center; color:var(--soft); font-size:12px; padding:4px 0 2px; user-select:none; }
+.bubble{ max-width:80%; padding:9px 13px; border-radius:14px; font-size:15px; word-wrap:break-word; }
+.bubble.bot{ align-self:flex-start; background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:4px; }
+.bubble.me{ align-self:flex-end; background:var(--teal); color:#fff; border-bottom-right-radius:4px; white-space:pre-wrap; }
+.bubble.typing{ color:var(--soft); letter-spacing:2px; }
+/* Clickable command chips inside bot replies (the help screen + any /command a reply mentions). */
+.cmd-link{ display:inline; background:var(--tealtint); color:var(--teal); border:1px solid var(--line); border-radius:6px; padding:0 5px; font:inherit; font-size:0.92em; font-weight:600; cursor:pointer; line-height:1.5; white-space:nowrap; }
+.cmd-link:hover{ border-color:var(--teal); background:var(--surface); }
+/* Rich-text subset in bot replies (shared/richtext.js → Telegram HTML, mirrored here). The web does what
+   Telegram can't: true small + muted for the de-emphasised meta. <b>=title, <i>=meta/soft, <code>=example. */
+.bubble.bot b{ font-weight:650; color:var(--ink); }
+.bubble.bot i{ font-style:italic; color:var(--soft); font-size:0.9em; }
+.bubble.bot code{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:0.85em; color:var(--soft); background:var(--code-bg); padding:0 4px; border-radius:5px; }
+/* A real link in a reply — a task title carrying a pasted URL, or a bare URL in plain text. */
+.msg-link{ color:var(--teal); text-decoration:underline; text-decoration-color:var(--line); text-underline-offset:2px; word-break:break-all; }
+.msg-link:hover{ text-decoration-color:var(--teal); }
+/* Kanban card's 🔗 chip (an anchor wearing the .chip skin — kill the default link underline). */
+.chip.link-chip{ text-decoration:none; cursor:pointer; }
+.chip.link-chip:hover{ border-color:var(--teal); }
+.status-chip{ font-size:11px; color:var(--soft); margin-bottom:6px; padding-bottom:5px; border-bottom:1px dashed var(--line); }
+.chart-img{ display:block; margin-top:8px; max-width:100%; border:1px solid var(--line); border-radius:10px; }
+.react-btn{ margin-top:5px; background:transparent; border:0; color:var(--soft); font-size:14px; line-height:1; cursor:pointer; opacity:.45; padding:0; }
+.react-btn:hover{ opacity:1; color:var(--teal); }
+.react-palette{ display:flex; flex-wrap:wrap; gap:1px; margin-top:5px; }
+.react-palette button{ background:transparent; border:0; font-size:18px; cursor:pointer; padding:1px 3px; border-radius:6px; line-height:1; }
+.react-palette button:hover{ background:var(--tealtint); }
+.reacted{ margin-top:5px; font-size:16px; line-height:1; }
+/* Fanad's reaction stamped on the user's OWN message (the two-step 👀 → decision, Telegram parity). The
+   me bubble is right-aligned, so anchor the emoji to its trailing edge. */
+/* position:relative is load-bearing: the 👀→decision swap uses AnimatePresence popLayout, which
+   pops the exiting emoji out with position:absolute — without a positioned parent it resolves
+   against the page, landing chat-backlog-height below the fold and flashing the body scrollbar. */
+.me-reacted{ position:relative; margin-top:5px; font-size:16px; line-height:1; text-align:right; }
+
+/* Quick-reply chips under a question bubble — the web twin of Telegram's reply keyboard. */
+.quick-replies{ display:flex; flex-wrap:wrap; gap:6px; align-self:flex-start; margin:2px 0 4px; }
+.quick-replies button{ background:var(--tealtint); color:var(--teal); border:1px solid var(--line); border-radius:14px; padding:5px 12px; font-size:13px; font-weight:600; cursor:pointer; line-height:1.2; }
+.quick-replies button:hover{ border-color:var(--teal); }
+/* Stacked button rows preserving the brain's layout (the same rows Telegram renders). Each row reuses
+   .quick-replies; the wrapper owns the vertical rhythm so the inner rows don't double their margins. */
+.quick-replies-rows{ display:flex; flex-direction:column; gap:6px; align-self:flex-start; margin:2px 0 4px; }
+.quick-replies-rows .quick-replies{ margin:0; }
+
+.composer{ display:flex; gap:8px; align-items:flex-end; padding-top:10px; border-top:1px solid var(--line); }
+/* The emoji button lives INSIDE the field (messaging-app convention), so the bar is two items —
+   field + Send — and nothing smushes on narrow screens. */
+.composer-field{ flex:1; min-width:0; display:flex; align-items:flex-end; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+.composer-field:focus-within{ border-color:var(--teal); }
+.composer textarea{ flex:1; min-width:0; resize:none; border:0; background:transparent; border-radius:12px; padding:10px 12px 10px 2px; font:inherit; max-height:140px; outline:none; }
+.composer button[type="submit"]{ background:var(--teal); color:#fff; border:0; border-radius:12px; padding:10px 18px; font-weight:600; cursor:pointer; }
+.composer button[type="submit"]:disabled{ opacity:.45; cursor:default; }
+.emoji-btn{ background:transparent; border:0; color:var(--soft); border-radius:10px; padding:13px 4px 13px 10px; font-size:18px; cursor:pointer; line-height:1; }
+.emoji-btn:hover{ filter:brightness(1.15); }
+.emoji-panel{ display:flex; flex-wrap:wrap; gap:2px; padding:8px; margin-bottom:6px; background:var(--surface); border:1px solid var(--line); border-radius:12px; max-height:150px; overflow-y:auto; }
+.emoji-panel button{ background:transparent; border:0; font-size:20px; cursor:pointer; padding:4px 6px; border-radius:8px; line-height:1; }
+.emoji-panel button:hover{ background:var(--tealtint); }
+
+.err{ color:#a8432c; font-size:14px; }
+
+/* ── Settings — the only panel UI ── */
+.settings-overlay{ position:fixed; inset:0; background:rgba(18,59,79,.35); display:flex; align-items:flex-start; justify-content:center; padding:40px 16px; overflow:auto; z-index:50; }
+/* Every overlay (Settings, modules, data browser, task editor) fades in with its card popping — one CSS
+   rule instead of per-component motion wiring; closing stays instant on purpose (snappy dismiss). */
+@media (prefers-reduced-motion: no-preference){
+  .settings-overlay{ animation:overlay-fade .18s ease-out; }
+  .settings-overlay > *{ animation:card-pop .22s cubic-bezier(.2,.9,.3,1.15); }
+}
+@keyframes overlay-fade{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes card-pop{ from{ opacity:0; transform:translateY(12px) scale(.97); } to{ opacity:1; transform:none; } }
+.settings{ background:var(--cream); border-radius:16px; width:100%; max-width:520px; padding:24px; box-shadow:0 20px 60px rgba(18,59,79,.3); }
+.settings-head{ display:flex; align-items:center; justify-content:space-between; }
+.settings-head h2{ margin:0; color:var(--navy); font-size:20px; }
+/* Left-bar variant of the Settings card: fixed-height, header pinned on top, nav + scrolling body below.
+   Scoped to .has-nav so the DataBrowser ('.settings.data') keeps the plain padded card. */
+.settings.has-nav{ max-width:760px; padding:0; display:flex; flex-direction:column; max-height:calc(100vh - 80px); overflow:hidden; }
+.settings.has-nav .settings-head{ flex:0 0 auto; padding:18px 24px; border-bottom:1px solid var(--line); }
+.settings-main{ display:flex; min-height:0; flex:1; }
+.settings-nav{ flex:0 0 184px; display:flex; flex-direction:column; gap:2px; padding:14px 12px; border-right:1px solid var(--line); overflow-y:auto; }
+.settings-nav button{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; border:0; border-radius:9px; padding:9px 12px; font:inherit; font-size:14px; font-weight:600; color:var(--soft); cursor:pointer; }
+.settings-nav button:hover{ background:var(--tealtint); color:var(--teal); }
+.settings-nav button.on{ background:var(--teal); color:#fff; }
+.settings-nav .nav-ico{ font-size:15px; line-height:1; width:18px; text-align:center; flex:0 0 auto; }
+.settings-body{ flex:1; min-width:0; overflow-y:auto; padding:18px 24px 22px; }
+.settings-body .settings-cat > h3:first-child,
+.settings-body .settings-cat > .tg-section:first-child{ margin-top:0; padding-top:0; border-top:0; }
+/* Narrow screens: drop the side bar to a horizontal, scrollable strip of category chips. */
+@media (max-width:560px){
+  .settings-overlay{ padding:16px; }
+  .settings.has-nav{ max-height:calc(100vh - 32px); }
+  .settings-main{ flex-direction:column; }
+  .settings-nav{ flex:0 0 auto; flex-direction:row; overflow-x:auto; padding:10px 12px; border-right:0; border-bottom:1px solid var(--line); }
+  .settings-nav button{ width:auto; flex:0 0 auto; white-space:nowrap; }
+}
+.settings .x{ background:transparent; border:0; font-size:18px; color:var(--soft); cursor:pointer; }
+.settings .hint{ color:var(--soft); font-size:14px; margin:6px 0 14px; }
+.settings label{ display:block; font-size:13px; font-weight:600; color:var(--navy); margin:14px 0 0; }
+.settings input,.settings select{ display:block; width:100%; margin-top:6px; border:1px solid var(--line); border-radius:9px; padding:9px 10px; font:inherit; background:var(--surface); color:var(--ink); }
+.settings .sub{ display:block; color:var(--soft); font-size:12px; margin-top:4px; font-weight:400; }
+.settings code{ background:var(--code-bg); padding:1px 5px; border-radius:4px; font-size:12px; }
+.test-row{ display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
+.test-row .ghost{ border:1px solid var(--teal); color:var(--teal); background:var(--surface); border-radius:9px; padding:8px 16px; cursor:pointer; }
+.test-row .ok{ color:#2f6b46; font-size:14px; }
+.test-row .bad{ color:#a8432c; font-size:14px; }
+.settings-foot{ display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:20px; }
+.settings-foot .ok{ color:#2f6b46; font-size:14px; }
+.settings .primary{ background:var(--teal); color:#fff; border:0; border-radius:10px; padding:9px 18px; font-weight:700; cursor:pointer; }
+.settings .primary:disabled{ opacity:.45; }
+.settings .bad{ color:#a8432c; font-size:14px; }
+.tg-section{ margin-top:22px; padding-top:18px; border-top:1px solid var(--line); }
+.tg-section h3{ margin:0 0 2px; color:var(--navy); font-size:16px; }
+.settings label.check{ display:flex; align-items:center; gap:8px; font-weight:600; }
+.settings label.check input{ width:auto; margin:0; }
+.seg{ display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-top:6px; }
+.seg button{ background:var(--surface); color:var(--soft); border:0; padding:7px 16px; font:inherit; font-size:13px; cursor:pointer; }
+.seg button + button{ border-left:1px solid var(--line); }
+.seg button.on{ background:var(--teal); color:#fff; font-weight:700; }
+/* Setup-mode backup/restore actions */
+.setup-actions{ display:flex; gap:10px; align-items:center; margin-top:6px; }
+.setup-actions .ghost{ border:1px solid var(--teal); color:var(--teal); background:var(--surface); border-radius:9px; padding:8px 14px; font:inherit; font-size:13px; cursor:pointer; }
+.setup-actions .ghost:hover{ background:var(--tealtint); }
+.setup-actions .ghost.danger{ border-color:#a8432c; color:#a8432c; }
+.setup-actions .ghost.danger:hover{ background:#a8432c14; }
+.setup-actions .file-btn{ display:inline-block; }
+.setup-actions .file-btn input{ display:none; }
+/* Vouch (access list) tree */
+.vouch-tree{ margin-top:8px; }
+.vouch-node{ margin-top:6px; }
+.vouch-row{ display:flex; align-items:center; gap:10px; }
+.vouch-row .vouch-who{ font-weight:700; color:var(--navy); }
+.vouch-row .sub{ flex:1; }
+.vouch-row .ghost.danger{ border:1px solid #a8432c; color:#a8432c; background:var(--surface); border-radius:9px; padding:4px 12px; font:inherit; font-size:12px; cursor:pointer; }
+.vouch-row .ghost.danger:hover{ background:#a8432c14; }
+
+/* Web login (auth mode 'simple') — a centered card reusing the Settings chrome, shown instead of the app. */
+.login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px; }
+.login-card{ max-width:400px; }
+.qr-box{ display:flex; flex-direction:column; align-items:center; gap:8px; margin:14px 0 4px; text-align:center; }
+.qr-box img{ width:200px; height:200px; border:1px solid var(--line); border-radius:12px; background:#fff; padding:6px; }
+.qr-box code{ word-break:break-all; }
+.settings textarea.ip-list{ display:block; width:100%; margin-top:6px; border:1px solid var(--line); border-radius:9px; padding:9px 10px; font:inherit; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13px; background:var(--surface); color:var(--ink); resize:vertical; }
+
+/* "Your data" browser — web-only transparency tab (a wider Settings-style overlay). */
+.data{ max-width:880px; }
+.data-layout{ display:flex; gap:16px; margin-top:10px; align-items:flex-start; }
+.data-nav{ flex:0 0 180px; display:flex; flex-direction:column; gap:2px; max-height:62vh; overflow:auto; }
+.data-nav button{ display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:left; background:transparent; border:1px solid transparent; border-radius:9px; padding:7px 10px; font:inherit; font-size:13px; color:var(--ink); cursor:pointer; }
+.data-nav button:hover{ background:var(--surface); }
+.data-nav button.on{ background:var(--tealtint); color:var(--teal); font-weight:700; }
+.data-nav button .n{ color:var(--soft); font-size:12px; font-weight:600; }
+.data-nav button.on .n{ color:var(--teal); }
+.data-main{ flex:1; min-width:0; max-height:62vh; overflow:auto; }
+/* The module swap slides views ±10px horizontally; clip that transient overflow so a horizontal
+   scrollbar never flashes mid-animation. Module views never need to scroll .data-main sideways
+   (kanban is a fluid grid; wide content scrolls itself) — the data browser keeps plain auto. */
+.modules .data-main{ overflow-x:hidden; }
+table.data-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.data-table th{ text-align:left; color:var(--soft); font-weight:600; border-bottom:1px solid var(--line); padding:6px 8px; position:sticky; top:0; background:var(--cream); white-space:nowrap; }
+.data-table td{ border-bottom:1px solid var(--line); padding:6px 8px; vertical-align:top; max-width:280px; overflow:hidden; text-overflow:ellipsis; }
+.data-table td input{ width:100%; border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; font-size:12.5px; background:var(--surface); color:var(--ink); }
+.row-actions{ white-space:nowrap; text-align:right; }
+.data-table button.link{ background:transparent; border:0; color:var(--teal); cursor:pointer; font-size:13px; padding:0 4px; }
+.data-table button.link.danger{ color:#a8432c; }
+.data-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
+.data-foot .ghost{ border:1px solid var(--line); color:var(--soft); background:var(--surface); border-radius:8px; padding:5px 12px; font:inherit; font-size:13px; cursor:pointer; }
+.data-foot .ghost + .ghost{ margin-left:6px; }
+.data-foot .ghost:disabled{ opacity:.4; cursor:default; }
+@media (max-width:640px){
+  .data-layout{ flex-direction:column; }
+  .data-nav{ flex-direction:row; flex-wrap:wrap; flex-basis:auto; max-height:none; }
+  /* Column flex + the base align-items:flex-start would otherwise size .data-main to its CONTENT
+     width (a wide table or long tree title), which .modules .data-main{ overflow-x:hidden } then clips
+     off-screen with no scrollbar — the core "clipped on mobile" bug. Pin it to the column width so
+     module content wraps/truncates/self-scrolls within the viewport instead. */
+  .data-main{ width:100%; }
+}
+
+/* Debug log panel (dev only, gated by DEBUG_LOG) — a live console tail. */
+.dbg{ max-width:760px; }
+.dbg-body{ margin-top:6px; max-height:60vh; overflow:auto; background:var(--code-bg); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; line-height:1.5; }
+.dbg-empty{ color:var(--soft); }
+.dbg-line{ display:flex; gap:8px; white-space:pre-wrap; word-break:break-word; padding:1px 0; }
+.dbg-t{ color:var(--soft); flex:0 0 auto; }
+.dbg-lvl{ flex:0 0 42px; text-transform:uppercase; font-size:10px; font-weight:700; opacity:.8; align-self:center; }
+.dbg-msg{ flex:1; min-width:0; color:var(--ink); }
+.dbg-line.warn .dbg-lvl,.dbg-line.warn .dbg-msg{ color:#a8742c; }
+.dbg-line.error .dbg-lvl,.dbg-line.error .dbg-msg{ color:#a8432c; }
+
+/* AI activity log panel — one expandable row per model call (+ the /whatdo decision event). */
+.ai-entry{ border-bottom:1px solid var(--line); }
+.ai-entry:last-child{ border-bottom:0; }
+.ai-row{ display:flex; align-items:center; gap:8px; width:100%; padding:4px 0; background:none; border:0; cursor:pointer; text-align:left; color:var(--ink); font:inherit; }
+.ai-caret{ flex:0 0 auto; color:var(--soft); }
+.ai-kind{ flex:0 0 auto; font-weight:700; }
+.ai-model{ flex:1; min-width:0; color:var(--soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ai-ms{ flex:0 0 auto; color:var(--soft); }
+.ai-badge{ flex:0 0 auto; font-size:10px; font-weight:700; text-transform:uppercase; padding:1px 6px; border-radius:6px; }
+.ai-badge.ok{ background:rgba(60,150,90,.18); color:#3c965a; }
+.ai-badge.bad{ background:rgba(168,67,44,.18); color:#a8432c; }
+.ai-badge.warn{ background:rgba(168,116,44,.18); color:#a8742c; }
+.ai-entry.bad .ai-kind{ color:#a8432c; }
+.ai-detail{ padding:2px 0 8px; }
+.ai-lbl{ margin-top:6px; font-size:10px; font-weight:700; text-transform:uppercase; color:var(--soft); }
+.ai-detail pre{ margin:2px 0 0; white-space:pre-wrap; word-break:break-word; color:var(--ink); }
+.ai-detail pre.ai-think{ color:var(--soft); font-style:italic; }
+
+/* ══════════════ Advanced module views (web-only GUI over tasks/notes/lists/metrics/templates) ══════════════ */
+/* A wider Settings-style overlay; each module view renders inside .data-main (its scroll container). */
+.settings.modules{ max-width:1040px; }
+.module-view{ display:flex; flex-direction:column; }
+.module-bar{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+.module-bar > .hint{ margin:0; }
+
+/* GUI / Text segmented toggle (the "current state as text as well as a GUI" control). */
+.view-toggle{ display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; flex:0 0 auto; }
+.view-toggle button{ background:var(--surface); color:var(--soft); border:0; padding:6px 13px; font:inherit; font-size:12px; cursor:pointer; }
+.view-toggle button + button{ border-left:1px solid var(--line); }
+.view-toggle button.on{ background:var(--teal); color:#fff; font-weight:700; }
+
+/* The plain-text mirror shown by every view's Text tab. */
+.text-mirror{ white-space:pre-wrap; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; line-height:1.55; color:var(--ink); background:var(--code-bg); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin:0; overflow:auto; max-height:56vh; }
+
+/* Inline "add" rows (task/note/list composers, step + metric-value forms). Override the global full-width
+   block input rule so the input and its button sit side by side. flex-wrap is the mobile safety valve:
+   on desktop these rows fit one line (wrap is a no-op), but on a narrow screen a control that can't fit
+   (a rigid date input, a long-placeholder select, a 4th child) drops to the next line instead of
+   overflowing the container — which is clipped by .modules .data-main{ overflow-x:hidden }. */
+.module-view .add-row, .task-editor .add-row{ display:flex; flex-wrap:wrap; gap:6px; row-gap:6px; flex:1; min-width:0; margin:0; }
+.module-view .add-row input, .task-editor .add-row input{ flex:1; width:auto; min-width:0; max-width:100%; margin-top:0; }
+/* The modules overlay reuses the .settings card, whose block/full-width select rule would otherwise hog
+   the whole add-row and crush the flexed inputs beside it (the diet unit pickers). max-width caps a long
+   option label so a content-sized select can't exceed the row (it wraps to its own line instead). */
+.module-view .add-row select, .task-editor .add-row select{ width:auto; flex:0 0 auto; max-width:100%; margin-top:0; }
+/* Vertical rhythm where a card stacks charts and inline forms back-to-back (the diet Today card). */
+.metric-card .metric-chart + .metric-chart{ margin-top:10px; }
+.metric-card .metric-chart + .add-row{ margin-top:10px; }
+.metric-card .add-row + .add-row{ margin-top:6px; }
+.module-view .add-row button, .task-editor .add-row button, .metric-add-row button{ background:var(--teal); color:#fff; border:0; border-radius:9px; padding:8px 14px; font:inherit; font-weight:600; font-size:13px; cursor:pointer; white-space:nowrap; }
+.module-view .add-row button:disabled, .task-editor .add-row button:disabled{ opacity:.45; cursor:default; }
+
+/* Shared chips + link/action buttons. */
+.chip{ display:inline-flex; align-items:center; gap:3px; font-size:11px; padding:1px 8px; border-radius:999px; background:var(--tealtint); color:var(--teal); border:1px solid var(--line); white-space:nowrap; }
+.chip.prio{ background:transparent; }
+.chip.effort{ background:var(--surface); color:var(--soft); }
+.chip.due{ background:var(--ambertint); color:#a8722a; border-color:#ecd9ac; }
+.module-view .link, .task-editor .link{ background:transparent; border:0; color:var(--teal); cursor:pointer; font:inherit; font-size:13px; padding:0 4px; }
+.module-view .link.danger, .task-editor .link.danger{ color:#a8432c; }
+.editor-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.editor-actions button{ background:var(--surface); border:1px solid var(--line); color:var(--ink); border-radius:9px; padding:7px 12px; font:inherit; font-size:13px; cursor:pointer; }
+.editor-actions button:hover{ border-color:var(--teal); color:var(--teal); }
+.editor-actions button.danger{ border-color:#d8b4ab; color:#a8432c; }
+.editor-actions button.danger:hover{ background:#a8432c14; }
+.editor-actions button:disabled{ opacity:.45; cursor:default; }
+.toast{ background:rgba(60,150,90,.15); color:#3c965a; border:1px solid #bfe3cf; border-radius:9px; padding:8px 12px; font-size:13px; margin:0 0 10px; }
+
+/* ── Tasks: Kanban ── */
+.kanban{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.kan-col{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:8px; min-height:120px; display:flex; flex-direction:column; gap:8px; }
+.kan-col.over{ border-color:var(--teal); background:var(--tealtint); }
+.kan-head{ display:flex; align-items:center; justify-content:space-between; font-weight:700; color:var(--navy); font-size:13px; padding:2px 4px; }
+.kan-head .n{ color:var(--soft); font-weight:600; font-size:12px; }
+.kan-card{ background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:8px 10px; cursor:grab; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.kan-card:hover{ border-color:var(--teal); }
+.kan-card:active{ cursor:grabbing; }
+.kan-sum{ font-size:14px; color:var(--ink); margin-bottom:5px; line-height:1.35; }
+.kan-meta{ display:flex; flex-wrap:wrap; gap:4px; }
+.kan-empty{ color:var(--soft); font-size:12px; text-align:center; padding:8px 0; }
+.slept-drawer{ margin-top:12px; border-top:1px dashed var(--line); padding-top:8px; }
+.slept-list{ display:flex; flex-direction:column; gap:4px; margin-top:6px; }
+.slept-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; color:var(--soft); }
+
+/* Task detail editor — a nested modal above the panel. */
+.settings-overlay.nested{ z-index:60; background:rgba(18,59,79,.45); }
+.task-editor{ background:var(--cream); border-radius:16px; width:100%; max-width:520px; padding:22px; box-shadow:0 20px 60px rgba(18,59,79,.3); max-height:calc(100vh - 80px); overflow:auto; }
+.task-editor .settings-head h3{ margin:0; color:var(--navy); font-size:18px; }
+.task-editor .x{ background:transparent; border:0; font-size:18px; color:var(--soft); cursor:pointer; }
+.fld{ display:block; margin-top:12px; }
+.fld > span{ display:block; font-size:12px; font-weight:700; color:var(--navy); margin-bottom:2px; }
+.fld input, .fld select{ display:block; width:100%; margin-top:0; border:1px solid var(--line); border-radius:9px; padding:9px 10px; font:inherit; background:var(--surface); color:var(--ink); }
+.fld-row{ display:flex; gap:12px; }
+.fld-row .fld{ flex:1; }
+.fld-label{ display:block; font-size:12px; font-weight:700; color:var(--navy); margin-top:14px; margin-bottom:4px; }
+.steps{ margin-top:12px; }
+.step{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 0; }
+.step label{ display:flex; align-items:center; gap:8px; margin:0; font-weight:400; cursor:pointer; }
+.step label input{ width:auto; margin:0; }
+.step .done{ text-decoration:line-through; color:var(--soft); }
+
+/* ── Notes: list + sidebar ── */
+.notes-split{ display:flex; gap:14px; align-items:flex-start; }
+.notes-side{ flex:0 0 240px; display:flex; flex-direction:column; gap:8px; }
+.filter-tabs, .range-tabs{ display:flex; gap:4px; flex-wrap:wrap; }
+.filter-tabs button, .range-tabs button{ background:var(--surface); border:1px solid var(--line); color:var(--soft); border-radius:8px; padding:5px 10px; font:inherit; font-size:12px; cursor:pointer; }
+.filter-tabs button.on, .range-tabs button.on{ background:var(--teal); color:#fff; border-color:var(--teal); }
+.recall-row{ display:flex; gap:4px; align-items:center; }
+.recall-row input{ flex:1; width:auto; margin-top:0; }
+.notes-list{ display:flex; flex-direction:column; gap:3px; max-height:46vh; overflow:auto; }
+.note-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:left; background:transparent; border:1px solid transparent; border-radius:8px; padding:7px 9px; font:inherit; color:var(--ink); cursor:pointer; }
+.note-item:hover{ background:var(--surface); }
+.note-item.on{ background:var(--tealtint); border-color:var(--line); }
+.note-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.note-date{ flex:0 0 auto; color:var(--soft); font-size:11px; }
+.notes-pane{ flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
+.note-title-edit{ margin-top:0; }
+.note-text-edit{ width:100%; margin-top:0; border:1px solid var(--line); border-radius:9px; padding:9px 10px; font:inherit; background:var(--surface); color:var(--ink); resize:vertical; }
+
+/* ── Metrics: table + graph per metric ── */
+.metric-card{ border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px; background:var(--surface); }
+.metric-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.metric-head b{ color:var(--navy); }
+.metric-chart{ display:block; max-width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; }
+/* The client-drawn (echarts) variant paints with theme tokens on a transparent canvas — no white slab. */
+.metric-chart.live{ background:var(--surface); }
+.metric-chart.empty{ color:var(--soft); font-size:13px; padding:22px; text-align:center; background:var(--code-bg); }
+.metric-table-wrap{ max-height:200px; overflow:auto; margin:10px 0; }
+.metric-add{ border-top:1px dashed var(--line); padding-top:12px; margin-top:8px; }
+.metric-add-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.metric-add-row input, .metric-add-row select{ width:auto; margin-top:0; flex:0 1 auto; border:1px solid var(--line); border-radius:9px; padding:8px 10px; font:inherit; background:var(--surface); color:var(--ink); }
+.metric-add-row input[name="name"]{ flex:1 1 130px; }
+
+/* ── Templates: gallery ── */
+.tpl-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
+.tpl-card{ border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--surface); display:flex; flex-direction:column; gap:6px; }
+.tpl-name{ font-weight:700; color:var(--navy); }
+.tpl-summary{ font-size:13px; color:var(--ink); }
+.tpl-card .editor-actions{ margin-top:auto; }
+
+/* ── Lists: nested tree ── */
+.tree{ font-size:14px; }
+.tree-row{ display:flex; align-items:center; gap:6px; padding:2px 0; }
+.tree-toggle{ background:transparent; border:0; color:var(--soft); cursor:pointer; width:18px; font-size:12px; flex:0 0 auto; }
+/* Let the title truncate (flex:1 + min-width:0) so a deep-nested row's cumulative indent pushes an
+   ellipsis, not the count/actions, off the right edge (which .modules .data-main clips). */
+.tree-title{ color:var(--ink); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tree-row .n{ color:var(--soft); font-size:11px; flex:0 0 auto; }
+.tree-edit{ width:auto; margin-top:0; flex:0 1 260px; border:1px solid var(--line); border-radius:7px; padding:3px 7px; font:inherit; background:var(--surface); color:var(--ink); }
+.tree-actions{ display:inline-flex; gap:2px; margin-left:4px; opacity:.5; flex:0 0 auto; }
+.tree-row:hover .tree-actions{ opacity:1; }
+.tree-add input{ width:auto; margin-top:0; }
+
+@media (max-width:640px){
+  .kanban{ grid-template-columns:1fr; }
+  .notes-split{ flex-direction:column; }
+  .notes-side{ flex-basis:auto; width:100%; }
+  /* Stack the task-editor's paired fields (Category/Priority, Deadline/Reminder) so two rigid
+     date/datetime inputs can't overflow the narrow modal. The .fld margin-top keeps their spacing. */
+  .fld-row{ flex-direction:column; gap:0; }
+  /* Reclaim horizontal room inside the module/settings cards on small screens (the left-nav Settings
+     card keeps its own padding:0 via the more specific .has-nav rule). */
+  .settings{ padding:16px; }
+  .task-editor{ padding:16px; }
+}

@@ -1,0 +1,21 @@
+# Normalize line endings: store LF in the repo, auto-handle on checkout.
+* text=auto eol=lf
+
+# Windows batch files must check out as CRLF — cmd.exe mis-parses some LF-only
+# constructs (multi-line parenthesized blocks, labels).
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Treat binary/asset types as binary (no EOL or diff munging).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.gguf binary
+*.bin  binary
+*.safetensors binary
+*.onnx binary
+*.db   binary
+*.sqlite binary

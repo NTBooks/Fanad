@@ -1,0 +1,16 @@
+{
+  "llm": {
+    "provider": "lmstudio",
+    "embedProvider": "lmstudio",
+    "baseUrl": "http://127.0.0.1:1234/v1",
+    "chatModel": "",
+    "embedModel": "",
+    "openai": { "chatModel": "gpt-4o-mini", "embedModel": "text-embedding-3-small" },
+    "gemini": { "chatModel": "gemini-2.0-flash", "embedModel": "text-embedding-004" },
+    "anthropic": { "chatModel": "claude-sonnet-4-6" }
+  },
+  "weather": {
+    "provider": "open-meteo",
+    "zip": ""
+  }
+}

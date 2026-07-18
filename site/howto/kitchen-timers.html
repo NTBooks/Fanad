@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Kitchen timers — Fanad how-to</title>
+<meta name="description" content="The one-shot ding that never touches your list: pasta, laundry, and the 20-minute 'just start' trick.">
+<link rel="stylesheet" href="./howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the article</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="../index.html">Fanad</a>
+    <a class="header-back" href="../manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">How-to</p>
+    <h1 id="page-title">Timers: the ding that never touches your list</h1>
+    <p class="hero-lead">Some things need a ding, not a task. The pasta, the laundry, the parking
+      meter &mdash; they're not commitments, they're eggs boiling.</p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<nav class="toc" aria-label="All how-tos">
+  <details open>
+    <summary>All how-tos</summary>
+    <div>
+      <h2>All how-tos</h2>
+      <ul>
+        <li><a href="./index.html">Overview</a></li>
+        <li><a href="./getting-it-out-of-your-head.html">Getting it out of your head</a></li>
+        <li><a href="./diet-and-meal-tracking.html">Diet &amp; meal tracking</a></li>
+        <li><a href="./problem-solving-journal.html">The problem-solving journal</a></li>
+        <li><a href="./nested-lists-and-groceries.html">Nested lists &amp; groceries</a></li>
+        <li><a href="./planning-a-party-with-steps.html">Planning a party with steps</a></li>
+        <li><a href="./household-memory.html">Household memory</a></li>
+        <li><a href="./reminders-and-deadlines.html">Reminders &amp; deadlines</a></li>
+        <li><a class="active" href="./kitchen-timers.html">Kitchen timers</a></li>
+        <li><a href="./routines-without-recurrence.html">Routines without recurrence</a></li>
+        <li><a href="./notebooks-separate-spaces.html">Notebooks: separate spaces</a></li>
+      </ul>
+      <a class="toc-back" href="../manual.html">&larr; Back to the manual</a>
+    </div>
+  </details>
+</nav>
+
+<article>
+
+<div class="subsec">
+  <h3>Turn it on, set one</h3>
+  <p>Putting the pasta on a task list is absurd &mdash; but you still reach for <em>something</em>, and
+    if Fanad is already the chat window you're standing in, it might as well hold the timer. That's the
+    whole module: a one-shot kitchen timer that lives in chat and leaves your list alone.</p>
+  <div class="ex-chat">
+    <p class="ex-you">optin timer</p>
+    <p class="ex-you">timer 12 min pasta</p>
+    <p class="ex-bot">⏰ Timer set — 12 min — pasta · rings 6:42 pm. (“timer” shows it · “timer off” cancels)
+
+…12 minutes later:
+⏰ Ding — 12 min is up: pasta.</p>
+    <div class="ex-btns"><span>✕ Cancel timer</span></div>
+  </div>
+  <p>Say the duration however it comes out of your mouth &mdash; <span class="cmd">timer 12 min pasta</span>,
+    <span class="cmd">timer 1h laundry</span>, <span class="cmd">timer 90 seconds</span>. The label is
+    optional but future-you appreciates knowing <em>which</em> ding this is when two are running.</p>
+</div>
+
+<div class="subsec">
+  <h3>Managing them</h3>
+  <ul>
+    <li><span class="cmd">timer</span> &mdash; bare, lists what's running and when each rings</li>
+    <li><span class="cmd">timer off 1</span> &mdash; cancels one (the set-confirmation also carries a
+      ✕&nbsp;Cancel button, so mis-sets die in one tap)</li>
+  </ul>
+  <p>And that's the entire command surface. It rings once, then it's gone.</p>
+</div>
+
+<div class="subsec">
+  <h3>What makes it different from a reminder</h3>
+  <p>It's worth being precise, because Fanad has <a href="./reminders-and-deadlines.html">both</a>:</p>
+  <table class="cmd-table">
+    <thead><tr><th scope="col">&nbsp;</th><th scope="col">Timer</th><th scope="col">Reminder</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Counts</strong></td><td>a duration (&ldquo;12 min from now&rdquo;)</td><td>a clock time (&ldquo;at 8pm&rdquo;)</td></tr>
+      <tr><td><strong>Lands on your list</strong></td><td>never</td><td>yes &mdash; the task stays until you <span class="cmd">done</span> it</td></tr>
+      <tr><td><strong>After it fires</strong></td><td>gone</td><td>the task remains</td></tr>
+      <tr><td><strong>Good for</strong></td><td>pasta, laundry, meters, breaks</td><td>bins, calls, meds, errands</td></tr>
+    </tbody>
+  </table>
+  <p>The rule of thumb: if you'd feel silly seeing it on tomorrow's list, it's a timer. &ldquo;Take the
+    bins out&rdquo; is a reminder &mdash; if you miss the ping, the task is still there tomorrow.
+    &ldquo;Pasta&rdquo; is a timer &mdash; if you miss the ding, no list can save the pasta.</p>
+</div>
+
+<div class="subsec">
+  <h3>Timers as a focus trick</h3>
+  <p>The sleeper use case has nothing to do with kitchens. A timer is the cheapest possible commitment
+    device:</p>
+  <div class="ex-chat">
+    <p class="ex-you">timer 20 min just start the gutters</p>
+  </div>
+  <p>Twenty minutes is small enough to start when the whole task feels impossible &mdash; and starting
+    is usually the entire problem. Pair it with a started task and its steps, and the ding becomes
+    permission to stop, which paradoxically makes starting easy. (If you're doing this daily,
+    <a href="./problem-solving-journal.html">the journal</a> can tell you whether it's actually working.)</p>
+  <p>Same trick, other direction: <span class="cmd">timer 30 min phone break</span>,
+    <span class="cmd">timer 1h then decide</span>. A ding is a boundary you set for yourself, delivered
+    by something that won't judge you either way when it arrives.</p>
+</div>
+
+</article>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./index.html">&larr; All how-tos</a> &nbsp;&middot;&nbsp; <a href="../manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="../cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="../index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var d = document.querySelector('.toc > details');
+  if (d && window.matchMedia('(max-width:959px)').matches) d.open = false;
+})();
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.subsec, .callout, .cmd-table, .ex-chat');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

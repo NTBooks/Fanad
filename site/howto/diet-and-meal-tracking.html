@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Diet &amp; meal tracking — Fanad how-to</title>
+<meta name="description" content="Calorie logging that converges to three words a meal: confirm-once foods, saved meals, and recipes priced by cooked weight.">
+<link rel="stylesheet" href="./howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the article</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="../index.html">Fanad</a>
+    <a class="header-back" href="../manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">How-to</p>
+    <h1 id="page-title">Tracking what you eat, without the database homework</h1>
+    <p class="hero-lead">You have maybe twenty foods and five meals you rotate through &mdash; so Fanad
+      learns <em>your</em> foods once, and then logging takes three words.</p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<nav class="toc" aria-label="All how-tos">
+  <details open>
+    <summary>All how-tos</summary>
+    <div>
+      <h2>All how-tos</h2>
+      <ul>
+        <li><a href="./index.html">Overview</a></li>
+        <li><a href="./getting-it-out-of-your-head.html">Getting it out of your head</a></li>
+        <li><a class="active" href="./diet-and-meal-tracking.html">Diet &amp; meal tracking</a></li>
+        <li><a href="./problem-solving-journal.html">The problem-solving journal</a></li>
+        <li><a href="./nested-lists-and-groceries.html">Nested lists &amp; groceries</a></li>
+        <li><a href="./planning-a-party-with-steps.html">Planning a party with steps</a></li>
+        <li><a href="./household-memory.html">Household memory</a></li>
+        <li><a href="./reminders-and-deadlines.html">Reminders &amp; deadlines</a></li>
+        <li><a href="./kitchen-timers.html">Kitchen timers</a></li>
+        <li><a href="./routines-without-recurrence.html">Routines without recurrence</a></li>
+        <li><a href="./notebooks-separate-spaces.html">Notebooks: separate spaces</a></li>
+      </ul>
+      <a class="toc-back" href="../manual.html">&larr; Back to the manual</a>
+    </div>
+  </details>
+</nav>
+
+<article>
+
+<div class="subsec">
+  <h3>Turn it on</h3>
+  <p>Most calorie apps make you search a database, pick the closest match from forty near-identical
+    entries, and adjust a slider. Fanad's Diet module works the way people actually eat. It's its own
+    module, off by default:</p>
+  <div class="ex-chat">
+    <p class="ex-you">optin diet</p>
+  </div>
+</div>
+
+<div class="subsec">
+  <h3>The first time you eat something</h3>
+  <p>Weigh it (kitchen scale, oz or grams) and say so. For a food Fanad has never seen, it makes one
+    guess at the calorie density &mdash; and you confirm or correct it <strong>once, ever</strong>:</p>
+  <div class="ex-chat">
+    <p class="ex-you">eat 4 oz chicken breast</p>
+    <p class="ex-bot">chicken breast ≈ 45 cal/oz (my guess) — 4 oz ≈ 180 cal.
+Reply “yes” to save &amp; log, send the right cal/oz (a bare number), or “no” to skip.</p>
+    <p class="ex-you">yes</p>
+    <p class="ex-bot">✓ chicken breast saved at 45 cal/oz — I’ll reuse it from now on.
+Logged 4 oz chicken breast: 180 cal.
+• calories: 180 / 2000 kcal</p>
+  </div>
+  <p>After that, it's canonical and never re-guessed:</p>
+  <div class="ex-chat">
+    <p class="ex-you">eat 6 oz chicken breast</p>
+    <p class="ex-bot">Logged 6 oz chicken breast: 270 cal.
+• calories: 450 / 2000 kcal</p>
+  </div>
+  <p>If you already know the number, your count always wins &mdash; no guess, no question.
+    <span class="cmd">eat olives 80 cal</span> saves olives at 80 calories a serving, and from then on
+    a bare <span class="cmd">eat olives</span> logs one serving. Foods that come in pieces just count:
+    <span class="cmd">eat 2 eggs</span>.</p>
+  <div class="callout" role="note">
+    <span class="label">One number, no macros</span>
+    <p>One calories number, no macros. That's deliberate &mdash; the goal is a total you'll actually
+      keep, not a spreadsheet you'll abandon in March.</p>
+  </div>
+</div>
+
+<div class="subsec">
+  <h3>Meals: the same breakfast every day</h3>
+  <p>If you eat the same thing most mornings, save it once:</p>
+  <div class="ex-chat">
+    <p class="ex-you">save meal breakfast 2 eggs, skyr, toast 450 cal</p>
+    <p class="ex-bot">✓ breakfast saved at 450 cal/serving (2 eggs, skyr, toast). “eat breakfast” logs it.</p>
+  </div>
+  <p>Leave the total off and Fanad prices the meal from your saved foods, guessing only the unknowns,
+    behind a single yes/number/no question. Either way, tomorrow morning the entire transaction is:</p>
+  <div class="ex-chat">
+    <p class="ex-you">eat breakfast</p>
+    <p class="ex-bot">Logged breakfast: 450 cal.</p>
+  </div>
+</div>
+
+<div class="subsec">
+  <h3>Recipes: the pot of chili problem</h3>
+  <p>Home cooking is where calorie tracking usually dies, because a &ldquo;serving&rdquo; of something
+    you made is meaningless. Fanad does it the honest way &mdash; total calories in, divided by cooked
+    weight out:</p>
+  <div class="ex-chat">
+    <p class="ex-you">recipe chili = 16 oz chicken breast, 8 oz olives @ 28 oz cooked</p>
+    <p class="ex-bot">🍲 chili:
+  • chicken breast — 16 oz @ 45 cal/oz = 720 cal
+  • olives — 8 oz @ 47 cal/oz = 376 cal
+= 1096 cal ÷ 28 oz cooked = 39.1 cal/oz. Log it with: eat 8 oz chili</p>
+  </div>
+  <p>(Weigh the whole pot, subtract the pot.) There's also a conversational version &mdash;
+    <span class="cmd">recipe new chili</span> walks you through it a line at a time. Once built, a
+    recipe logs like any other food: scoop out a portion, weigh it, <span class="cmd">eat 8 oz chili</span>.</p>
+</div>
+
+<div class="subsec">
+  <h3>The daily picture</h3>
+  <table class="cmd-table">
+    <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+    <tbody>
+      <tr><td><span class="cmd">target 1800</span></td><td>Sets the calorie goal every tally is measured against.</td></tr>
+      <tr><td><span class="cmd">weight 182</span></td><td>Logs today's body weight.</td></tr>
+      <tr><td><span class="cmd">tally</span></td><td>Shows where the day stands.</td></tr>
+      <tr><td><span class="cmd">undo</span></td><td>Removes the last logged portion &mdash; no fixing typos by hand.</td></tr>
+      <tr><td><span class="cmd">foods</span></td><td>Lists your library; <span class="cmd">food set</span> and <span class="cmd">food del</span> correct or remove an entry.</td></tr>
+    </tbody>
+  </table>
+  <p>Two details that keep the numbers honest: the day rolls over at <strong>2:00&nbsp;am</strong>, not
+    midnight, so a 1&nbsp;am snack still counts against the evening it belongs to. And days follow
+    <em>your</em> timezone &mdash; if Fanad runs on a hosted box, set your weather location in Settings
+    so the server's clock matches yours.</p>
+  <p>The web app adds a Diet report view: daily totals, a weight chart over time, and inline
+    edit/delete on the food log for anything you got wrong.</p>
+</div>
+
+<div class="subsec">
+  <h3>Why it stays easy</h3>
+  <p>The whole system converges. Every food you confirm makes the next log shorter, until a normal day
+    is four messages: <span class="cmd">eat breakfast</span>, <span class="cmd">eat lunch</span>,
+    <span class="cmd">eat 8 oz chili</span>, <span class="cmd">weight 182</span>. That's the entire
+    overhead &mdash; which is about what a habit can actually afford.</p>
+</div>
+
+</article>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./index.html">&larr; All how-tos</a> &nbsp;&middot;&nbsp; <a href="../manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="../cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="../index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var d = document.querySelector('.toc > details');
+  if (d && window.matchMedia('(max-width:959px)').matches) d.open = false;
+})();
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.subsec, .callout, .cmd-table, .ex-chat');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

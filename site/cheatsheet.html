@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fanad — Quickstart &amp; Cheat Sheet</title>
+<style>
+  :root {
+    --ink: #1a1d21;
+    --dim: #5a6068;
+    --line: #c9ced4;
+    --accent: #0e7490;
+    --accent-soft: #e6f3f6;
+    --box-bg: #ffffff;
+    --page-bg: #f4f5f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--page-bg); }
+  body {
+    font: 9.6pt/1.38 "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+  }
+  .sheet {
+    width: 8.5in; min-height: 11in;
+    margin: 0 auto; padding: 0.3in 0.34in;
+    background: #fff;
+    display: flex; flex-direction: column;
+  }
+  @media screen { .sheet { box-shadow: 0 2px 14px rgba(0,0,0,.15); margin: 16px auto; } }
+  @page { size: letter; margin: 0; }
+  @media print {
+    /* Remap the palette for PAPER, not a backlit screen: the on-screen teal tints and light grays print
+       washed-out, and disappear entirely on a black-and-white laser printer. Darken the secondary text,
+       define the borders, and deepen the accent to a value that still reads once converted to grayscale —
+       so the sheet has good contrast whether it comes out in color or B&W. */
+    :root {
+      --ink: #000;
+      --dim: #34383d;          /* description column — the bulk of the text; crisp but still secondary */
+      --line: #7d848c;         /* boxes & rules stay defined in grayscale */
+      --accent: #0a4f63;       /* deep teal → legible in color AND as a dark gray in B&W */
+      --accent-soft: #eef1f2;  /* near-white fill; contributes no contrast, just a subtle panel */
+    }
+    html, body { background: #fff; }
+    body { color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet { box-shadow: none; margin: 0; width: auto; min-height: auto; }
+    /* Two sides of one card: force the back onto a fresh sheet, keep each side from splitting across pages. */
+    .sheet + .sheet { break-before: page; }
+    .box, header, footer { break-inside: avoid; }
+    /* Command "chips": swap the faint teal tint for a solid light-gray fill + hairline border. The border
+       survives even when a browser prints with background graphics off, so a command is always delineated. */
+    code { background: #ececec; border: 1px solid #b4bac0; color: #000; }
+    .box.web code { background: #fff; border-color: #b4bac0; }
+    kbd { background: #fff; border-color: #000; }
+  }
+
+  header {
+    display: flex; align-items: baseline; gap: 10px;
+    border-bottom: 2px solid var(--ink); padding-bottom: 3px; margin-bottom: 7px;
+  }
+  header h1 { font-size: 17.4pt; letter-spacing: .01em; }
+  header .tag { color: var(--dim); font-size: 10pt; font-style: italic; }
+  header .rule { margin-left: auto; text-align: right; font-size: 8.4pt; color: var(--dim); max-width: 4.1in; }
+  header .rule b { color: var(--ink); }
+  header .side { margin-left: auto; font-size: 8.3pt; font-weight: 600; color: var(--accent);
+    letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+
+  .grid { columns: 2; column-gap: 10px; }
+  .box {
+    border: 1px solid var(--line); border-radius: 5px;
+    background: var(--box-bg); padding: 6px 9px 7px;
+    break-inside: avoid; margin-bottom: 9px;
+  }
+  .box h2 {
+    font-size: 10.1pt; text-transform: uppercase; letter-spacing: .05em;
+    border-bottom: 1px solid var(--line); padding-bottom: 3px; margin-bottom: 4px;
+    display: flex; align-items: baseline; gap: 5px;
+  }
+  .box h2 .opt { margin-left: auto; font-size: 7.6pt; font-weight: 600; color: var(--accent);
+    text-transform: none; letter-spacing: 0; white-space: nowrap; }
+  .box.core h2 { border-bottom-color: var(--ink); }
+  .box.web { border: 1.5px solid var(--accent); background: var(--accent-soft); margin: 0 0 7px; }
+  .box.web h2 { color: var(--accent); border-bottom-color: var(--accent); }
+
+  table { width: 100%; border-collapse: collapse; }
+  td { vertical-align: top; padding: 2px 0; }
+  td.c { white-space: nowrap; padding-right: 10px; }
+  td.d { color: var(--dim); }
+  code {
+    font: 8.8pt/1.25 Consolas, "Cascadia Code", monospace;
+    background: rgba(14,116,144,.07); border-radius: 3px; padding: 0 3px;
+    white-space: nowrap;
+  }
+  /* A handful of example commands are too long to sit on one line in a two-column box; let just those wrap
+     (at their spaces/commas) so the command column can't force the table wider than its box. */
+  code.wrap { white-space: normal; }
+  .box.web code { background: rgba(255,255,255,.85); }
+  .note { color: var(--dim); font-size: 8.3pt; margin-top: 4px; }
+  .note b { color: var(--ink); }
+
+  .keys { display: flex; flex-wrap: wrap; gap: 5px 9px; margin-top: 4px; }
+  .keys span { white-space: nowrap; color: var(--dim); }
+  kbd {
+    font: bold 8.7pt Consolas, monospace; color: var(--ink);
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px;
+    padding: 1px 4px; background: #fff;
+  }
+
+  footer {
+    margin-top: auto; padding-top: 6px; border-top: 1px solid var(--line);
+    font-size: 8.2pt; color: var(--dim); display: flex; gap: 14px; flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================ FRONT — the everyday core ============================ -->
+<div class="sheet">
+
+<header>
+  <h1>Fanad</h1>
+  <div class="tag">Get it out of your head.</div>
+  <div class="rule"><b>The one rule:</b> make a statement → it’s filed as a task. Ask a question → it’s answered.
+  The <code>/</code> prefix is always optional — it just escapes an open question.</div>
+</header>
+
+<div class="grid">
+
+  <div class="box core">
+    <h2>⚡ Quickstart</h2>
+    <table>
+      <tr><td class="c"><code>clean the gutters</code></td><td class="d">any thought → saved verbatim as a task</td></tr>
+      <tr><td class="c"><code>… by friday p1</code></td><td class="d">deadline + priority parsed out for you</td></tr>
+      <tr><td class="c"><code>… on jun 30 3pm</code></td><td class="d">deadline <i>and</i> a reminder at that time</td></tr>
+      <tr><td class="c"><code>/today call mom</code></td><td class="d">pin it to end of today</td></tr>
+      <tr><td class="c"><code>paste a link</code></td><td class="d">grabs the page title → a titled, clickable task</td></tr>
+      <tr><td class="c"><code>done 3</code></td><td class="d">act by the № on the last listing</td></tr>
+      <tr><td class="c"><code>c</code></td><td class="d">pop the tappable command menu</td></tr>
+    </table>
+    <div class="note">A photo with no caption parks in your notes inbox. Numbers always mean the last list you saw — never IDs.</div>
+  </div>
+
+  <div class="box core">
+    <h2>✅ Tasks</h2>
+    <table>
+      <tr><td class="c"><code>tasks</code> · <code>tasks today</code></td><td class="d">list (or counts → drill in) · <code>next</code>/<code>prev</code> pages</td></tr>
+      <tr><td class="c"><code>start 2</code> · <code>done 2</code></td><td class="d">work one at a time · finish (or <code>done 1 2 3</code>)</td></tr>
+      <tr><td class="c"><code>unstart</code> · <code>/snoozed</code></td><td class="d">un-start without finishing · see snoozed + <code>unsnooze 1</code></td></tr>
+      <tr><td class="c"><code>undo</code></td><td class="d">take back the last thing Fanad did (capture, done, eat, timer…)</td></tr>
+      <tr><td class="c"><code>step rinse the pan</code></td><td class="d">add a step to the task you’re on · <code>unstep 2</code></td></tr>
+      <tr><td class="c"><code>guess</code></td><td class="d">AI breaks the started task into a checklist</td></tr>
+      <tr><td class="c"><code>/drop 1</code> · <code>sleeping</code></td><td class="d">let one go · idle 21 days auto-sleeps · <code>revive 1</code></td></tr>
+      <tr><td class="c"><code>/cal 1</code> · <code>/pic 1</code></td><td class="d">calendar .ics for a dated task · a picture card</td></tr>
+      <tr><td class="c"><code>template 3 weekly</code></td><td class="d">save task 3 as “weekly” · <code>template weekly</code> reloads it</td></tr>
+    </table>
+  </div>
+
+  <div class="box core">
+    <h2>💡 Coach &amp; Recall</h2>
+    <table>
+      <tr><td class="c"><code>whatdo</code></td><td class="d">suggest a task for your mood — say <i>yes / smaller / not today</i></td></tr>
+      <tr><td class="c"><code>/summary this week</code></td><td class="d">what happened lately</td></tr>
+      <tr><td class="c"><code>/recall spare key</code></td><td class="d">search everything you’ve told it</td></tr>
+      <tr><td class="c"><code>mood 🙂</code></td><td class="d">tell it how you feel (an emoji alone works)</td></tr>
+      <tr><td class="c"><code>lock work</code> · <code>/unlock</code></td><td class="d">focus every capture into one category</td></tr>
+      <tr><td class="c"><code>wake 8:30</code></td><td class="d">daily check-in · <code>wakelist</code> · <code>wake off 1</code></td></tr>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>📝 Notes <span class="opt">optin notes</span></h2>
+    <table>
+      <tr><td class="c"><code>note buy milk</code></td><td class="d">into the inbox — not the task list</td></tr>
+      <tr><td class="c"><code>/notes</code></td><td class="d">read the inbox</td></tr>
+      <tr><td class="c"><code>/promote 1</code></td><td class="d">note № 1 becomes a task</td></tr>
+      <tr><td class="c"><code>forget 1</code></td><td class="d">delete a listed note</td></tr>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>🗂 Lists <span class="opt">optin lists</span></h2>
+    <table>
+      <tr><td class="c"><code>lists</code> · <code>/list groceries</code></td><td class="d">hub · create / open a list</td></tr>
+      <tr><td class="c"><code>sub 2</code> · <code>sub 2 eggs</code></td><td class="d">descend into item 2 · quick-add a child</td></tr>
+      <tr><td class="c"><i>any line</i></td><td class="d">while a list is open, it’s added as an item</td></tr>
+      <tr><td class="c"><code>out</code> · <code>top</code> · <code>del 3</code> · <code>exit</code></td><td class="d">navigate, prune, leave</td></tr>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>📈 Metrics <span class="opt">optin metrics</span></h2>
+    <table>
+      <tr><td class="c"><code>metric add weight lbs</code></td><td class="d">define what to track</td></tr>
+      <tr><td class="c"><code>track weight 182</code></td><td class="d">log a value · <code>tally</code> counts +1s</td></tr>
+      <tr><td class="c"><code>chart weight 30d</code></td><td class="d">a graph over a range</td></tr>
+      <tr><td class="c"><code>metrics</code> · <code>undo</code></td><td class="d">overview · take back the last entry (undo is app-wide)</td></tr>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>🧩 Modules &amp; Help</h2>
+    <table>
+      <tr><td class="c"><code>modules</code></td><td class="d">what’s on/off, tap to toggle · <code>optin</code>/<code>optout &lt;name&gt;</code></td></tr>
+      <tr><td class="c"><code>help</code> · <code>guide lists</code></td><td class="d">topic hub · one topic walkthrough</td></tr>
+      <tr><td class="c"><code>commands</code> · <code>/me</code></td><td class="d">the full command list · what it knows about you</td></tr>
+      <tr><td class="c"><code>h how do timers work</code></td><td class="d">ask the manual anything</td></tr>
+      <tr><td class="c"><code>vouch @friend</code></td><td class="d">invite someone onto your server</td></tr>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>⌨ Shortcuts</h2>
+    <div class="keys">
+      <span><kbd>n</kbd> note</span>
+      <span><kbd>t</kbd> task</span>
+      <span><kbd>d</kbd> done</span>
+      <span><kbd>k</kbd> drop</span>
+      <span><kbd>u</kbd> undo</span>
+      <span><kbd>s</kbd> step</span>
+      <span><kbd>r</kbd> recall</span>
+      <span><kbd>g</kbd> guide</span>
+      <span><kbd>x</kbd> today</span>
+      <span><kbd>j</kbd> journal</span>
+      <span><kbd>h</kbd> manual</span>
+      <span><kbd>w</kbd> whatdo</span>
+      <span><kbd>c</kbd> menu</span>
+    </div>
+    <div class="note">A letter + a space, e.g. <code>n buy milk</code>. Bare <kbd>w</kbd> <kbd>u</kbd> <kbd>j</kbd> <kbd>h</kbd> work alone.</div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============================ BACK — the opt-in modules &amp; the web app ============================ -->
+<div class="sheet">
+
+<header>
+  <h1>Fanad</h1>
+  <div class="tag">The opt-in modules.</div>
+  <div class="side">Back · flip for the core</div>
+</header>
+
+<div class="grid">
+
+  <div class="box">
+    <h2>🍽 Diet <span class="opt">optin diet</span></h2>
+    <table>
+      <tr><td class="c"><code>eat 4oz chicken breast</code></td><td class="d">log it — unknown food? one AI guess, you confirm once</td></tr>
+      <tr><td class="c"><code class="wrap">eat 8oz chicken, half a pepper, 5 mushrooms</code></td><td class="d">a comma list = a one-off plate; each amount binds to its own item, logged as one entry</td></tr>
+      <tr><td class="c"><code>eat whatever</code></td><td class="d">a cheat/off day — tinted on the graph, skipped in your average (<code>eat whatever off</code> undoes)</td></tr>
+      <tr><td class="c"><code>foods</code> · <code>food add 7up 12</code></td><td class="d">your canonical foods (last number = calories)</td></tr>
+      <tr><td class="c"><code>recipe new chili</code></td><td class="d">build a recipe conversationally · <code>recipes</code></td></tr>
+      <tr><td class="c"><code>weight 182</code> · <code>target 1800</code></td><td class="d">weigh-in graph · daily calorie goal</td></tr>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>📔 Journal <span class="opt">optin journal</span></h2>
+    <table>
+      <tr><td class="c"><code>journal new food</code></td><td class="d">start a trend journal (a pet’s works too)</td></tr>
+      <tr><td class="c"><code>entry</code> · <code>check 1 2</code></td><td class="d">open today · tick checklist items</td></tr>
+      <tr><td class="c"><code>j note had dairy</code></td><td class="d">add a note to the day</td></tr>
+      <tr><td class="c"><code>journal week</code> · <code>journal trends</code></td><td class="d">AI summaries &amp; patterns over time</td></tr>
+    </table>
+  </div>
+
+  <div class="box">
+    <h2>🧪 Batches <span class="opt">optin batches</span></h2>
+    <table>
+      <tr><td class="c"><code>batch new sourdough</code></td><td class="d">start a run from your latest saved version</td></tr>
+      <tr><td class="c"><code>batch check 1 2</code> · <code>batch log …</code></td><td class="d">tick steps · add a dated line</td></tr>
+      <tr><td class="c"><code>batch add/edit/rm</code></td><td class="d">tweak the run’s steps as you go</td></tr>
+      <tr><td class="c"><code>batch save</code></td><td class="d">graduate the tweaks into a new version (auto-numbered)</td></tr>
+      <tr><td class="c"><code>batch done tangy, best yet</code></td><td class="d">close the run with its outcome</td></tr>
+      <tr><td class="c"><code>batch reject sourdough #2</code></td><td class="d">drop a bad version · <code>versions</code>/<code>history</code> to review</td></tr>
+    </table>
+    <div class="note">Tweak each run, save the winners as versions — no reminders, no recurrence.</div>
+  </div>
+
+  <div class="box">
+    <h2>⏰ Timer <span class="opt">optin timer</span></h2>
+    <table>
+      <tr><td class="c"><code>timer 12 min pasta</code></td><td class="d">one-shot ding (label optional)</td></tr>
+      <tr><td class="c"><code>timer</code> · <code>timer off 1</code></td><td class="d">what’s running · cancel one</td></tr>
+    </table>
+    <div class="note">A timer is a ding, not a task — nothing to clean up after.</div>
+  </div>
+
+  <div class="box">
+    <h2>🏠 Home Assistant <span class="opt">optin ha</span></h2>
+    <table>
+      <tr><td class="c"><code>ha turn off the kitchen light</code></td><td class="d">anything after <code>ha</code> goes to HA’s own assistant</td></tr>
+      <tr><td class="c"><code>ha</code> · <code>ha test</code></td><td class="d">connection &amp; outputs status · ring every output now</td></tr>
+      <tr><td class="c"><code>ha cal 3</code></td><td class="d">push dated task 3 onto the house calendar (🏠 button on <code>/cal</code> too)</td></tr>
+    </table>
+    <div class="note">Your timers &amp; reminders also ring the house — a voice satellite speaks them, a script
+    can sound a siren, phones get a push. The owner pairs HA in Settings → Home Assistant.
+    Dashboards: <code>GET /api/ha/summary</code> + a read-only token (Settings → Security) feeds HA sensors —
+    counts only, <code>?titles=1</code> to opt content in. Recipes in the manual.</div>
+  </div>
+
+  <div class="box">
+    <h2>📓 Notebooks <span class="opt">optin notebook</span></h2>
+    <table>
+      <tr><td class="c"><code>notebook work</code></td><td class="d">open (or create) a separate private space</td></tr>
+      <tr><td class="c"><code>notebook</code></td><td class="d">list yours · <code>notebook main</code> heads home</td></tr>
+      <tr><td class="c"><code>notebook retire work</code></td><td class="d">hide one (kept) · <code>notebook recover work</code> brings it back</td></tr>
+    </table>
+    <div class="note">Each notebook has its own tasks, notes &amp; lists.</div>
+  </div>
+
+  <div class="box web">
+    <h2>🌐 The Web App — for more control</h2>
+    <table>
+      <tr><td class="c"><code>/web</code></td><td class="d">type it in <b>Telegram or Slack</b> → a one-time sign-in link that opens Fanad
+        in your browser, already signed in as you. It works once and expires in minutes — run <code>/web</code> again anytime.</td></tr>
+      <tr><td class="c"><code>cmd</code></td><td class="d">type it in any chat (web or a Telegram/Slack DM) → a ready-to-paste <code>fanad &lt;server&gt; &lt;token&gt;</code>
+        command for the <b>terminal client</b> (a full-screen chat in your console). Admin opt-in: the owner enables it under
+        Settings → Security → Terminal client tokens. The token is shown once and expires in 90 days; revoke anytime in the same place.</td></tr>
+    </table>
+    <div class="note">Everything on this sheet works in the web chat too, plus GUI views the phone can’t do:
+    <b>kanban board</b> for tasks, <b>notes wall</b>, <b>metric charts</b>, <b>lists outliner</b>, <b>templates</b>,
+    <b>diet report</b> with inline food-log edits, the <b>📔 journal</b>, and <b>🧪 batches</b> — toggle GUI/Text per view, pick a theme,
+    and manage your modules in Settings.</div>
+    <div class="note">On a wide screen the web chat also floats <b>side panels</b> in the empty space beside the
+    column: a <b>shortcut legend</b> on the left (tap a letter to start that command) and a <b>status panel</b> on the
+    right — your module toggles, the task you’re working on, upcoming timers &amp; reminders, and today’s notebook /
+    mood / date. Both follow your module opt-ins, and one <code>»</code> button hides the whole layer at once.</div>
+  </div>
+
+</div>
+
+<footer>
+  <span><b>Fanad</b> — your assignment pad. Local-first; your data stays on your box.</span>
+  <span>Tasks are always on; every other module is off until you <code>optin</code>.</span>
+  <span style="margin-left:auto">Full manual: <code>h</code> in chat, or 📖 in the web app.</span>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "setup-wizard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server/scripts/setup-server.js", "--env-path", ".claude/preview-wizard.env", "--port", "8899", "--no-open"],
+      "port": 8899
+    },
+    {
+      "name": "report",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [".claude/serve-report.cjs"],
+      "port": 4321
+    },
+    {
+      "name": "fanad",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--env-file-if-exists=.claude/mock.env", "server/index.js"],
+      "port": 8787,
+      "autoPort": true
+    },
+    {
+      "name": "fanad-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--workspace", "web", "run", "dev"],
+      "port": 5173,
+      "autoPort": true
+    }
+  ]
+}

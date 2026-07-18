@@ -1,0 +1,27 @@
+# Nixpacks build config for Coolify (Build Pack = Nixpacks). See DEPLOY-COOLIFY.md.
+#
+# Why this file exists: Nixpacks' built-in Node provider falls back to Node 18 here (it ignores
+# .nvmrc / engines for versions it doesn't know). This app REQUIRES Node 24 — it uses the built-in
+# `node:sqlite` module (no such thing on Node 18) and `--env-file-if-exists`. So we pin Node 24
+# directly by naming the nix package and an archive that contains it (nixos-25.05, which ships
+# nodejs_24). This is version-independent: it works regardless of which Nixpacks version Coolify bundles.
+#
+# Build flow (monorepo): npm ci installs root + the `web` workspace; `npm run build` runs vite to
+# produce web/dist; `npm run start` runs the Express server, which serves that built frontend.
+# Nixpacks sets NPM_CONFIG_PRODUCTION=false during build, so web's devDeps (vite) install even though
+# NODE_ENV=production — devDeps are present at build time and the app runs in production mode.
+
+providers = ['node']
+
+[phases.setup]
+nixPkgs = ['nodejs_24']
+nixpkgsArchive = 'ac62194c3917d5f474c1a844b6fd6da2db95077d'
+
+[phases.install]
+cmds = ['npm ci']
+
+[phases.build]
+cmds = ['npm run build']
+
+[start]
+cmd = 'npm run start'

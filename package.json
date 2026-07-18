@@ -1,0 +1,40 @@
+{
+  "name": "fanad",
+  "version": "0.2.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Local-first, local-LLM RAG life-OS. You text your future self; it stays grounded in your own data.",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "workspaces": [
+    "web",
+    "cli"
+  ],
+  "bin": {
+    "fanad": "bin/fanad.js"
+  },
+  "scripts": {
+    "setup": "node server/scripts/setup-server.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "build": "npm --workspace web run build && npm --workspace cli run build",
+    "web:dev": "npm --workspace web run dev",
+    "token": "node --env-file-if-exists=.env server/scripts/mint-cli-token.js",
+    "restore": "node --env-file-if-exists=.env server/scripts/restore-backup.js",
+    "chat": "node cli/dist/index.js",
+    "reindex": "node --env-file-if-exists=.env server/scripts/reindex-embeddings.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@slack/bolt": "^4.2.0",
+    "dejavu-fonts-ttf": "^2.37.3",
+    "echarts": "^6.1.0",
+    "express": "^4.21.2",
+    "grammy": "^1.44.0",
+    "otplib": "^13.4.1",
+    "qrcode": "^1.5.4"
+  }
+}

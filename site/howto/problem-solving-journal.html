@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>The problem-solving journal — Fanad how-to</title>
+<meta name="description" content="Finding slow patterns — 'is it the dairy?' — with a daily checklist, a one-line note, and AI trend summaries that name their evidence.">
+<link rel="stylesheet" href="./howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the article</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="../index.html">Fanad</a>
+    <a class="header-back" href="../manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">How-to</p>
+    <h1 id="page-title">The problem-solving journal: &ldquo;is it the dairy?&rdquo;</h1>
+    <p class="hero-lead">Some problems live across weeks, and your memory doesn't. Log a little every
+      day, and let Fanad read it back over time.</p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<nav class="toc" aria-label="All how-tos">
+  <details open>
+    <summary>All how-tos</summary>
+    <div>
+      <h2>All how-tos</h2>
+      <ul>
+        <li><a href="./index.html">Overview</a></li>
+        <li><a href="./getting-it-out-of-your-head.html">Getting it out of your head</a></li>
+        <li><a href="./diet-and-meal-tracking.html">Diet &amp; meal tracking</a></li>
+        <li><a class="active" href="./problem-solving-journal.html">The problem-solving journal</a></li>
+        <li><a href="./nested-lists-and-groceries.html">Nested lists &amp; groceries</a></li>
+        <li><a href="./planning-a-party-with-steps.html">Planning a party with steps</a></li>
+        <li><a href="./household-memory.html">Household memory</a></li>
+        <li><a href="./reminders-and-deadlines.html">Reminders &amp; deadlines</a></li>
+        <li><a href="./kitchen-timers.html">Kitchen timers</a></li>
+        <li><a href="./routines-without-recurrence.html">Routines without recurrence</a></li>
+        <li><a href="./notebooks-separate-spaces.html">Notebooks: separate spaces</a></li>
+      </ul>
+      <a class="toc-back" href="../manual.html">&larr; Back to the manual</a>
+    </div>
+  </details>
+</nav>
+
+<article>
+
+<div class="subsec">
+  <h3>The kind of problem this solves</h3>
+  <p>Some problems don't announce themselves. The headaches that show up <em>some</em> afternoons.
+    Sleep that's fine for a week and then isn't. The dog's limp that comes and goes just often enough
+    that you can't describe it properly at the vet.</p>
+  <p>You can't think your way to these answers, because the pattern lives across weeks and your memory
+    doesn't. What works is boring: log a little every day, then read it back over time. Fanad's Journal
+    module does the logging with two small moves a day, and does the reading back for you.</p>
+</div>
+
+<div class="subsec">
+  <h3>The setup, once</h3>
+  <p>Say the mystery is afternoon headaches, and your hunch is dairy.</p>
+  <p><strong>1. Turn it on:</strong> <span class="cmd">optin journal</span></p>
+  <p><strong>2. Build your daily checklist as a template.</strong> File a task, give it steps for
+    whatever you want to correlate later, save it:</p>
+  <div class="ex-chat">
+    <p class="ex-you">morning checks</p>
+    <p class="ex-you">step walk the dog</p>
+    <p class="ex-you">step no dairy breakfast</p>
+    <p class="ex-you">step meds</p>
+    <p class="ex-you">/template 1 morning-checks</p>
+    <p class="ex-bot">🗂 Saved template “morning-checks” (3 steps).</p>
+  </div>
+  <p>The &ldquo;no dairy breakfast&rdquo; item <em>is</em> the experiment. Everything else is context.</p>
+  <p><strong>3. Point a journal at it:</strong></p>
+  <div class="ex-chat">
+    <p class="ex-you">journal new food</p>
+    <p class="ex-you">journal template morning-checks</p>
+    <p class="ex-bot">✓ “food” now uses the “morning-checks” checklist (3 items)</p>
+  </div>
+  <p>The checklist is snapshotted &mdash; editing the template later never rewrites your journal.</p>
+</div>
+
+<div class="subsec">
+  <h3>The daily habit: two moves</h3>
+  <p><strong>Open today and tick the boxes:</strong></p>
+  <div class="ex-chat">
+    <p class="ex-you">entry</p>
+    <p class="ex-bot">📔 food — 2026-07-09 (fresh entry)
+Checklist 0/3:
+1. ☐ walk the dog
+2. ☐ no dairy breakfast
+3. ☐ meds</p>
+    <p class="ex-you">check 1 3</p>
+  </div>
+  <p><strong>Then let the note carry the story.</strong> This is where trends hide &mdash; jot symptoms,
+    food, mood, anything:</p>
+  <div class="ex-chat">
+    <p class="ex-you">j note had dairy at lunch, headache by 3pm</p>
+    <p class="ex-bot">📝 Added to today’s “food” note.</p>
+  </div>
+  <p>That's it. Under a minute. An unticked box is data, not guilt, and a skipped day is data too &mdash;
+    Fanad never scolds you for gaps.</p>
+  <p>Each night, Fanad quietly summarizes the finished day, and weeks and months are built from those
+    summaries. That's why the journal stays fast no matter how long it runs &mdash; month-old detail is
+    never re-read raw.</p>
+</div>
+
+<div class="subsec">
+  <h3>Reading it back</h3>
+  <p>After a few days:</p>
+  <div class="ex-chat">
+    <p class="ex-you">journal week</p>
+    <p class="ex-bot">📅 food · 2026-W28
+You kept 5 of 7 days. Adherence held around 80% — dairy turned up in three notes, headaches in two, both in the back half of the week.</p>
+  </div>
+  <p>And once it's been running a while, the long look:</p>
+  <div class="ex-chat">
+    <p class="ex-you">journal trends</p>
+    <p class="ex-bot">🧭 food — trends
+One pattern might be worth watching: headaches turned up on 4 of the 5 days that followed dairy. Tentative — the data is still thin.
+
+🩺 These are patterns in what you logged, not medical advice — a real conversation with a doctor (or vet) is the next step if one worries you.</p>
+  </div>
+  <div class="callout" role="note">
+    <span class="label">Honest by design</span>
+    <p>Notice what it's doing: naming its evidence, staying tentative on thin data, and reminding you
+      it isn't a doctor. Fanad only ever describes what you actually logged &mdash; it never invents a
+      day, and that disclaimer is part of every trends reply on purpose.</p>
+  </div>
+</div>
+
+<div class="subsec">
+  <h3>Then act like a scientist, not a patient</h3>
+  <p>A pattern is a hypothesis, not a verdict. Tighten the checklist (&ldquo;no dairy after
+    noon&rdquo;), keep logging, see if the pattern holds. And when you do take it to a doctor, you're
+    walking in with <em>dated evidence</em> &mdash; &ldquo;headaches on 4 of the 5 days after dairy,
+    over three weeks&rdquo; &mdash; instead of &ldquo;I get headaches sometimes.&rdquo;</p>
+</div>
+
+<div class="subsec">
+  <h3>Swap in your own mystery</h3>
+  <p>The shape is identical for anything slow:</p>
+  <ul>
+    <li><strong>Sleep:</strong> checklist of caffeine-after-noon, screens in bed, exercise; note how you slept.</li>
+    <li><strong>A new medication:</strong> checklist for taking it; note side effects and mood.</li>
+    <li><strong>The dog:</strong> <span class="cmd">journal new pepper</span>, checklist of walks and
+      food; note the limp when it shows. Journals are named so you can keep several &mdash; one for
+      you, one for the dog &mdash; and <span class="cmd">journal use &lt;name&gt;</span> picks the default.</li>
+  </ul>
+  <p>When an experiment is over, <span class="cmd">journal delete</span> erases a journal and
+    everything in it. It asks you to confirm first &mdash; only an explicit &ldquo;delete&rdquo; deletes.</p>
+</div>
+
+</article>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./index.html">&larr; All how-tos</a> &nbsp;&middot;&nbsp; <a href="../manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="../cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="../index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var d = document.querySelector('.toc > details');
+  if (d && window.matchMedia('(max-width:959px)').matches) d.open = false;
+})();
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.subsec, .callout, .cmd-table, .ex-chat');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

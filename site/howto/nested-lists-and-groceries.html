@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Nested lists &amp; groceries — Fanad how-to</title>
+<meta name="description" content="The outliner for things that aren't tasks: groceries by aisle, packing lists, and anything with an inside.">
+<link rel="stylesheet" href="./howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the article</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="../index.html">Fanad</a>
+    <a class="header-back" href="../manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">How-to</p>
+    <h1 id="page-title">Nested lists: groceries, packing, and everything with an inside</h1>
+    <p class="hero-lead">A grocery list isn't something you <em>do</em> &mdash; it's something you carry
+      around and add to for a week. Lists are where those live.</p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<nav class="toc" aria-label="All how-tos">
+  <details open>
+    <summary>All how-tos</summary>
+    <div>
+      <h2>All how-tos</h2>
+      <ul>
+        <li><a href="./index.html">Overview</a></li>
+        <li><a href="./getting-it-out-of-your-head.html">Getting it out of your head</a></li>
+        <li><a href="./diet-and-meal-tracking.html">Diet &amp; meal tracking</a></li>
+        <li><a href="./problem-solving-journal.html">The problem-solving journal</a></li>
+        <li><a class="active" href="./nested-lists-and-groceries.html">Nested lists &amp; groceries</a></li>
+        <li><a href="./planning-a-party-with-steps.html">Planning a party with steps</a></li>
+        <li><a href="./household-memory.html">Household memory</a></li>
+        <li><a href="./reminders-and-deadlines.html">Reminders &amp; deadlines</a></li>
+        <li><a href="./kitchen-timers.html">Kitchen timers</a></li>
+        <li><a href="./routines-without-recurrence.html">Routines without recurrence</a></li>
+        <li><a href="./notebooks-separate-spaces.html">Notebooks: separate spaces</a></li>
+      </ul>
+      <a class="toc-back" href="../manual.html">&larr; Back to the manual</a>
+    </div>
+  </details>
+</nav>
+
+<article>
+
+<div class="subsec">
+  <h3>Turn it on</h3>
+  <p>Not everything is a task. The grocery list, the packing list, the gift ideas, the books people
+    keep recommending &mdash; Fanad keeps these in Lists, a separate outliner where anything can
+    contain anything.</p>
+  <div class="ex-chat">
+    <p class="ex-you">optin lists</p>
+    <p class="ex-bot">✓ Lists on. Make nestable lists with /lists and “/list &lt;name&gt;”.</p>
+  </div>
+</div>
+
+<div class="subsec">
+  <h3>The grocery list</h3>
+  <p>Start one:</p>
+  <div class="ex-chat">
+    <p class="ex-you">/list Groceries</p>
+    <p class="ex-bot">📑 Groceries
+This list is empty. Type an item to add it, or “out” to go back. 🌱</p>
+  </div>
+  <p>While a list is open, <strong>anything you type becomes an item</strong>. No command per line
+    &mdash; just rattle it off:</p>
+  <div class="ex-chat">
+    <p class="ex-you">milk</p>
+    <p class="ex-you">eggs</p>
+    <p class="ex-you">olive oil</p>
+  </div>
+  <div class="callout" role="note">
+    <span class="label">A list is a room</span>
+    <p>Opening a list is like walking into a room. Your messages land in that room until you leave
+      (<span class="cmd">exit</span>, or <span class="cmd">out</span> to step up a level). If you get
+      interrupted mid-list and need to file a real task, exit first &mdash; or just know that Fanad
+      will tell you where you are at the top of every reply.</p>
+  </div>
+</div>
+
+<div class="subsec">
+  <h3>Nesting: aisles inside the list</h3>
+  <p>Any item can become a list of its own. Each row shows a <span class="cmd">/sub_N</span> link &mdash;
+    tap it (or type it) to descend:</p>
+  <div class="ex-chat">
+    <p class="ex-you">/sub_1</p>
+    <p class="ex-bot">📑 Groceries › Produce · 3 items
+1. apples · /sub_1
+2. bananas · /sub_2
+3. spinach · /sub_3</p>
+  </div>
+  <p>So a grocery list that organizes itself by aisle is just: top-level items named Produce, Dairy,
+    Pantry, then descend into each and type. <span class="cmd">/sub_2 cheddar</span> quick-adds a child
+    without even going in. At the store, open Groceries and walk the aisles in order.</p>
+  <p>The same shape covers a lot of ground:</p>
+  <ul>
+    <li><strong>Trip packing</strong> &rsaquo; Clothes / Toiletries / Documents / Kids</li>
+    <li><strong>Home projects</strong> &rsaquo; each room &rsaquo; what it needs</li>
+    <li><strong>Gift ideas</strong> &rsaquo; each person &rsaquo; things they've mentioned all year</li>
+  </ul>
+</div>
+
+<div class="subsec">
+  <h3>Moving around</h3>
+  <p>Everything you need while inside a list fits in a few words:</p>
+  <table class="cmd-table">
+    <thead><tr><th scope="col">Say</th><th scope="col">What happens</th></tr></thead>
+    <tbody>
+      <tr><td><span class="cmd">(any text)</span></td><td>adds an item right here</td></tr>
+      <tr><td><span class="cmd">/sub_N</span></td><td>open item N as its own list</td></tr>
+      <tr><td><span class="cmd">out</span></td><td>up one level</td></tr>
+      <tr><td><span class="cmd">top</span></td><td>jump to all your lists</td></tr>
+      <tr><td><span class="cmd">next / prev</span></td><td>page through a long list</td></tr>
+      <tr><td><span class="cmd">del 2</span></td><td>delete item 2</td></tr>
+      <tr><td><span class="cmd">rename 1 cheddar</span></td><td>rename item 1</td></tr>
+      <tr><td><span class="cmd">exit</span></td><td>leave lists entirely</td></tr>
+    </tbody>
+  </table>
+  <p>Numbers always mean the rows you're currently looking at, renumbered 1..N &mdash; never some
+    hidden id.</p>
+  <p><span class="cmd">/lists</span> shows all your top-level lists whenever you want back in, and the
+    web app has a Lists view for when a keyboard and a big screen beat thumb-typing.</p>
+</div>
+
+<div class="subsec">
+  <h3>Lists vs. tasks vs. notes</h3>
+  <p>A quick rule of thumb, since Fanad has three places things can live:</p>
+  <ul>
+    <li><strong>Task</strong> &mdash; you'll do it, and want it off your mind: <em>&ldquo;fix the fence gate.&rdquo;</em></li>
+    <li><strong>Note</strong> &mdash; you'll want to recall it later: <em>&ldquo;the spare key is under the blue pot.&rdquo;</em></li>
+    <li><strong>List</strong> &mdash; it has structure and you'll keep coming back: groceries, packing, the wish list.</li>
+  </ul>
+  <p>If you're unsure, just say the thing as a statement and let it be a task &mdash; you can always
+    <span class="cmd">drop</span> it. But the moment you notice yourself filing tasks like &ldquo;buy
+    milk, buy eggs, buy bread,&rdquo; that's a grocery list wanting to exist.</p>
+</div>
+
+</article>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./index.html">&larr; All how-tos</a> &nbsp;&middot;&nbsp; <a href="../manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="../cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="../index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var d = document.querySelector('.toc > details');
+  if (d && window.matchMedia('(max-width:959px)').matches) d.open = false;
+})();
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.subsec, .callout, .cmd-table, .ex-chat');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

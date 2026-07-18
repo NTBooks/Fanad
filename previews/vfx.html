@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Fanad ocean backdrop VFX bench — pin the sea's clock to any hour and watch the lighthouse beam sweep.">
+<title>Fanad VFX — the sea at any hour</title>
+<style>
+  :root{ color-scheme:dark; }
+  body{ margin:0; min-height:100vh; background:#0a141c; color:#cfe3ec;
+        font:15px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        display:flex; flex-direction:column; align-items:center; gap:14px; padding:18px 14px 28px; box-sizing:border-box; }
+  h1{ font-size:18px; font-weight:600; margin:0; letter-spacing:.3px; }
+  h1 small{ font-weight:400; color:#7fa3b5; }
+  .sea{ position:relative; width:min(400px, 92vw); height:min(66vh, 600px);
+        border:1px solid rgba(130,180,210,.18); border-radius:14px; overflow:hidden;
+        box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  .sea canvas{ width:100%; height:100%; display:block; image-rendering:pixelated; }
+  .controls{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; max-width:560px; }
+  button{ background:rgba(30,58,76,.6); color:#cfe3ec; border:1px solid rgba(130,180,210,.25);
+          border-radius:999px; padding:7px 15px; font:inherit; font-size:13.5px; cursor:pointer; }
+  button:hover{ border-color:rgba(150,205,235,.6); }
+  button.on{ background:#1d5a78; border-color:#5fb5d6; color:#fff; }
+  button.beam{ background:rgba(90,70,20,.55); border-color:rgba(246,210,127,.4); color:#f6d689; }
+  button.beam:hover{ border-color:#f6d689; }
+  .fine{ display:flex; align-items:center; gap:10px; font-size:13px; color:#7fa3b5; }
+  .fine input{ width:min(300px, 70vw); accent-color:#5fb5d6; }
+  .readout{ font-variant-numeric:tabular-nums; min-width:88px; }
+  .hint{ margin:0; max-width:560px; text-align:center; font-size:12.5px; color:#6b8b9c; }
+</style>
+</head>
+<body>
+<h1>Fanad sea &amp; beam bench <small>— pin the clock, watch the light</small></h1>
+
+<div class="sea"><canvas id="sea" width="96" height="160"></canvas></div>
+
+<div class="controls" id="presets"></div>
+<div class="fine">
+  <span class="readout" id="readout"></span>
+  <input id="hour" type="range" min="0" max="24" step="0.25">
+</div>
+<div class="controls">
+  <button class="beam" id="summon">🔦 summon the beam</button>
+</div>
+<p class="hint">The beam is a night effect — it hides while the sun is up (it starts appearing past ~19:00).
+  One pass every 16s; “summon” skips the dark dwell. Hour changes keep the built-up swells: the page
+  nudges the sim’s clock instead of restarting it, so the water never flattens.</p>
+
+<script src="assets/ocean.js"></script>
+<script src="vfx.js"></script>
+</body>
+</html>

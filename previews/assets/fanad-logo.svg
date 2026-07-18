@@ -1,0 +1,11 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fanad logo mark">
+  <circle cx="24" cy="24" r="23" fill="#123b4f"/>
+  <path d="M24,12.5 L8,9 L11,17 Z" fill="#f3c66a" opacity="0.5"/>
+  <path d="M24,12.5 L40,9 L37,17 Z" fill="#f3c66a" opacity="0.5"/>
+  <path d="M21,34 L22,16 L26,16 L27,34 Z" fill="#ffffff"/>
+  <rect x="19.5" y="14.6" width="9" height="2.2" rx="1" fill="#ffffff"/>
+  <rect x="22" y="11.3" width="4" height="3.5" fill="#f3c66a"/>
+  <path d="M21.3,11.3 L24,8 L26.7,11.3 Z" fill="#ffffff"/>
+  <circle cx="24" cy="13" r="1.5" fill="#f3c66a"/>
+  <path d="M14,37 q5,-3 10,0 t10,0" stroke="#5f9bb4" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>Routines without recurrence — Fanad how-to</title>
+<meta name="description" content="Why Fanad has no recurring tasks, and what to use instead: templates, your own calendar via .ics, one-shot reminders, and daily check-ins.">
+<link rel="stylesheet" href="./howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the article</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="../index.html">Fanad</a>
+    <a class="header-back" href="../manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">How-to</p>
+    <h1 id="page-title">Routines without recurring tasks</h1>
+    <p class="hero-lead">Fanad has no recurring tasks. That's not a missing feature &mdash; it's a
+      refusal. Here's how real repetition works instead.</p>
+  </div>
+</section>
+
+<main id="main">
+<div class="shell">
+<div class="manual-layout">
+
+<nav class="toc" aria-label="All how-tos">
+  <details open>
+    <summary>All how-tos</summary>
+    <div>
+      <h2>All how-tos</h2>
+      <ul>
+        <li><a href="./index.html">Overview</a></li>
+        <li><a href="./getting-it-out-of-your-head.html">Getting it out of your head</a></li>
+        <li><a href="./diet-and-meal-tracking.html">Diet &amp; meal tracking</a></li>
+        <li><a href="./problem-solving-journal.html">The problem-solving journal</a></li>
+        <li><a href="./nested-lists-and-groceries.html">Nested lists &amp; groceries</a></li>
+        <li><a href="./planning-a-party-with-steps.html">Planning a party with steps</a></li>
+        <li><a href="./household-memory.html">Household memory</a></li>
+        <li><a href="./reminders-and-deadlines.html">Reminders &amp; deadlines</a></li>
+        <li><a href="./kitchen-timers.html">Kitchen timers</a></li>
+        <li><a class="active" href="./routines-without-recurrence.html">Routines without recurrence</a></li>
+        <li><a href="./notebooks-separate-spaces.html">Notebooks: separate spaces</a></li>
+      </ul>
+      <a class="toc-back" href="../manual.html">&larr; Back to the manual</a>
+    </div>
+  </details>
+</nav>
+
+<article>
+
+<div class="subsec">
+  <h3>The refusal</h3>
+  <p>A task that re-adds itself is a machine for manufacturing guilt: skip &ldquo;water the
+    plants&rdquo; twice and your list is now nagging you about the past instead of helping with the
+    present. Recurrence is nagging, and nagging is stress.</p>
+  <p>But real life does repeat. Here's how Fanad handles each kind of repetition, without ever putting
+    a task on your list that you didn't ask for <em>today</em>.</p>
+</div>
+
+<div class="subsec">
+  <h3>Templates: the routine you invoke on purpose</h3>
+  <p>For anything with a repeatable shape &mdash; the sourdough bake, the packing routine, the monthly
+    bills sweep &mdash; do it once with steps, then save the shape:</p>
+  <div class="ex-chat">
+    <p class="ex-you">/template 3 sourdough</p>
+    <p class="ex-bot">🗂 Saved template “sourdough” (4 steps).</p>
+  </div>
+  <p>From then on, whenever <em>you</em> decide it's bread day:</p>
+  <div class="ex-chat">
+    <p class="ex-you">/template sourdough</p>
+    <p class="ex-bot">📋 Fresh copy on your list:
+✓ Filed: “bake sourdough” · Home · medium (4 steps) — say “start” to walk through it.</p>
+  </div>
+  <p>A fresh copy, every box unticked, no deadline or leftovers carried over. The difference from
+    recurrence is exactly one thing, and it's everything: the task appears when you summon it, not when
+    a calendar decides you're behind. <span class="cmd">/templates</span> lists your saved ones;
+    <span class="cmd">/template retire &lt;name&gt;</span> removes one.</p>
+</div>
+
+<div class="subsec">
+  <h3>The calendar: where actual recurrence belongs</h3>
+  <p>Some things genuinely happen on a schedule &mdash; trash night, the quarterly filter change. Those
+    belong in your <em>calendar</em>, which is already good at recurrence and already yours. Any dated
+    task in Fanad offers a <span class="cmd">/cal</span> link:</p>
+  <div class="ex-chat">
+    <p class="ex-you">/cal 3</p>
+    <p class="ex-bot">📅 Add “renew the passport” to your calendar
+(hands you an .ics file to open — recur it there if you like)</p>
+  </div>
+  <p>Open the .ics, set it to repeat in your own calendar app, on your terms. Fanad stays a clean pad;
+    your calendar does calendar things.</p>
+</div>
+
+<div class="subsec">
+  <h3>One-time reminders: pings that fire once</h3>
+  <p><span class="cmd">remind me to take the bins out at 8pm</span> pings you once at 8 and leaves the
+    task on your list. Ending a capture with <span class="cmd">on sunday 6pm</span> sets a deadline
+    plus one reminder at that moment. Every reminder in Fanad fires exactly once &mdash; there is no
+    snooze-spiral. (Full detail in <a href="./reminders-and-deadlines.html">reminders &amp; deadlines</a>.)</p>
+  <p>For even smaller stuff, the <a href="./kitchen-timers.html">Timer module</a>
+    (<span class="cmd">optin timer</span>) gives you a kitchen-grade one-shot ding &mdash;
+    <span class="cmd">timer 12 min pasta</span> &mdash; that never touches your list at all.</p>
+</div>
+
+<div class="subsec">
+  <h3>The daily check-in: one nudge, sized to you</h3>
+  <p>If you want a daily rhythm without a daily task, ask for a check-in:</p>
+  <div class="ex-chat">
+    <p class="ex-you">/wake 8:30</p>
+    <p class="ex-bot">⏰ I'll check in at 08:30 (tomorrow).</p>
+  </div>
+  <p>Each morning you get a single gentle nudge &mdash; one suggestion from your real list, sized to
+    your mood and history, with <span class="cmd">whatdo</span>'s usual escape hatches
+    (<span class="cmd">no</span>, <span class="cmd">smaller</span>, or just ignore it). It's the
+    difference between a housemate saying &ldquo;morning &mdash; gutters, maybe?&rdquo; and an app with
+    a red badge counting your failures.</p>
+</div>
+
+<div class="subsec">
+  <h3>Journals: routine as data</h3>
+  <p>When the routine <em>is</em> the point &mdash; meds, morning checks, an experiment you're running
+    on yourself &mdash; that's the Journal module's job: a named daily checklist you tick, where a
+    skipped day is data rather than debt. See
+    <a href="./problem-solving-journal.html">the problem-solving journal</a>.</p>
+</div>
+
+<div class="subsec">
+  <h3>The shape of all of it</h3>
+  <div class="callout" role="note">
+    <span class="label">The pull comes from you</span>
+    <p>Every repetition tool in Fanad has the same property: templates wait to be summoned, calendars
+      are yours, reminders fire once, the check-in offers instead of demands. The list only ever
+      contains things you put there &mdash; which is why you can trust it enough to keep using it.</p>
+  </div>
+</div>
+
+</article>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="./index.html">&larr; All how-tos</a> &nbsp;&middot;&nbsp; <a href="../manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="../cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="../index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var d = document.querySelector('.toc > details');
+  if (d && window.matchMedia('(max-width:959px)').matches) d.open = false;
+})();
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.subsec, .callout, .cmd-table, .ex-chat');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

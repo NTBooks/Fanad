@@ -1,0 +1,104 @@
+# ─────────────────────────── Secrets & environment ───────────────────────────
+# NEVER commit real secrets. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+*.local
+secrets.json
+**/secrets/
+*.pem
+*.key
+*.kek
+*.p12
+*.pfx
+id_rsa*
+*.token
+*.credentials
+
+# ───────────────────────────────── Node ──────────────────────────────────────
+node_modules/
+.pnpm-store/
+.npm/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ───────────────────────────── Build output ──────────────────────────────────
+dist/
+build/
+web/dist/
+.vite/
+*.tsbuildinfo
+
+# ──────────── Local runtime data (SQLite DB + app state — never commit) ───────
+# Keep the data/ dir but ignore everything in it except the example + placeholder.
+data/*
+!data/.gitkeep
+!data/config.example.json
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# ─────────────────────── Windows installer build output ──────────────────────
+installer/staging/
+installer/dist/
+
+# ───────────────────────── Logs / coverage / temp ────────────────────────────
+logs/
+*.log
+coverage/
+.nyc_output/
+.cache/
+tmp/
+.tmp/
+*.tmp.md
+
+# ─────────────────────────────── OS / editor ─────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# ───────────────── LLM / AI tooling artifacts (incl. local models) ────────────
+# Local model weights are huge and must never be committed.
+*.gguf
+*.bin
+*.safetensors
+*.onnx
+models/
+# AI assistant working files / local overrides
+.claude/settings.local.json
+.claude/**/*.local.json
+.aider*
+.cursor/
+.continue/
+.windsurf/
+.codeium/
+
+# ───── Browser automation / Chrome-in-the-loop artifacts (Playwright, etc.) ───
+test-results/
+playwright-report/
+playwright/.cache/
+.playwright/
+.playwright-mcp/
+blob-report/
+traces/
+*.har
+trace.zip
+**/__screenshots__/
+screenshots/
+chrome-profile/
+chrome-user-data/
+.chrome/
+puppeteer_cache/
+downloads/
+
+# Internal strategy / planning docs — never publish
+private-docs/

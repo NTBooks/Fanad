@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%3E%3Crect%20width='16'%20height='16'%20fill='%23F6F1E3'/%3E%3Crect%20x='4'%20y='1.5'%20width='1.7'%20height='13'%20fill='%23C0392B'/%3E%3C/svg%3E">
+<title>How-tos — Fanad</title>
+<meta name="description" content="Real ways people use Fanad, one article each: brain-dumping, diet tracking, trend journals, nested lists, party planning, and more.">
+<link rel="stylesheet" href="./howto.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body class="pad">
+<a class="skip-link" href="#main">Skip to the how-tos</a>
+
+<header class="site-header" role="banner">
+  <div class="shell">
+    <a class="brandmark" href="../index.html">Fanad</a>
+    <a class="header-back" href="../manual.html">&larr; The manual</a>
+  </div>
+</header>
+
+<section class="ruled" aria-labelledby="page-title">
+  <div class="shell">
+    <p class="kicker">How-tos</p>
+    <h1 id="page-title">Real ways to use Fanad</h1>
+    <p class="hero-lead">One article per use case. They're independent &mdash; start with whichever
+      matches your life &mdash; but the first one explains the core loop everything else builds on.</p>
+    <p>All commands shown work with or without the leading slash. Modules (Diet, Journal, Lists,
+      Notes, Notebooks, Timer) are per-person and off by default &mdash; each article starts with its
+      <span class="cmd">optin</span>.</p>
+  </div>
+</section>
+
+<main id="main">
+<section style="padding-top:var(--space-6)">
+<div class="shell">
+  <div class="grid grid-2 howto-grid">
+    <div class="card">
+      <h3><a href="./getting-it-out-of-your-head.html">Getting it out of your head</a></h3>
+      <p>The core loop: brain-dump everything, ask for one thing to do now, let stale tasks sleep.
+        Read this one first.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./diet-and-meal-tracking.html">Diet &amp; meal tracking</a></h3>
+      <p>Calorie logging that converges to three words a meal: confirm-once foods, saved meals,
+        recipes by cooked weight.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./problem-solving-journal.html">The problem-solving journal</a></h3>
+      <p>Finding slow patterns &mdash; &ldquo;is it the dairy?&rdquo; &mdash; with a daily checklist, a
+        one-line note, and trend summaries that name their evidence.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./nested-lists-and-groceries.html">Nested lists &amp; groceries</a></h3>
+      <p>The outliner for things that aren't tasks: groceries by aisle, packing lists, anything with
+        an inside.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./planning-a-party-with-steps.html">Planning a party with steps</a></h3>
+      <p>Breaking a big vague task into a checklist, letting Fanad draft the steps with
+        <span class="cmd">guess</span>, and saving the shape as a template.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./household-memory.html">Household memory</a></h3>
+      <p>Notes you get back by meaning, not exact words: the spare key, the wifi password, the
+        furnace filter photo.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./reminders-and-deadlines.html">Reminders &amp; deadlines</a></h3>
+      <p>Putting time on tasks in plain words &mdash; <span class="cmd">by</span>,
+        <span class="cmd">on</span>, <span class="cmd">remind me</span> &mdash; plus the .ics calendar
+        handoff and the at-most-one-ping promise.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./kitchen-timers.html">Kitchen timers</a></h3>
+      <p>The one-shot ding that never touches your list: pasta, laundry, and the 20-minute
+        &ldquo;just start&rdquo; trick.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./routines-without-recurrence.html">Routines without recurrence</a></h3>
+      <p>Why Fanad has no recurring tasks, and what to use instead: templates, your own calendar,
+        one-shot reminders, daily check-ins.</p>
+    </div>
+    <div class="card">
+      <h3><a href="./notebooks-separate-spaces.html">Notebooks: separate spaces</a></h3>
+      <p>Isolated sub-spaces for a big project, a work/home split, or someone you're helping.</p>
+    </div>
+  </div>
+</div>
+</section>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="shell">
+    <p style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;margin:0 0 var(--space-2)">Fanad &mdash; get it out of your head.</p>
+    <p style="margin:0 0 var(--space-5)"><a href="../manual.html">The manual</a> &nbsp;&middot;&nbsp; <a href="../cheatsheet.html">Cheat sheet</a> &nbsp;&middot;&nbsp; <a href="../index.html">What is Fanad?</a></p>
+    <p class="disclaimer">This app is a self-reflection and organization aid. It is not therapy, diagnosis, or medical advice, and it does not treat any condition. If you are struggling, please reach out to a qualified professional.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  if (!('IntersectionObserver' in window)) return;
+  var targets = document.querySelectorAll('.card');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting || e.boundingClientRect.top < 0) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
+  targets.forEach(function (el) { el.classList.add('reveal'); io.observe(el); });
+})();
+</script>
+</body>
+</html>

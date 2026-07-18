@@ -1,0 +1,26 @@
+{
+  "name": "fanad-cli",
+  "version": "0.2.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Fanad terminal chat client — `fanad <server> <token>`. esbuild transpiles JSX; packages stay external (resolved from the checkout's node_modules).",
+  "scripts": {
+    "build": "esbuild src/index.jsx --bundle --packages=external --platform=node --format=esm --jsx=automatic --outfile=dist/index.js --log-level=warning",
+    "dev": "npm run build -- --watch"
+  },
+  "dependencies": {
+    "cfonts": "^3.3.1",
+    "cli-spinners": "^3.2.0",
+    "gradient-string": "^3.0.0",
+    "ink": "^5.2.1",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.1",
+    "string-width": "^7.2.0",
+    "supports-color": "^10.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.5"
+  }
+}
