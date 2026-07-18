@@ -38,6 +38,25 @@ test('homeassistant ships dark: default OFF system-wide, other modules default O
   assert.equal(settings.isSystemModuleOn('homeassistant'), false);
 });
 
+// ── add-on auto-pairing (asserted on the still-fresh DB, before any token is set) ──
+
+test('add-on auto-pairing: SUPERVISOR_TOKEN is the HA fallback; a user-set URL/token wins', () => {
+  process.env.SUPERVISOR_TOKEN = 'supervisor-secret';
+  try {
+    // Nothing configured yet → pair automatically via the Supervisor proxy (no token paste).
+    let cfg = settings.getHomeAssistantConfig();
+    assert.equal(cfg.baseUrl, 'http://supervisor/core', 'proxy base when nothing is configured');
+    assert.equal(cfg.token, 'supervisor-secret', 'the injected Supervisor token');
+    // Once the owner sets their own connection, it wins over the Supervisor default.
+    settings.setHomeAssistantConfig({ baseUrl: 'http://ha.local:8123', token: 'own-token' });
+    cfg = settings.getHomeAssistantConfig();
+    assert.equal(cfg.baseUrl, 'http://ha.local:8123', 'user URL wins');
+    assert.equal(cfg.token, 'own-token', 'user token wins');
+  } finally {
+    delete process.env.SUPERVISOR_TOKEN; // the next test re-sets the config from scratch
+  }
+});
+
 // ── the settings blob: encrypted token, normalization ──
 
 test('the HA token is encrypted at rest and decrypted on read; base URL and notify services normalize', () => {

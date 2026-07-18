@@ -153,10 +153,19 @@ const cleanBaseUrl = (v) => String(v ?? '').trim().replace(/\/+$/, '');
 export function getHomeAssistantConfig() {
   if (haCache) return haCache;
   const o = getSetting('homeassistant', {}) || {};
+  let baseUrl = cleanBaseUrl(o.baseUrl);
+  let token = decKey(o.token, null) || '';
+  // Home Assistant add-on auto-pairing: running as an HA App, the Supervisor injects
+  // SUPERVISOR_TOKEN and proxies HA core at http://supervisor/core — so the house is reachable
+  // with no long-lived token to paste. A URL/token set in Settings always wins over this.
+  if (!baseUrl && !token && process.env.SUPERVISOR_TOKEN) {
+    baseUrl = 'http://supervisor/core';
+    token = process.env.SUPERVISOR_TOKEN;
+  }
   haCache = {
     enabled: o.enabled === true, // default off
-    baseUrl: cleanBaseUrl(o.baseUrl),
-    token: decKey(o.token, null) || '',
+    baseUrl,
+    token,
     agentId: o.agentId || '', // blank = HA's default Assist agent
     announce: {
       enabled: o.announce?.enabled === true,
