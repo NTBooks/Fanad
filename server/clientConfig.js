@@ -10,7 +10,7 @@ import { config } from './config.js';
 import { emitUserEvent } from './events.js';
 import { CATEGORIES, CATEGORY_ORDER, CATEGORY_LABELS, EFFORT_LEVELS } from '../shared/categories.js';
 import { ARGLESS_COMMANDS, SHORTCUTS, COMMAND_FEATURES } from '../shared/commands.js';
-import { RULES, HOWTO } from '../shared/copy.js';
+import { RULES, HOWTO, REACTION_DEMO } from '../shared/copy.js';
 import { PROVIDERS } from '../shared/providers.js';
 import { UNIT_TYPES, UNIT_LABEL, COUNT_UNIT_TYPES, GRAMS_PER_OZ } from '../shared/diet.js';
 import { getSystemModules } from './settings.js';
@@ -44,6 +44,9 @@ function build() {
     commandFeatures: { ...COMMAND_FEATURES }, // argless command → gating module (absent = core)
     rules: RULES,
     howto: HOWTO,
+    // The self-playing onboarding reel (shared/copy.js) the web animates on first run + the 🎬 button.
+    // Static onboarding copy, so it can't go dirty at runtime — a redeploy re-seeds the cache like the rest.
+    reactionDemo: REACTION_DEMO,
     providers: PROVIDERS,
     // The Diet module's unit taxonomy (types + display labels + count types + the oz↔g factor the live
     // recipe preview needs) — served here so web/src never hardcodes it.

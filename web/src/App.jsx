@@ -8,6 +8,7 @@ import DebugLog from './DebugLog.jsx';
 import Login from './Login.jsx';
 import ModulesPanel, { availableModules } from './ModulesPanel.jsx';
 import UserConfig from './UserConfig.jsx';
+import ReactionDemo from './ReactionDemo.jsx';
 import OceanBackdrop from './OceanBackdrop.jsx';
 import { LegendPanel, StatusPanel } from './GutterPanels.jsx';
 
@@ -131,6 +132,8 @@ export default function App() {
   const [showUserConfig, setShowUserConfig] = useState(false); // the non-owner "Your modules" panel
   const [showData, setShowData] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);   // the "how Fanad works" reaction reel (first-run + 🎬)
+  const demoCheckedRef = useRef(false);               // only auto-open once per session (cfg can reload)
   const [features, setFeatures] = useState(null);   // { notes, lists, metrics, vouch, notebook } — drives the module icons
   const [modulesTab, setModulesTab] = useState(null); // which advanced module view is open (null = none)
   const [debugEnabled, setDebugEnabled] = useState(false); // server has DEBUG_LOG set
@@ -347,6 +350,16 @@ export default function App() {
     });
   }
   useEffect(() => { if (authed) loadInitialHistory(); }, [authed]);
+  // First-run reaction demo: once we're signed in and the reel copy has arrived, auto-open it a single time
+  // per browser (remembered in localStorage, same idiom as fanad-theme / fanad-gutters). Gated on the flag
+  // ONLY, not on isOwner — the "it's not a chatbot" confusion hits solo self-hosters too (mode none → owner).
+  // The 🎬 header button reopens it anytime; closeDemo() sets the flag so it never auto-reopens.
+  const closeDemo = () => { try { localStorage.setItem('fanad-demo-seen', '1'); } catch { /* ignore */ } setShowDemo(false); };
+  useEffect(() => {
+    if (!authed || !cfg?.reactionDemo || demoCheckedRef.current) return;
+    demoCheckedRef.current = true;
+    try { if (!localStorage.getItem('fanad-demo-seen')) setShowDemo(true); } catch { /* ignore */ }
+  }, [authed, cfg]);
   // Theme must live on the root element so the body (and all inherited text) gets the night palette.
   // 'bokeh' is a separate opt-in dark theme (animated glass — costs GPU, so 'auto' never resolves to it).
   const mode = theme === 'bokeh' ? 'bokeh' : (theme === 'dark' || (theme === 'auto' && night)) ? 'night' : 'day';
@@ -631,6 +644,7 @@ export default function App() {
         {availableModules(features).map((m) => (
           <button key={m.key} className="gear module-icon" title={`${m.label} — advanced view`} onClick={() => setModulesTab(m.key)}>{m.icon}</button>
         ))}
+        <button className="gear" title="How Fanad works — a 20-second demo" onClick={() => setShowDemo(true)}>🎬</button>
         <a className="gear" title="Guide — what Fanad is &amp; how to use it" href="/docs/" target="_blank" rel="noreferrer">❔</a>
         <a className="gear" title="Manual — the full handbook" href="/docs/manual.html" target="_blank" rel="noreferrer">📖</a>
         <button className="gear" title="Your data" onClick={() => setShowData(true)}>▦</button>
@@ -689,6 +703,7 @@ export default function App() {
                   <button key={mod.key} className="hdr-menu-item" onClick={menuGo(() => setModulesTab(mod.key))}>{mod.icon} {mod.label}</button>
                 ))}
                 <hr className="hdr-menu-sep" />
+                <button className="hdr-menu-item" onClick={menuGo(() => setShowDemo(true))}>🎬 How it works</button>
                 <a className="hdr-menu-item" href="/docs/" target="_blank" rel="noreferrer" onClick={() => setShowMenu(false)}>❔ Guide</a>
                 <a className="hdr-menu-item" href="/docs/manual.html" target="_blank" rel="noreferrer" onClick={() => setShowMenu(false)}>📖 Manual</a>
                 <button className="hdr-menu-item" onClick={menuGo(() => setShowData(true))}>▦ Your data</button>
@@ -833,6 +848,9 @@ export default function App() {
       {showUserConfig && <UserConfig theme={theme} onTheme={setTheme} onClose={() => { setShowUserConfig(false); loadNotebooks(); loadFeatures(); }} />}
       {showData && <DataBrowser onClose={() => setShowData(false)} />}
       {showDebug && <DebugLog onClose={() => setShowDebug(false)} />}
+      {showDemo && cfg?.reactionDemo && (
+        <ReactionDemo reel={cfg.reactionDemo} onClose={closeDemo} onTry={(t) => { closeDemo(); insertIntoComposer(t); }} />
+      )}
       {modulesTab && <ModulesPanel tab={modulesTab} onTab={setModulesTab} features={features} cfg={cfg} onClose={() => setModulesTab(null)} />}
     </div>
     </LazyMotion>

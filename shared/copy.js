@@ -25,6 +25,69 @@ export const HOWTO = [
   'The bigger your list, the richer the experience. Start small, add often. 🌱',
 ].join('\n');
 
+// ── The reaction demo — a short, self-playing reel the web client animates on first run (and on demand via
+// the 🎬 header button) to SHOW, not just tell, how Fanad reads a message. It exists because the #1
+// onboarding stumble is treating Fanad like a chatbot: people paste a ChatGPT-style paragraph and it files
+// the whole blob as one task (correct by design, baffling on message #1 — see private-docs/ONE-PAGER.md).
+// Lives here (the canonical onboarding copy) and ships to web/src via /api/config as `reactionDemo`, so the
+// copy has ONE home and Telegram/site can echo it later. Web-only playback, but the words are shared.
+//
+// Each step is illustrative DATA, never live behavior (no real message is sent, no LLM is called):
+//   { title?, me?, react?, bot?, caption, turns?, rules?, cta? }
+//     title  — a card headline (intro / recap steps, no `me` bubble)
+//     me     — the fake user line typed into a chat bubble
+//     react  — the decision emoji the two-step 👀→… lands on; MUST be a shared/reaction.js outcome
+//              (🫡 filed / ✍ noted). 👀 is always the transient first face, added by the player.
+//     bot    — an optional bot reply bubble (\n-separated lines; /command tokens render as chips)
+//     turns  — several quick { me, react } lines shown stacked (the "one thought per line" fix)
+//     rules  — a bulleted recap list (the Rules of Three)
+//     cta    — final-step buttons [{ label, insert }] that drop `insert` into the composer and close the reel
+export const REACTION_DEMO = [
+  {
+    title: '👋 Meet Fanad',
+    caption: 'Fanad reads every message and decides what to do with it — it doesn’t chat back like an AI. Here’s how it reads you. ⏱ about 20 seconds.',
+  },
+  {
+    me: 'the gutters need clearing',
+    react: '🫡',
+    bot: '📝 On your list — filed under 🏠 home.',
+    caption: '① Make a statement → it becomes a task. I keep your own words and quietly sort it. The 🫡 stamped on your message means “filed.”',
+  },
+  {
+    me: 'what should I do?',
+    react: '🫡',
+    bot: '💡 clear the gutters — about 20 min.\nyes · smaller · not today',
+    caption: '② Ask a question → I run a command. Try /whatdo, /tasks, or /done 3 — the leading slash is always optional.',
+  },
+  {
+    me: 'hey can you help me plan my week? I’m overwhelmed — maybe suggest a morning routine, remind me to call the dentist, and what should I eat to lose weight…',
+    react: '🫡',
+    bot: '📝 Filed as ONE task: “hey can you help me plan my week? I’m overwhelmed…”',
+    caption: '⚠️ I’m a command pad, not a chatbot — send a whole paragraph and the WHOLE thing becomes a single task. This one trips up almost everyone at first.',
+  },
+  {
+    turns: [
+      { me: 'plan my week', react: '🫡' },
+      { me: 'call the dentist by friday', react: '🫡' },
+      { me: 'note eat lighter lunches', react: '✍' },
+    ],
+    caption: '✅ The fix: one thought per line. A deadline like “by friday” just works, and starting a line with “note …” (✍) sets something down to remember, not to do. 🌱',
+  },
+  {
+    title: '✨ The Rules of Three',
+    rules: [
+      '① Make a statement → I add it to your list.',
+      '② Ask a question → I’ll see what I can do.',
+      '③ Answer my question → and so shall it be.',
+    ],
+    caption: 'That’s the whole grammar. Now you try — or replay this anytime from 🎬 up top.',
+    cta: [
+      { label: '➕ Add your first task', insert: 'the kitchen tap is dripping' },
+      { label: '💡 Ask what to do', insert: '/whatdo' },
+    ],
+  },
+];
+
 // ── Topic guides — a deeper, friendly walkthrough of ONE feature at a time, reached via "guide <topic>".
 // Add a topic by adding an entry to GUIDES + an alias or two below; the command (chat.js) and the `c` menu
 // pick it up automatically. Written to be read start-to-finish (some users read every word), so keep them

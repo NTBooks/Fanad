@@ -20,6 +20,11 @@ Fanad's input handling is **three layers**, and only one of them is a grammar:
 3. **A free-text capture fallback** (everything else → the LLM, or a verbatim task). Deliberately
    _not_ grammar-shaped — that's the whole point of the app.
 
+> Because layer 3 files a whole paragraph as one verbatim task, newcomers who treat Fanad like a
+> chatbot are surprised on message #1. The web client counters this with a first-run **reaction demo**
+> (`web/src/ReactionDemo.jsx`, reel copy in `shared/copy.js` → `REACTION_DEMO`) that animates the
+> statement→task / question→command split; it changes no syntax.
+
 A subtlety that rules out plain **BNF**: disambiguation in Fanad lives in **order** and in
 **runtime/database state**, not in the syntax. `route()` is an ordered cascade (first match wins),
 and several productions only fire if a predicate holds (a template exists, a word names a real
