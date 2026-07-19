@@ -82,7 +82,7 @@ export const REACTION_DEMO = [
     ],
     caption: 'That’s the whole grammar. Now you try — or replay this anytime from 🎬 up top.',
     cta: [
-      { label: '➕ Add your first task', insert: 'the kitchen tap is dripping' },
+      { label: '➕ Add your first task', insert: 'give somebody a high five today' },
       { label: '💡 Ask what to do', insert: '/whatdo' },
     ],
   },
