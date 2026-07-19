@@ -7,7 +7,11 @@ import * as api from './api.js';
 // bridges both register and a login that finds 2FA unfinished. Success reloads the page — the same
 // "reload is the reset" idiom as the user/notebook switchers.
 export default function Login({ status }) {
-  const [view, setView] = useState('login'); // 'login' | 'register' | 'enroll'
+  // Deep link from the /demo "create an account" link (href="/?signup"): boot straight on the register
+  // view when the owner has registration open. The needsTotp effect below still wins for downgraded demo
+  // accounts; the ?signup param is stripped once so a later reload doesn't re-force register.
+  const wantsRegister = !!status?.allowRegistration && new URLSearchParams(window.location.search).has('signup');
+  const [view, setView] = useState(wantsRegister ? 'register' : 'login'); // 'login' | 'register' | 'enroll'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -29,6 +33,12 @@ export default function Login({ status }) {
       .catch((err) => setError(err.message))
       .finally(() => setBusy(false));
   }, [status?.needsTotp]);
+
+  // Strip the ?signup deep-link marker so a later reload (or "Back to sign in") doesn't snap the visitor
+  // back to the register view — the initial view above already consumed it.
+  useEffect(() => {
+    if (wantsRegister) window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+  }, [wantsRegister]);
 
   async function doLogin(e) {
     e.preventDefault();

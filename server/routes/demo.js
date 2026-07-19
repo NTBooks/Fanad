@@ -132,12 +132,12 @@ ${open ? `
   <p class="err" id="e"></p>
   <p class="fine">Double-check that it&rsquo;s your username — whoever messages the bot with it first gets the access.</p>
   <div class="beta">🚧 <strong>This is a beta, and the fine print isn't written yet</strong> — there's no terms of service or privacy policy to show you, because none exist. What you tell the bot is stored on the demo server and sent to an AI model to be sorted, so keep anything sensitive out, and expect demo data to be wiped from time to time. Send the bot <code>/requestdeletion</code> whenever you want everything you've given it erased.</div>
-  ${webSignup ? '<p class="browser">No Telegram?<br><a href="/">Sign up to use Fanad right here in your browser&nbsp;&rarr;</a></p>' : ''}
+  ${webSignup ? '<p class="browser">No Telegram?<br><a href="/?signup">Sign up to use Fanad right here in your browser&nbsp;&rarr;</a></p>' : ''}
   <p class="links">Curious what it can do? Read the <a href="/docs/">guide</a> or the full <a href="/docs/manual.html">manual</a>.</p>
 ` : `
   <h1>The demo is closed</h1>
   <p>Fanad's demo isn't taking signups right now. Check back later — or ask whoever sent you this link to vouch you in directly.</p>
-  ${webSignup ? '<p class="browser">You can still <a href="/">sign up to use Fanad in your browser&nbsp;&rarr;</a></p>' : ''}
+  ${webSignup ? '<p class="browser">You can still <a href="/?signup">sign up to use Fanad in your browser&nbsp;&rarr;</a></p>' : ''}
   <p class="links">Meanwhile, you can read the <a href="/docs/">guide</a> or the full <a href="/docs/manual.html">manual</a>.</p>
 `}
 </main>
