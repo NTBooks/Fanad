@@ -2051,9 +2051,9 @@ function cmdReply(identityId, channel) {
     text: [
       '💻 Your terminal connect command — shown ONCE (only its hash is stored):',
       '',
-      code(`fanad ${serverUrl} ${token}`).toString(),
+      code(`npx github:NTBooks/Fanad ${serverUrl} ${token}`).toString(),
       '',
-      `Run it from a Fanad checkout (or npx fanad …). The token acts as you, chat only — never Settings — and expires in ${CLI_TOKEN_DEFAULT_TTL_DAYS} days. Manage or revoke: Settings → Security → Terminal client tokens.`,
+      `Paste it into any terminal with Node.js 24+ installed; npx fetches the client from the repo, so no checkout or pre-downloaded source is needed. The token acts as you, chat only — never Settings — and expires in ${CLI_TOKEN_DEFAULT_TTL_DAYS} days. Manage or revoke: Settings → Security → Terminal client tokens.`,
     ].join('\n'),
     html: true,
     ...close,

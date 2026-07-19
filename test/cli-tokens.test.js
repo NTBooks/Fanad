@@ -151,7 +151,7 @@ test('the "cmd" chat command mints a connect line on any channel — web and cha
   setAuthConfig({ cliEnabled: true });
   try {
     const web = await handleMessage({ userId: root, text: 'cmd', channel: 'web' });
-    assert.match(web.reply, /fanad https?:\/\/\S+ fnd1_[A-Za-z0-9_-]+/, 'web gets the ready-to-paste connect command');
+    assert.match(web.reply, /npx github:NTBooks\/Fanad https?:\/\/\S+ fnd1_[A-Za-z0-9_-]+/, 'web gets the ready-to-paste npx connect command');
     assert.match(web.reply, /shown ONCE/i);
     const row = lastRow();
     assert.equal(Number(row.user_id), root, 'minted for the acting account');
@@ -160,7 +160,7 @@ test('the "cmd" chat command mints a connect line on any channel — web and cha
     // no browser bunny-hop. The token belongs to THAT chat account, not the owner.
     const tgUser = getOrCreateTelegramUser(777003, 'cmdchat');
     const tg = await handleMessage({ userId: tgUser, text: 'cmd', channel: 'telegram' });
-    assert.match(tg.reply, /fanad https?:\/\/\S+ fnd1_[A-Za-z0-9_-]+/, 'a chat DM gets the connect command directly');
+    assert.match(tg.reply, /npx github:NTBooks\/Fanad https?:\/\/\S+ fnd1_[A-Za-z0-9_-]+/, 'a chat DM gets the npx connect command directly');
     const tgRow = lastRow();
     assert.equal(Number(tgRow.user_id), tgUser, 'minted for the DM account itself');
     assert.match(String(tgRow.label || ''), /via cmd \(telegram\)/, 'origin channel in the label');
