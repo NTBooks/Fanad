@@ -342,7 +342,8 @@
         in your browser, already signed in as you. It works once and expires in minutes — run <code>/web</code> again anytime.</td></tr>
       <tr><td class="c"><code>cmd</code></td><td class="d">type it in any chat (web or a Telegram/Slack DM) → a ready-to-paste <code>fanad &lt;server&gt; &lt;token&gt;</code>
         command for the <b>terminal client</b> (a full-screen chat in your console). Admin opt-in: the owner enables it under
-        Settings → Security → Terminal client tokens. The token is shown once and expires in 90 days; revoke anytime in the same place.</td></tr>
+        Settings → Security → Terminal client tokens. The token is shown once; choose how long it stays valid (30 / 90 days, 1 year, or never) when you mint it, and revoke anytime in the same place.</td></tr>
+      <tr><td class="c"><code>token</code></td><td class="d">type it in any chat → a warning + yes/no, then a <b>read-only, never-expiring</b> token scoped to your own account (shown once). It's the credential a <b>Home Assistant</b> dashboard needs: it can only read <code>/api/ha/summary</code>, never post or change anything. Any authorized user can self-mint; same enable switch as <code>cmd</code>. Copy it, then delete the message.</td></tr>
     </table>
     <div class="note">Everything on this sheet works in the web chat too, plus GUI views the phone can’t do:
     <b>kanban board</b> for tasks, <b>notes wall</b>, <b>metric charts</b>, <b>lists outliner</b>, <b>templates</b>,

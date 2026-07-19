@@ -2206,7 +2206,20 @@ It opens a page with one button — tap it and Fanad opens in your browser, alre
 
 fanad https://fanad.example.com fnd1_05qO…Z71o
 
-Run it from a Fanad checkout (or npx fanad …). The token acts as you, chat only — never Settings — and expires in 90 days. Manage or revoke: Settings → Security → Terminal client tokens.</p>
+Run it from a Fanad checkout (or npx fanad …). The token acts as you, chat only — never Settings — and expires after the window you pick when minting (90 days by default, or never for always-on credentials like a Home Assistant dashboard). Manage or revoke: Settings → Security → Terminal client tokens.</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">token</span> (read-only)</td><td>The self-service way to get the credential a <a href="#adv-homeassistant">Home Assistant</a> dashboard needs, straight from chat &mdash; no web panel. Send <span class="cmd">token</span> (also <span class="cmd">create token</span> / <span class="cmd">new token</span>) and Fanad shows a warning and asks yes/no; reply <b>yes</b> and it mints a <b>read-only, never-expiring</b> token scoped to <b>your</b> account, shown once. Unlike <span class="cmd">cmd</span> (which mints a full, 90-day terminal-client token), this one can only GET <span class="cmd">/api/ha/summary</span> &mdash; it can never post chat or change anything. Any authorized user can mint their own; it follows the same <b>Enable the terminal client</b> switch as <span class="cmd">cmd</span> (while it's off, a non-owner's &ldquo;token&rdquo; is just a task). Because the raw token arrives over chat, copy it and delete the message. Revoke anytime in Settings &rarr; Security &rarr; Terminal client tokens.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">token</p>
+        <p class="ex-bot">🔑 Mint a read-only access token? This creates a long-lived token that lets an outside app (like a Home Assistant dashboard) READ your Fanad numbers. It can only read, never expires until you revoke it, and covers only your data. Reply “yes” to mint it, or “no” to cancel.</p>
+        <p class="ex-you">yes</p>
+        <p class="ex-bot">🔑 Your read-only token — shown ONCE (only its hash is stored):
+
+fnd1_9tQ…4kZ
+
+Point a dashboard at https://fanad.example.com/api/ha/summary with the header  Authorization: Bearer &lt;token&gt;. It never expires and can only read. Copy it now, then delete this message.</p>
       </div>
       </details></td></tr>
         <tr><td><span class="cmd">AUTH_MODE</span></td><td>Env default for the mode before any in-app choice; the dropdown's stored value wins thereafter.</td></tr>

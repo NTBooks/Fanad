@@ -9,7 +9,8 @@ The credential for HA is a **read-only claim token** — it can only GET, so the
 in your HA config can never post chat or change anything. Three ways to mint:
 
 - **Web:** Settings → Security → Terminal client tokens → tick **"Enable the terminal
-  client"** → tick **Read-only** → Mint. The token shows ONCE (only its hash is stored).
+  client"** → tick **Read-only** → set **Expires** to **Never (unlimited)** (a wall dashboard
+  shouldn't die in 90 days) → Mint. The token shows ONCE (only its hash is stored).
 - **Server box:** `npm run token -- --read-only --label ha-dashboard` (or
   `fanad token --read-only`).
 - **API:** `POST /api/settings/cli-tokens` with `{"readOnly": true, "label": "ha-dashboard"}`.
@@ -17,7 +18,8 @@ in your HA config can never post chat or change anything. Three ways to mint:
 Gotchas:
 - Tokens only authenticate while **"Enable the terminal client"** stays ticked — flipping it
   off instantly (and reversibly) disables every outstanding token.
-- Default TTL is 90 days (`--ttl 0` = never expires). Revoke any time from the same panel.
+- Default TTL is 90 days; pick a different lifetime from the **Expires** dropdown when minting
+  (or `--ttl 0` on the CLI = never expires). Revoke any time from the same panel.
 - The Scope column in the token list tells you which tokens are read-only.
 
 ## 2. The endpoint

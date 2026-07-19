@@ -194,6 +194,16 @@ export function deleteConfirmAnswer(text) {
   return null;
 }
 
+// Confirm/cancel for "mint a read-only access token?" (chat.js's `token` command). A plain yes/no is fine
+// here — the token is read-only and revocable, so there's nothing irreversible to guard (unlike the strict
+// deleteConfirmAnswer). Anything unrecognized returns null and the caller escapes it as a new intent (no trap).
+export function haTokenConfirmAnswer(text) {
+  const s = (text || '').trim().toLowerCase().replace(/[.!]+$/, '');
+  if (/^(y|yes|yep|yeah|yup|ok|okay|sure|do it|mint(?:\s+it)?|go|confirm|please)$/.test(s)) return 'yes';
+  if (/^(n|no|nope|nah|cancel|stop|nvm|never ?mind|abort|wait|keep)$/.test(s)) return 'no';
+  return null;
+}
+
 // Diet's "you're in a notebook" guard: the log belongs in Main. "switch" (or a plain yes) moves to Main
 // and re-runs the command there; "log here" keeps it in the notebook on purpose; explicit no/cancel drops
 // it. Anything else escapes as a new intent (no trap) — nothing gets logged.
@@ -248,6 +258,7 @@ const FAST_ANSWER = {
   diet_notebook: (t) => notebookGuardAnswer(t) != null,  // diet's switch-to-Main guard
   med_reminder: (t) => medReminderAnswer(t) != null,     // medication's "want a daily reminder?"
   med_notebook: (t) => notebookGuardAnswer(t) != null,   // medication's switch-to-Main guard
+  ha_token_confirm: (t) => haTokenConfirmAnswer(t) != null, // "mint a read-only access token?" yes/no
 };
 
 const CONF_NEW_INTENT = 0.8;
@@ -296,7 +307,7 @@ export async function answersPendingState(ds, text) {
     || ds.type === 'batch_delete'
     || ds.type === 'food_confirm' || ds.type === 'meal_confirm' || ds.type === 'eat_meal_confirm'
     || ds.type === 'eat_qty' || ds.type === 'diet_notebook'
-    || ds.type === 'med_reminder' || ds.type === 'med_notebook') {
+    || ds.type === 'med_reminder' || ds.type === 'med_notebook' || ds.type === 'ha_token_confirm') {
     return FAST_ANSWER[ds.type](t) ? 'answer' : 'new_intent';
   }
   if (FAST_ANSWER[ds.type]?.(t)) return 'answer';

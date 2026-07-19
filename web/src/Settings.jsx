@@ -94,6 +94,7 @@ export default function Settings({ onClose, theme = 'auto', onTheme = () => {} }
   const [cliMinted, setCliMinted] = useState(null);
   const [cliLabel, setCliLabel] = useState('');
   const [cliReadOnly, setCliReadOnly] = useState(false); // scope 'read' — dashboards / Home Assistant
+  const [cliTtlDays, setCliTtlDays] = useState(90); // token lifetime in days; 0 = never expires (unlimited)
   const [cliMsg, setCliMsg] = useState(null);
 
   useEffect(() => {
@@ -137,11 +138,12 @@ export default function Settings({ onClose, theme = 'auto', onTheme = () => {} }
   // ── CLI claim tokens (Security) ──
   const mintCli = () => {
     setCliMsg(null);
-    const body = { ...(cliLabel.trim() ? { label: cliLabel.trim() } : {}), ...(cliReadOnly ? { readOnly: true } : {}) };
+    const body = { ...(cliLabel.trim() ? { label: cliLabel.trim() } : {}), ...(cliReadOnly ? { readOnly: true } : {}), ttlDays: cliTtlDays };
     api.mintCliToken(body).then((d) => {
       setCliMinted(d);
       setCliLabel('');
       setCliReadOnly(false);
+      setCliTtlDays(90);
       return api.getCliTokens().then((x) => setCliTokens(x.tokens || []));
     }).catch((e) => setCliMsg(e.message));
   };
@@ -889,11 +891,20 @@ export default function Settings({ onClose, theme = 'auto', onTheme = () => {} }
                         <span className="sub">— can only read (GET); for dashboards and the Home Assistant
                           integration. It can never post chat or change anything.</span>
                       </label>
+                      <label>Expires <span className="sub">— how long this token stays valid; pick “Never” for
+                        always-on credentials like a Home Assistant dashboard</span>
+                        <select value={cliTtlDays} onChange={(e) => { setCliTtlDays(Number(e.target.value)); setCliMsg(null); }}>
+                          <option value={30}>30 days</option>
+                          <option value={90}>90 days</option>
+                          <option value={365}>1 year</option>
+                          <option value={0}>Never (unlimited)</option>
+                        </select>
+                      </label>
                       <div className="settings-foot">
                         {cliMsg && <span className="ok">{cliMsg}</span>}
                         <button className="primary" onClick={mintCli} disabled={busy || authCfg?.cliEnabled !== true}
                           title={authCfg?.cliEnabled === true ? undefined : 'Enable the terminal client first'}>
-                          Mint token (90 days)
+                          Mint token ({cliTtlDays === 0 ? 'never expires' : cliTtlDays === 365 ? '1 year' : `${cliTtlDays} days`})
                         </button>
                       </div>
                       {cliTokens?.length > 0 && (

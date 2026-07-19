@@ -172,6 +172,40 @@ test('the "cmd" chat command mints a connect line on any channel — web and cha
   }
 });
 
+test('the "token" chat command mints a read-only, non-expiring token behind a yes/no confirm', async () => {
+  const user = getOrCreateTelegramUser(777010, 'tokchat'); // a non-owner — proves ANY authorized user can self-mint
+  // Off by default: a non-owner's "token" is just a word → filed as a task (no mint, no admin hint).
+  const off = await handleMessage({ userId: user, text: 'token', channel: 'telegram' });
+  assert.doesNotMatch(String(off.reply), /fnd1_/);
+  assert.match(String(off.reply), /Filed/i, 'disabled + non-owner → a plain task');
+  setAuthConfig({ cliEnabled: true });
+  try {
+    // Step 1: the command warns and asks — but mints NOTHING yet.
+    const ask = await handleMessage({ userId: user, text: 'token', channel: 'telegram' });
+    assert.doesNotMatch(String(ask.reply), /fnd1_/, 'no token until confirmed');
+    assert.match(String(ask.reply), /read-only/i, 'the warning names the scope');
+    assert.match(String(ask.reply), /“yes”|yes.*no/i, 'offers a yes/no');
+    // Step 2: "yes" mints a read-only, non-expiring token for THIS account.
+    const yes = await handleMessage({ userId: user, text: 'yes', channel: 'telegram' });
+    assert.match(String(yes.reply), /fnd1_[A-Za-z0-9_-]+/, 'the raw token, shown once');
+    const row = lastRow();
+    assert.equal(Number(row.user_id), user, 'minted for the sender’s own account (per-user)');
+    assert.equal(row.scope, 'read', 'read-only scope');
+    assert.equal(row.expires_at, null, 'non-expiring (unlimited)');
+    // "no" cancels without minting.
+    await handleMessage({ userId: user, text: 'token', channel: 'telegram' });
+    const before = lastRow().id;
+    const no = await handleMessage({ userId: user, text: 'no', channel: 'telegram' });
+    assert.doesNotMatch(String(no.reply), /fnd1_/);
+    assert.equal(lastRow().id, before, 'cancel mints nothing');
+    // Exact-match only: "token for the garage door" is a task, not a mint.
+    const task = await handleMessage({ userId: user, text: 'token for the garage door', channel: 'telegram' });
+    assert.doesNotMatch(String(task.reply || ''), /fnd1_/);
+  } finally {
+    setAuthConfig({ cliEnabled: false });
+  }
+});
+
 test('last_used_at stamps at most hourly (the CLI polls — do not write per tick)', () => {
   const token = auth.mintCliToken(root, { label: 'throttle' });
   auth.resolveCliToken(token);

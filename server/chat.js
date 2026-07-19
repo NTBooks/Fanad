@@ -45,7 +45,7 @@ import { archiveUserData } from './retention.js';
 import {
   getDialogState, setDialogState, clearDialogState, dialogIsStale, answersPendingState,
   reactionAnswer, groomingAnswer, taskFilterAnswer, feedbackAnswer, referenceAnswer,
-  deleteConfirmAnswer,
+  deleteConfirmAnswer, haTokenConfirmAnswer,
   setListing, resolveListing, setPageState, getPageState,
   getListCursor, setListCursor, clearListCursor,
   getTaskLock, setTaskLock, clearTaskLock, parseLockTarget,
@@ -1797,6 +1797,7 @@ const DIALOG_HANDLERS = {
   task_reference: handleTaskReference,
   stepping: handleStepping,
   delete_confirm: handleDeleteConfirm,
+  ha_token_confirm: handleHaTokenConfirm,
   list_nav: handleListNav,
 };
 
@@ -2059,6 +2060,61 @@ function cmdReply(identityId, channel) {
   };
 }
 
+// 🔑 "token" — mint a READ-ONLY, non-expiring claim token for the sender's own account, so an outside app
+// (a Home Assistant dashboard, a wall tablet) can read /api/ha/summary. Deliberately its own command, NOT
+// `/cmd`: that mints a FULL, 90-day terminal-client credential; this is the safe, long-lived read credential
+// dashboards actually want. Two-step by design — a warning + yes/no confirm — because the raw token arrives
+// over the chat channel. Any authorized user can mint their OWN (mintCliToken is per-account, refuses
+// notebook rows); the gate at the call site mirrors /cmd (owner, or the terminal client enabled).
+function startHaTokenConfirm(userId) {
+  const close = { buttons: [[CLOSE_BTN]] };
+  if (!getAuthConfig().cliEnabled) {
+    return { text: '💻 The terminal client is currently disabled. Enable it under Settings → Security → Terminal client tokens, then send “token” again.', ...close };
+  }
+  setDialogState(userId, { type: 'ha_token_confirm', prompt: 'mint a read-only access token?' });
+  return {
+    text: [
+      '🔑 Mint a read-only access token?',
+      '',
+      'This creates a long-lived token that lets an outside app (like a Home Assistant dashboard) READ your Fanad numbers — task counts, deadlines, and any modules you have on. It:',
+      '• can only read — it can never post chat or change anything,',
+      '• never expires until you revoke it (Settings → Security → Terminal client tokens),',
+      '• covers only YOUR data (and whichever notebook you’re in when it’s read).',
+      '',
+      '⚠️ Anyone who has the token can read those numbers, and it will arrive here in chat — so copy it, then delete the message.',
+      '',
+      'Reply “yes” to mint it, or “no” to cancel.',
+    ].join('\n'),
+    ...close,
+  };
+}
+
+function handleHaTokenConfirm(userId, text, _ds, { channel = 'web', identityId = userId } = {}) {
+  const close = { buttons: [[CLOSE_BTN]] };
+  clearDialogState(userId);
+  if (haTokenConfirmAnswer(text) !== 'yes') return { text: 'Okay — no token minted.', ...close };
+  // Re-check the switch: the owner could have turned the terminal client off between the prompt and the reply.
+  if (!getAuthConfig().cliEnabled) return { text: '💻 The terminal client is disabled now — nothing minted.', ...close };
+  let token;
+  try {
+    token = mintCliToken(accountIdFor(identityId), { label: `read-only via chat (${channel}) · ${new Date().toISOString().slice(0, 10)}`, ttlDays: 0, scope: 'read' });
+  } catch (err) {
+    return { text: `I couldn’t mint a token: ${err.message}`, ...close };
+  }
+  const serverUrl = getSiteConfig().url || `http://localhost:${config.port}`;
+  return {
+    text: [
+      '🔑 Your read-only token — shown ONCE (only its hash is stored):',
+      '',
+      code(token).toString(),
+      '',
+      `Point a dashboard at ${serverUrl}/api/ha/summary with the header  Authorization: Bearer <token>. It never expires and can only read. Revoke anytime: Settings → Security → Terminal client tokens. Copy it now, then delete this message.`,
+    ].join('\n'),
+    html: true,
+    ...close,
+  };
+}
+
 async function dispatchIntent(intent, args, { userId, t, channel, energy, isOn, moduleAvailable = () => true }) {
   switch (intent) {
     case 'whatdo': return startSuggestion(userId, { channel, energy, today: /\btoday\b/i.test(args.text || t) });
@@ -2236,6 +2292,11 @@ async function route({ userId, identityId = userId, text, energy = null, channel
   // "cmd to clear the cache" still files as a task — and while the surface is disabled, only the owner
   // matches at all (the enable-it hint is an admin instruction), so a non-owner's "cmd" files as a task too.
   if ((lower === '/cmd' || lower === 'cmd') && (getAuthConfig().cliEnabled || isOwner(identityId))) return cmdReply(identityId, channel);
+  // 🔑 token — mint a READ-ONLY, non-expiring token for a dashboard / Home Assistant (see startHaTokenConfirm).
+  // Exact-match the request phrases so "token for the parking garage" still files as a task; same enable/owner
+  // gate as cmd, so a non-owner's "token" files as a task while the terminal client is off.
+  if (/^\/?(?:token|newtoken|mint(?:\s+a)?\s+token|create(?:\s+a)?\s+token|new\s+token|get(?:\s+a)?\s+token)$/i.test(lower)
+    && (getAuthConfig().cliEnabled || isOwner(identityId))) return startHaTokenConfirm(userId);
   // 🛡️ demo — the owner's kill switches (see demoCommand above). The tight verb list keeps "demo the new
   // build to Sarah" filing as a task; non-owners never match, so for them even "demo pause" is just a task.
   if ((m = /^\/?demo(?:\s+(pause|resume|unpause|status|freeze|unfreeze|thaw|signups?\s+on|signups?\s+off)(?:\s+vouch(?:ing|es)?)?)?\s*$/i.exec(t)) && isOwner(identityId)) {
