@@ -4,6 +4,28 @@ All notable changes to Fanad are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-19
+
+### Added
+- **Medication module** (opt-in): a calm adherence logger modeled on the Diet module. Log
+  doses, keep per-medication metrics (hidden from the daily tally), set up templates and daily
+  reminders, and review it all in a web view. A logger, not an advisor.
+- **Speed dial** (owner-curated Home Assistant pads): program another Telegram account's 0-9
+  pad, mapping each slot to a Home Assistant command you authored. They send a bare digit (or
+  tap a button) and it fires only that command. An optional "speed-dial only" lock restricts an
+  account to its pad, with no tasks or chat.
+- First-run reaction demo in the web UI: a self-playing reel that teaches the "command pad, not
+  a chatbot" model, with a replay button.
+- Browser (non-Telegram) demo signup: the signup link opens the create-account panel directly.
+- The docs site (brochure, manual, cheatsheet, how-tos) is now published to GitHub Pages.
+
+### Changed
+- The web shortcut legend nests sub-shortcuts under their parent for a cleaner map.
+
+### Fixed
+- The reaction-demo reel runs slower and pauses on hover or focus.
+- Stale quick-reply chips are cleared on a contentless acknowledgement.
+
 ## [0.2.1] - 2026-07-18
 
 ### Home Assistant
