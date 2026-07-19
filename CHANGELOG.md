@@ -4,6 +4,16 @@ All notable changes to Fanad are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-19
+
+### Added
+- Self-service access token: the chat `token` command (also `create` / `new` / `mint` / `get token`)
+  mints a read-only, never-expiring claim token scoped to your own account, behind a yes/no confirm
+  with a warning. It is the credential a Home Assistant dashboard needs to read your Fanad data, so
+  any authorized user can now get one without the owner-only web panel. Shown once.
+- Web Settings, Security: an "Expires" dropdown (30 / 90 / 365 days / Never) when minting a token,
+  exposing the never-expiring option the backend already supported.
+
 ## [0.3.0] - 2026-07-19
 
 ### Added
