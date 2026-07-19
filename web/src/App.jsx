@@ -384,7 +384,18 @@ export default function App() {
   function appendBotTurn(p) {
     // A kind:'ack' turn is a contentless emoji ack (🌱/👍) — the reaction stamped on your OWN message is the
     // whole reply (send() swaps it in), so no bot bubble. Matches Telegram/Slack; it's never persisted either.
-    if (p.kind === 'ack') return;
+    // But an ack ANSWERS whatever the prior bot turn asked (e.g. the "how did that feel?" chips after a
+    // completion), so strip that turn's quick-reply options — otherwise the chip row lingers on the stale
+    // bubble and re-tapping it just acks forever (an endless-loop of clickable OKs). `buttons` (the per-task
+    // menu) are persistent affordances, so leave those alone.
+    if (p.kind === 'ack') {
+      setMessages((m) => {
+        const i = m.map((x) => x.role).lastIndexOf('bot');
+        if (i < 0 || !m[i].options) return m;
+        return [...m.slice(0, i), { ...m[i], options: null }, ...m.slice(i + 1)];
+      });
+      return;
+    }
     // "✕ Hide / ✕" dismissed the screen it sat on (always the latest bot turn, since only that turn shows
     // buttons) — drop that bubble. Mirrors Telegram deleting the message.
     if (p.hide) {
