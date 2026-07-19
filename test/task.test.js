@@ -78,7 +78,7 @@ test('a live deadline outranks undated work in /whatdo', async (t) => {
   // Freeze the clock at a safe midday so this is deterministic no matter when the suite runs. A wall-clock
   // "end of today" seed is racy near midnight: in the final minute (now > 23:59) the deadline is already in
   // the PAST, so suggestTask's expireDueTasks() drops the task and an undated/later one wins (a real
-  // observed failure at ~23:59 local). now+1h had the opposite problem — it rolls into "tomorrow" late in
+  // observed failure at ~23:59 local). now+1h had the opposite problem: it rolls into "tomorrow" late in
   // the evening. Pinning now to noon sidesteps both; end-of-today is then unambiguously live and "due today".
   const noon = new Date(); noon.setHours(12, 0, 0, 0);
   t.mock.timers.enable({ apis: ['Date'], now: noon.getTime() });
