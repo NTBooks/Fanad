@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 
 // A self-playing onboarding reel: it SHOWS how Fanad reads a message (statement→task, question→command,
@@ -10,9 +10,10 @@ import { m, AnimatePresence } from 'framer-motion';
 // Hold the 👀 "thinking" face before swapping to the decision emoji — mirrors App.jsx / Telegram REACT_MIN_MS.
 const REACT_HOLD_MS = 600;
 // How long a step lingers before auto-advancing: a turn step (has a reaction to watch) gets longer than a
-// caption-only card. The last step never auto-advances — it holds on the recap + "try it" buttons.
-const TURN_MS = 4200;
-const CARD_MS = 3400;
+// caption-only card. A turn's bot bubble only appears after REACT_HOLD_MS, so subtract that from the reading
+// budget when tuning. The last step never auto-advances — it holds on the recap + "try it" buttons.
+const TURN_MS = 7000;
+const CARD_MS = 5500;
 const springPop = { type: 'spring', stiffness: 500, damping: 22 };
 
 // A /command token at the start of a word (same shape as App.jsx's CMD_RE) — rendered as an inert chip here,
@@ -54,20 +55,39 @@ function Turn({ me, react, reacted }) {
 export default function ReactionDemo({ reel, onClose, onTry }) {
   const [step, setStep] = useState(0);
   const [reacted, setReacted] = useState(false); // has the current turn's decision emoji been revealed yet
+  const [paused, setPaused] = useState(false);   // hovering (or focusing) the card freezes the auto-advance
   const s = reel[step] || {};
   const isLast = step === reel.length - 1;
   const hasTurn = !!(s.me || s.turns);
 
-  // Reveal + auto-advance timers, re-armed whenever the step changes (so Prev replays a step's animation).
+  // Reveal the decision emoji shortly after a turn step appears (caption/recap cards reveal immediately).
+  // Re-armed per step so Prev replays the 👀→decision swap.
   useEffect(() => {
     setReacted(false);
-    const timers = [];
-    if (hasTurn) timers.push(setTimeout(() => setReacted(true), REACT_HOLD_MS));
-    else setReacted(true); // caption/recap cards have nothing to swap — reveal the bot bubble immediately
-    if (!isLast) timers.push(setTimeout(() => setStep((i) => Math.min(i + 1, reel.length - 1)), hasTurn ? TURN_MS : CARD_MS));
-    return () => timers.forEach(clearTimeout);
+    if (!hasTurn) { setReacted(true); return; }
+    const t = setTimeout(() => setReacted(true), REACT_HOLD_MS);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
+
+  // Auto-advance, pausable on hover/focus. We bank the time left on the current step so pausing freezes the
+  // countdown and resuming picks up where it stopped (rather than restarting the whole step from the top).
+  const remainingRef = useRef(0);
+  const startedAtRef = useRef(0);
+  useEffect(() => { remainingRef.current = hasTurn ? TURN_MS : CARD_MS; // fresh budget whenever the step changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+  useEffect(() => {
+    if (isLast) return;               // the last step holds on the recap + "try it" buttons
+    if (paused) {                     // freeze: subtract elapsed so the next resume continues where we stopped
+      if (startedAtRef.current) remainingRef.current = Math.max(0, remainingRef.current - (Date.now() - startedAtRef.current));
+      return;
+    }
+    startedAtRef.current = Date.now();
+    const t = setTimeout(() => setStep((i) => Math.min(i + 1, reel.length - 1)), remainingRef.current);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, paused, isLast]);
 
   // Esc closes; arrows step through (buttons do the same).
   useEffect(() => {
@@ -82,7 +102,9 @@ export default function ReactionDemo({ reel, onClose, onTry }) {
 
   return (
     <div className="settings-overlay" onClick={onClose}>
-      <div className="settings demo-card" onClick={(e) => e.stopPropagation()}>
+      <div className="settings demo-card" onClick={(e) => e.stopPropagation()}
+        onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+        onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
         <div className="settings-head">
           <h2>🎬 How Fanad works</h2>
           <button className="x" onClick={onClose} aria-label="Close">✕</button>
