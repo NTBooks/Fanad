@@ -264,7 +264,7 @@ export function setFeaturesConfig(partial = {}) {
 // rides the existing per-user cleanup on /requestdeletion (repo.userSettingKeys). The legacy global
 // get/setFeaturesConfig + get/setMetricsConfig above are kept only for the SETUP_MODE settings backup — they
 // no longer gate anything. ──
-export const OPTIN_FEATURES = ['notes', 'lists', 'metrics', 'diet', 'vouch', 'notebook', 'timer', 'journal', 'batches', 'homeassistant'];
+export const OPTIN_FEATURES = ['notes', 'lists', 'metrics', 'diet', 'vouch', 'notebook', 'timer', 'journal', 'batches', 'homeassistant', 'medication'];
 const userFeaturesKey = (userId) => `features:${userId}`;
 export function getUserFeatures(userId) {
   const o = getSetting(userFeaturesKey(userId), {}) || {};
@@ -442,7 +442,7 @@ export function setGuardConfig(partial = {}) {
 // available on deploy; ship a NEW module dark by adding its key to SYSTEM_MODULES_DEFAULT_OFF and flip it on
 // from Settings → Modules (or "system enable <mod>") when it's ready. markConfigDirty() is intentionally NOT
 // called here (would cycle settings↔clientConfig) — the two write call-sites bump the web config version. ──
-const SYSTEM_MODULES_DEFAULT_OFF = new Set(['homeassistant']); // keys here ship "dark" (off until released)
+const SYSTEM_MODULES_DEFAULT_OFF = new Set(['homeassistant', 'medication']); // keys here ship "dark" (off until released)
 export function getSystemModules() {
   if (sysModulesCache) return sysModulesCache;
   const o = getSetting('system_modules', {}) || {};

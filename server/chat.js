@@ -87,7 +87,7 @@ export function isFeatureOnFor(userId, name) { return makeIsOn(userId)(name); }
 // offer shown when someone reaches a module that's off for them. The offer carries a one-tap turn-on button
 // (m:optin:<module>) and a "Not now" that just dismisses it — discoverable without re-cluttering the surface.
 const OPTIN_MODULES = OPTIN_FEATURES; // notes · lists · metrics · vouch · notebook
-const MODULE_LABEL = { notes: 'Notes', lists: 'Lists', metrics: 'Metrics', diet: 'Diet', vouch: 'Vouch', notebook: 'Notebooks', timer: 'Timer', journal: 'Journal', batches: 'Batches', homeassistant: 'Home Assistant' };
+const MODULE_LABEL = { notes: 'Notes', lists: 'Lists', metrics: 'Metrics', diet: 'Diet', vouch: 'Vouch', notebook: 'Notebooks', timer: 'Timer', journal: 'Journal', batches: 'Batches', homeassistant: 'Home Assistant', medication: 'Medication' };
 const MODULE_OFF_TEXT = {
   metrics: 'Metrics are off for you — turn them on to use track / measure / tally / chart.',
   diet: 'Diet is off for you — turn it on to log what you eat by weight: “eat 4 oz chicken breast”, a canonical food list, and recipes.',
@@ -99,6 +99,7 @@ const MODULE_OFF_TEXT = {
   journal: 'The Journal is off for you — turn it on to keep a daily checklist + note I can read for trends over time (great for food, symptoms, even a pet).',
   batches: 'Batches are off for you — turn them on to track each run of a process (a brew, a bake, a batch of soap): directions from a template, a dated log, and an outcome per run.',
   homeassistant: 'Home Assistant is off for you — turn it on to ring the house when a timer or reminder fires, talk to HA with “ha <command>”, and push dated tasks onto the house calendar.',
+  medication: 'Medication is off for you — turn it on to log when you take your meds (“med amlodipine”), group them into daily templates (“med template morning = …”), and track adherence. A logger, not medical advice.',
 };
 const MODULE_ON_MSG = {
   notes: '✓ Notes on. Jot with “note …”, see them with /notes, pull one back with /recall.',
@@ -111,6 +112,7 @@ const MODULE_ON_MSG = {
   journal: '✓ Journal on. “journal new food” starts one, “journal template <name>” gives it a daily checklist, “entry” opens today. “guide journal” walks you through it.',
   batches: '✓ Batches on. Save a task with steps as a template first (“template <task N> sourdough”), then “batch new sourdough” opens run #1 — “batch log <text>” keeps the diary, “batch done” closes it. “guide batches” walks you through it.',
   homeassistant: '✓ Home Assistant on. Your timer dings and reminders now ring the house · “ha <command>” talks to HA (“ha turn off the kitchen light”) · “ha test” rings the outputs · “ha” shows status.',
+  medication: '✓ Medication on. “med add amlodipine 5mg” · log a dose with “med amlodipine” · group them: “med template morning = amlodipine, metformin” (I’ll offer a daily reminder) · “meds” shows today. It logs only what you type — not medical advice.',
 };
 const MODULE_OFF_MSG = {
   notes: '✓ Notes hidden. Your notes are kept — “optin notes” brings them back.',
@@ -123,6 +125,7 @@ const MODULE_OFF_MSG = {
   journal: '✓ Journal hidden. Your journals and their entries are kept (and I’ll still tidy summaries overnight) — “optin journal” brings them back.',
   batches: '✓ Batches hidden. Your runs and their logs are kept — “optin batches” brings them back.',
   homeassistant: '✓ Home Assistant hidden. The house stays quiet for your dings — “optin ha” brings it back.',
+  medication: '✓ Medication hidden. Your meds, templates and dose history are kept, and reminders stop — “optin medication” brings it back.',
 };
 function offerOn(name) {
   return {
@@ -142,6 +145,7 @@ function moduleKey(word) {
   if (/^(journals?|diar(?:y|ies))$/.test(w)) return 'journal';
   if (/^batch(?:es)?$/.test(w)) return 'batches';
   if (/^(ha|home[- ]?assistant|house)$/.test(w)) return 'homeassistant';
+  if (/^(medication|medications|meds?|rx|pills?)$/.test(w)) return 'medication';
   return null;
 }
 // Turn one module on/off for a user (opt-out HIDES, never deletes — the data is preserved). Returns the
@@ -272,7 +276,7 @@ function maybeEatHint(reply, { userId, isOn, text }) {
 }
 
 // Topic guides gated behind a module — only resolved / advertised while that module is on for the user.
-const GUIDE_GATED = new Set(['metrics', 'diet', 'notes', 'lists', 'timer', 'journal', 'batches']);
+const GUIDE_GATED = new Set(['metrics', 'diet', 'notes', 'lists', 'timer', 'journal', 'batches', 'medication']);
 const guideTopicOn = (key, isOn) => !GUIDE_GATED.has(key) || isOn(key);
 const liveGuideTopics = (isOn) => GUIDE_TOPICS.filter((k) => guideTopicOn(k, isOn));  // gated topics included only when on
 

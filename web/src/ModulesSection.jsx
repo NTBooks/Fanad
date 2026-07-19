@@ -95,6 +95,12 @@ export default function ModulesSection({ filterDisabled = false, compact = false
           Home Assistant <span className="sub">— your timers &amp; reminders ring the house; <code>ha &lt;command&gt;</code> talks to HA</span>
         </label>
       )}
+      {avail('medication') && (
+        <label className="check">
+          <input type="checkbox" checked={features.medication === true} onChange={(e) => toggleFeature('medication', e.target.checked)} />
+          Medication <span className="sub">— log when you take your meds (<code>med amlodipine</code>), daily templates, adherence; a logger, not medical advice</span>
+        </label>
+      )}
       {saved && <span className="ok">Saved ✓</span>}
       {error && <p className="err">⚠ {error}</p>}
     </div>

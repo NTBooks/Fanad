@@ -314,6 +314,25 @@ export const HOMEASSISTANT_GUIDE = [
   'Fanad never reads your house — no sensors, no presence, nothing comes back except what HA answers when you ask. The house is an output, not an input. 🌱',
 ].join('\n');
 
+// Medication is the OPTIONAL adherence-logger module (per-user opt-in, ships dark). A calm "did I take it?"
+// journal: each med is its own tracked metric, named templates group a day's doses, and an optional daily
+// reminder reuses the /wake schedule machinery. It logs only what you type — never a guessed dose, never
+// drug advice. Gated like the other opt-in guides — chat.js resolves + advertises it only while it's on.
+export const MEDICATION_GUIDE = [
+  '✨ Guide: Medication — a calm “did I take it?” log',
+  '',
+  'Not a pillbox and not medical advice — just an easy way to mark a dose taken and see your streak. Each med is tracked on its own, so “did I take my amlodipine today?” always has an answer. 🌱',
+  '',
+  '① Add your meds once: “med add amlodipine 5mg”, “med add metformin”. The dose is just a note (I never guess it).',
+  '② Log a dose when you take it: “med amlodipine”. That’s the whole loop. Took two? Log it twice.',
+  '③ Group a time of day: “med template morning = amlodipine, metformin”. Then one “med morning” logs them all, and I’ll offer a daily reminder (say a time like “8am”, or “no”).',
+  '④ Knock out the day: “med all” logs every scheduled med you haven’t taken yet. “meds” shows today’s ☑/☐ by template.',
+  '⑤ See the trend: “med chart amlodipine” draws your adherence. Slipped a log? “undo” takes back the last dose.',
+  '⑥ Reminders your way: “med template morning remind 8am” sets one; “… remind off” clears it. A reminder never nags once the meds are already logged.',
+  '',
+  '💊 Medication logs only what you type — it’s an adherence journal, not medical advice, and never suggests doses. Ask your pharmacist or doctor about your medications. 🌱',
+].join('\n');
+
 export const GUIDES = {
   steps: STEPS_GUIDE,
   templates: TEMPLATES_GUIDE,
@@ -329,6 +348,7 @@ export const GUIDES = {
   journal: JOURNAL_GUIDE,
   batches: BATCHES_GUIDE,
   homeassistant: HOMEASSISTANT_GUIDE,
+  medication: MEDICATION_GUIDE,
 };
 
 // Spoken name → topic key, so "guide subtasks", "reminder guide", "photo guide" all resolve. Aliases must
@@ -363,6 +383,8 @@ export const GUIDE_ALIASES = {
   ferment: 'batches', fermentation: 'batches', bake: 'batches', baking: 'batches',
   ha: 'homeassistant', homeassistant: 'homeassistant', house: 'homeassistant',
   announce: 'homeassistant', announcements: 'homeassistant', siren: 'homeassistant',
+  medication: 'medication', medications: 'medication', meds: 'medication', med: 'medication',
+  rx: 'medication', pill: 'medication', pills: 'medication', adherence: 'medication', dose: 'medication', doses: 'medication',
 };
 export const GUIDE_TOPICS = Object.keys(GUIDES);
 
@@ -383,6 +405,7 @@ export const GUIDE_LABELS = {
   journal: '📔 Journal',
   batches: '🧪 Batches',
   homeassistant: '🏠 Home Assistant',
+  medication: '💊 Medication',
 };
 
 // Resolve a spoken topic to its canonical key (or null). chat.js uses this to gate config-dependent guides.
@@ -505,6 +528,19 @@ export const COMMAND_SECTIONS = [
     ],
   },
   {
+    key: 'medication',
+    label: '💊 Medication',
+    feature: 'medication',
+    lines: [
+      '• med add amlodipine 5mg — add a med (the dose is just a note; I never guess it) · med list — your catalog',
+      '• med amlodipine — log a dose taken today (took two? log it twice) · undo — take back the last dose',
+      '• med template morning = amlodipine, metformin — group a time of day (I’ll offer a daily reminder) · med morning — log the whole template · med all — log every scheduled med not yet taken',
+      '• /meds — today’s ☑/☐ by template · med chart amlodipine — your adherence trend',
+      '• med template morning remind 8am — set the daily reminder (“… remind off” clears it) · med templates — list them',
+      '• A logger, not medical advice — it never suggests doses. “guide medication” walks it through.',
+    ],
+  },
+  {
     key: 'me',
     label: '📊 Me & metrics',
     lines: [
@@ -521,7 +557,7 @@ export const COMMAND_SECTIONS = [
     lines: [
       '• You start with just Tasks. Optional surfaces stay off until you turn them on — so the chat stays calm.',
       '• modules — see what’s on or off, and tap to toggle.',
-      '• optin lists · optin notes · optin metrics · optin vouch · optin notebook · optin timer · optin journal · optin batches · optin ha — turn one on. optout lists — hide it again (your data is kept; opt back in any time).',
+      '• optin lists · optin notes · optin metrics · optin vouch · optin notebook · optin timer · optin journal · optin batches · optin ha · optin medication — turn one on. optout lists — hide it again (your data is kept; opt back in any time).',
       { feature: 'notebook', text: '• notebook <name> — open a separate, private space with its own tasks, notes & lists (like a fresh notebook); “notebook” lists yours, “notebook main” returns to your default space.' },
     ],
   },

@@ -36,6 +36,7 @@ import {
   getJournalEntry, listEntriesBetween, listJournalSummaries,
   getBatchById, listBatchNames, listBatches, listBatchLog, deleteBatchesByName,
   setDietDay, clearDietDay, getDietDay, listDietDays,
+  getMedTemplate, deleteMed, deleteMedTemplate, setMedTemplateReminder,
   activeTimers, listSchedules, pendingReminders, latestMood,
 } from '../repo.js';
 import {
@@ -47,6 +48,7 @@ import {
   addBatchStep, editBatchStep, removeBatchStep, saveBatchAsVersion, batchVersions, rejectVersion, unrejectVersion,
 } from '../batches.js';
 import { findFood, findRecipe, recipeAsFood, portionOf, logFood, recipeSummary, ensureCaloriesMetric, recordWeight, setCalorieTarget } from '../diet.js';
+import { todayData as medToday, catalogData as medCatalog, templatesData as medTemplatesData, webSetTaken as medSetTaken, webAddMed, webSaveTemplate, medAll, MED_DISCLAIMER } from '../medication.js';
 import { UNIT_TYPES, COUNT_UNIT_TYPES, toFoodUnits } from '../../shared/diet.js';
 import { DAY_ROLLOVER_HOUR, dayStartOf } from '../../shared/timeframe.js';
 import { resolveActingUserId } from '../actingUser.js';
@@ -1103,6 +1105,65 @@ router.get('/diet/chart-data/:name', requireFeature('diet'), (req, res) => {
   if (!['calories', 'weight'].includes(req.params.name)) return res.status(404).json({ error: 'Unknown chart' });
   const d = getMetricChartData(dataUid(req), req.params.name, (req.query.range || '30d').toString());
   if (!d) return res.status(404).json({ error: 'No data yet' });
+  res.json(d);
+});
+
+// ── medication: the opt-in adherence logger (its OWN module, kind='med' metrics stay out of /metrics). Every
+// route is requireFeature('medication') — belt-and-braces behind the web hiding the icon. Logging never calls
+// an LLM. "med chart" reuses the metric chart-data path with the med's own metric name. ──
+router.get('/med/today', requireFeature('medication'), (req, res) => res.json(medToday(dataUid(req))));
+router.get('/meds', requireFeature('medication'), (req, res) => res.json({ meds: medCatalog(dataUid(req)), disclaimer: MED_DISCLAIMER }));
+router.post('/meds', requireFeature('medication'), (req, res) => {
+  const name = (req.body?.name ?? '').toString().trim();
+  if (!name) return res.status(400).json({ error: 'name required' });
+  const dose = req.body?.dose != null ? req.body.dose.toString().trim() : null;
+  webAddMed(dataUid(req), name, dose || null);
+  res.json({ ok: true });
+});
+router.delete('/meds/:name', requireFeature('medication'), (req, res) => {
+  if (!deleteMed(dataUid(req), (req.params.name || '').toString())) return res.status(404).json({ error: 'Med not found' });
+  res.json({ ok: true }); // the adherence metric (history/chart) is kept
+});
+// Tick / untick one med for today. { name, taken } — taken=false removes today's dose(s) for that med.
+router.post('/med/log', requireFeature('medication'), (req, res) => {
+  const name = (req.body?.name ?? '').toString().trim();
+  if (!name) return res.status(400).json({ error: 'name required' });
+  medSetTaken(dataUid(req), name, req.body?.taken !== false);
+  res.json(medToday(dataUid(req)));
+});
+// "log all remaining scheduled meds" — the web button behind the today view.
+router.post('/med/all', requireFeature('medication'), (req, res) => {
+  medAll(dataUid(req));
+  res.json(medToday(dataUid(req)));
+});
+router.get('/med/templates', requireFeature('medication'), (req, res) => res.json({ templates: medTemplatesData(dataUid(req)) }));
+router.post('/med/templates', requireFeature('medication'), (req, res) => {
+  const name = (req.body?.name ?? '').toString().trim();
+  const meds = Array.isArray(req.body?.meds) ? req.body.meds : [];
+  if (!name) return res.status(400).json({ error: 'name required' });
+  if (!meds.length) return res.status(400).json({ error: 'meds required' });
+  webSaveTemplate(dataUid(req), name, meds);
+  res.json({ ok: true });
+});
+router.delete('/med/templates/:name', requireFeature('medication'), (req, res) => {
+  if (!deleteMedTemplate(dataUid(req), (req.params.name || '').toString())) return res.status(404).json({ error: 'Template not found' });
+  res.json({ ok: true });
+});
+// Set (minute 0..1439) or clear (null) a template's daily reminder. The web owns the time picker.
+router.post('/med/template/:name/remind', requireFeature('medication'), (req, res) => {
+  const tpl = getMedTemplate(dataUid(req), (req.params.name || '').toString());
+  if (!tpl) return res.status(404).json({ error: 'Template not found' });
+  const raw = req.body?.minute;
+  const off = raw == null || raw === '' || req.body?.enabled === false;
+  const minute = off ? null : Number(raw);
+  if (!off && !(Number.isInteger(minute) && minute >= 0 && minute <= 1439)) return res.status(400).json({ error: 'minute must be 0..1439 or null' });
+  setMedTemplateReminder(dataUid(req), tpl.id, minute, !off);
+  res.json({ ok: true });
+});
+// Per-med adherence chart data (reuses the metric chart pipeline; the med metric shares the med's name).
+router.get('/med/chart-data/:name', requireFeature('medication'), (req, res) => {
+  const d = getMetricChartData(dataUid(req), (req.params.name || '').toString(), (req.query.range || '30d').toString());
+  if (!d) return res.status(404).json({ error: 'No doses logged yet' });
   res.json(d);
 });
 

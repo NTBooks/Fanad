@@ -23,7 +23,7 @@ setTelegramConfig({ ownerId: null, allowedUsername: '' }); // nobody has claimed
 const OWNER = 1;                                            // root is always the owner
 const bob = getOrCreateTelegramUser(1002, 'bob');          // a non-owner account
 const datasOf = (r) => (r.buttons || []).flat().map((b) => b.data);
-const reset = () => setSystemModules({ notes: true, lists: true, metrics: true, diet: true, vouch: true, notebook: true, timer: true, journal: true, batches: true, homeassistant: true });
+const reset = () => setSystemModules({ notes: true, lists: true, metrics: true, diet: true, vouch: true, notebook: true, timer: true, journal: true, batches: true, homeassistant: true, medication: true });
 
 test('default: every module is available system-wide, so nothing changes', () => {
   reset();

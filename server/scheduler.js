@@ -1,7 +1,9 @@
 // In-process scheduler: weather refresh + the optional "wake-up" check-ins.
 // A one-minute tick (local time, so it's DST-correct by construction) fires any due schedule once a day,
 // queues a gentle, data-grounded nudge for the web, and pushes it to Telegram if the bot is running.
-import { defaultUserId, allDueSchedules, markScheduleFired, insertWakeupMirroredToOwner, expireDueTasks, getImageForTask, allDueReminders, markRemindedAndQueue, sleepStaleTasks, allDueTimers, markTimerFiredAndQueue, reclaimStaleDemoSeats } from './repo.js';
+import { defaultUserId, allDueSchedules, markScheduleFired, insertWakeupMirroredToOwner, expireDueTasks, getImageForTask, allDueReminders, markRemindedAndQueue, sleepStaleTasks, allDueTimers, markTimerFiredAndQueue, reclaimStaleDemoSeats, allDueMedReminders, markMedReminderFired } from './repo.js';
+import { allMedsTakenToday, medReminderText } from './medication.js';
+import { isSystemModuleOn } from './settings.js';
 import { durationLabel } from './services/llm/duration.js';
 import { suggestTask } from './rag/index.js';
 import { runAsLlmUser } from './services/llm/context.js';
@@ -134,6 +136,36 @@ export async function fireDueTimers(now = Date.now(), { send = sendTelegram, sen
   return fired;
 }
 
+// Fire the optional daily MEDICATION reminders (the opt-in Medication module) due at this local minute.
+// Copies fireDueWakeups exactly — the daily-schedule shape — but keyed off med_templates.remind_minute_of_day
+// with last_reminded_day dedup (local midnight, like `schedules`, so "8am" means 8am and "once today" is
+// unambiguous). Globally-dark ⇒ silent (a template's reminder can outlive an opt-out, so also re-check the
+// per-user gate). If every med in the template is already logged today, the row is still STAMPED (so it won't
+// retry) but no nudge is sent — no "take your meds" when they're done. Same cross-user delivery rule and
+// isolation exception (owner mirror) as the other firers. Exported for tests; senders injectable.
+export async function fireDueMedReminders(now = Date.now(), { send = sendTelegram, sendSlackFn = sendSlack, annunciateFn = annunciate } = {}) {
+  if (!isSystemModuleOn('medication')) return []; // shipped dark / owner-disabled ⇒ no med reminders at all
+  const d = new Date(now);
+  const minute = d.getHours() * 60 + d.getMinutes();
+  const day = localDay(now);
+  const fired = [];
+  for (const t of allDueMedReminders(minute, day)) {
+    try {
+      markMedReminderFired(t.user_id, t.id, day); // stamp FIRST so a slow check can't double-fire
+      if (!isFeatureOnFor(t.user_id, 'medication')) continue; // opted out since setting the reminder → stay quiet
+      if (allMedsTakenToday(t.user_id, t.meds_json, now)) continue; // already done today → no nudge
+      const text = medReminderText(t);
+      insertWakeupMirroredToOwner(t.user_id, text); // sanctioned proactive path (web queue + owner mirror)
+      pushToOwner(t, text, null, { sendTg: send, sendSl: sendSlackFn });
+      ringHouse(t.user_id, 'reminder', `${t.name} meds`, annunciateFn);
+      fired.push(text);
+    } catch (err) {
+      console.error(`med reminder ${t.id} failed (continuing with the rest):`, err.message);
+    }
+  }
+  return fired;
+}
+
 let timer = null;
 export function startScheduler() {
   refreshWeather().catch(() => {});
@@ -143,6 +175,7 @@ export function startScheduler() {
     if (ticks % 15 === 0) refreshWeather().catch(() => {}); // ~every 15 min
     fireDueReminders().catch((err) => console.error('reminder tick:', err.message)); // before the expire sweep
     fireDueTimers().catch((err) => console.error('timer tick:', err.message));
+    fireDueMedReminders().catch((err) => console.error('med reminder tick:', err.message));
     try { expireDueTasks(defaultUserId()); } catch { /* backstop; also swept on every access */ }
     // Once a day, sleep long-untouched tasks so the list stays scannable (before nudges → slept tasks aren't suggested).
     // This is the feature's ONLY call site — if it starts throwing, auto-sleep is dead until someone notices: log it.

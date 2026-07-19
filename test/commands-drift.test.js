@@ -22,7 +22,7 @@ const { ARGLESS_COMMANDS } = await import('../shared/commands.js');
 
 migrate();
 // Modules are per-user opt-in (default OFF); the drift check needs every surface visible, so opt root in.
-(await import('../server/settings.js')).setUserFeatures(1, { notes: true, lists: true, metrics: true, vouch: true, timer: true, journal: true, homeassistant: true });
+(await import('../server/settings.js')).setUserFeatures(1, { notes: true, lists: true, metrics: true, vouch: true, timer: true, journal: true, homeassistant: true, medication: true });
 const uid = defaultUserId();
 // Clear any dialog first, so a prior command's open question can't swallow the next as its "answer".
 const reply = async (text) => { clearDialogState(uid); return (await handleMessage({ text })).reply; };

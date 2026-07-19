@@ -4,7 +4,7 @@
 // SINGLE SOURCE OF TRUTH for the tappable list: the web does NOT hardcode it — clientConfig.js puts this
 // into /api/config and web/src/App.jsx reads `cfg.argless`. Edit here only.
 export const ARGLESS_COMMANDS = [
-  '/whatdo', '/tasks', '/notes', '/lists', '/tally', '/timer', '/ha', '/wakelist', '/me', '/rules', '/howto', '/guide', '/manual',
+  '/whatdo', '/tasks', '/notes', '/lists', '/tally', '/meds', '/timer', '/ha', '/wakelist', '/me', '/rules', '/howto', '/guide', '/manual',
 ];
 
 // The single-letter shortcuts, as DATA — one row per letter, so chat.js (routing) and the web legend
@@ -33,4 +33,4 @@ export const SHORTCUT_BARE = Object.fromEntries(SHORTCUTS.filter((s) => s.kind !
 
 // Which ARGLESS_COMMANDS belong to an opt-in module (absent = core, always shown). Shared by chat's
 // commandMenu AND the web legend, so a chip for a switched-off surface never appears on either.
-export const COMMAND_FEATURES = { '/tally': 'metrics', '/notes': 'notes', '/lists': 'lists', '/timer': 'timer', '/ha': 'homeassistant' };
+export const COMMAND_FEATURES = { '/tally': 'metrics', '/meds': 'medication', '/notes': 'notes', '/lists': 'lists', '/timer': 'timer', '/ha': 'homeassistant' };

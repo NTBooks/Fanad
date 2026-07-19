@@ -7,3 +7,4 @@ import './diet.js';
 import './journal.js';
 import './batches.js';
 import './homeassistant.js';
+import './medication.js';

@@ -965,6 +965,52 @@ export const MIGRATIONS = [
   (d) => {
     d.exec('ALTER TABLE tasks ADD COLUMN link_json TEXT');
   },
+
+  // v40 -> v41: MEDICATION module (opt-in). A calm adherence logger modeled on Diet/eat — it records only
+  // what the user types (never an LLM-guessed dose) and is a logger, not an advisor. `meds` is the catalog
+  // (like `foods`); each med owns one named metric (metrics.kind='med') so a dose is just a metric_value
+  // and "taken today" is derived from metricValuesSince — no separate med-log table. `med_templates` are
+  // named schedules (morning/evening/bedtime) with an OPTIONAL daily reminder, whose remind_minute_of_day/
+  // last_reminded_day mirror the `schedules` (/wake) dedup columns so fireDueMedReminders reuses that shape.
+  // The metrics.kind flag keeps med metrics OUT of the generic tally / Metrics view (they surface only on
+  // the dedicated `meds` screen + adherence charts). Both new tables are in USER_TABLES (repo.js) for
+  // retention export + /requestdeletion; med metrics already live in metrics/metric_values (covered).
+  (d) => {
+    d.exec(`
+      CREATE TABLE meds (
+        id         INTEGER PRIMARY KEY,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name       TEXT NOT NULL COLLATE NOCASE,
+        dose       TEXT,                 -- freeform "5mg", "1 tablet" (never LLM-guessed)
+        notes      TEXT,
+        metric_id  INTEGER REFERENCES metrics(id) ON DELETE SET NULL,  -- the per-med adherence metric
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE (user_id, name)
+      );
+      CREATE INDEX idx_meds_user ON meds(user_id, name);
+
+      CREATE TABLE med_templates (
+        id                   INTEGER PRIMARY KEY,
+        user_id              INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name                 TEXT NOT NULL COLLATE NOCASE,   -- "morning", "evening", "bedtime"
+        meds_json            TEXT NOT NULL,                  -- JSON array of med names, order = display
+        remind_minute_of_day INTEGER,                        -- 0..1439 local; NULL = no reminder
+        reminder_enabled     INTEGER NOT NULL DEFAULT 1,
+        last_reminded_day    INTEGER,                         -- epoch-day dedup (local midnight, like schedules)
+        created_at           INTEGER NOT NULL,
+        updated_at           INTEGER NOT NULL,
+        UNIQUE (user_id, name)
+      );
+      CREATE INDEX idx_med_templates_user ON med_templates(user_id, name);
+      CREATE INDEX idx_med_templates_due  ON med_templates(remind_minute_of_day) WHERE remind_minute_of_day IS NOT NULL;
+
+      -- Flag on metrics so med metrics stay OUT of the generic tally / Metrics view. Existing rows backfill
+      -- to 'user' (unchanged); a med's metric is created with kind='med'.
+      ALTER TABLE metrics ADD COLUMN kind TEXT NOT NULL DEFAULT 'user'
+        CHECK (kind IN ('user','med'));
+    `);
+  },
 ];
 
 export function migrate() {

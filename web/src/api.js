@@ -226,6 +226,19 @@ export const logDietWeight = (value, at = null) => post('/api/diet/weight', at ?
 export const getDietWeightLog = () => req('/api/diet/weight-log');
 export const patchDietWeight = (id, patch) => send(`/api/diet/weight/${id}`, 'PATCH', patch);
 export const deleteDietWeight = (id) => send(`/api/diet/weight/${id}`, 'DELETE');
+
+// Medication (opt-in adherence logger). today = the ☑/☐ view; toggleMed ticks/unticks one med for today.
+export const getMedToday = () => req('/api/med/today');
+export const getMeds = () => req('/api/meds');
+export const addMed = (name, dose) => post('/api/meds', { name, dose });
+export const deleteMed = (name) => send(`/api/meds/${encodeURIComponent(name)}`, 'DELETE');
+export const toggleMed = (name, taken) => post('/api/med/log', { name, taken });
+export const logAllMeds = () => post('/api/med/all', {});
+export const getMedTemplates = () => req('/api/med/templates');
+export const saveMedTemplate = (name, meds) => post('/api/med/templates', { name, meds });
+export const deleteMedTemplate = (name) => send(`/api/med/templates/${encodeURIComponent(name)}`, 'DELETE');
+export const setMedReminder = (name, minute) => post(`/api/med/template/${encodeURIComponent(name)}/remind`, { minute });
+export const getMedChartData = (name, range = '30d') => req(`/api/med/chart-data/${encodeURIComponent(name)}?range=${range}`);
 export const setDietTarget = (value) => post('/api/diet/target', { value });
 export const setDietWhatever = (on, date = null) => post('/api/diet/whatever', date ? { on, date } : { on });
 

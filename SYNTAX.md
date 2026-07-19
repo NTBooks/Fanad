@@ -225,6 +225,28 @@ unit        ← "oz"/"ounce(s)"/"g"/"gram(s)"/"lb(s)"/"pound(s)"
 unit_tail   ← "/" ("oz"/"g"/"piece"/"each")                  # food add default: per-oz
 # NB: a FOOD shadows a RECIPE of the same name in eat's lookup (foods → recipes → guess).
 
+# ── medication module (its own opt-in, ships dark; logger not advisor — never calls the LLM) ────
+medication  ← "/"? "med"("s")? SP "add" SP TEXT (SP dose)?     # define/update a med + its kind='med' metric
+            / "/"? "med"("s")? SP ("list"/"catalog")           # the med catalog, taken-today marked
+            / "/"? "med"("s")? SP "chart" SP TEXT (SP range)?  # per-med adherence chart (works w/o Metrics)
+            / "/"? "med"("s")? SP ("del"/"delete"/"rm"/"remove") SP TEXT
+            / "/"? "med"("s")? SP "template" SP TEXT "=" med_list   # define a template → med_reminder dialog
+            / "/"? "med"("s")? SP "template" SP TEXT SP "remind"("er")? SP (clock / "off")   # set/clear reminder
+            / "/"? "med"("s")? SP "template" SP ("del"/"delete"/"rm"/"remove") SP TEXT
+            / "/"? "med"("s")? SP "template"("s")?              # list templates
+            / "/"? "med"("s")? SP "template" SP TEXT            # show one template
+            / "/"? "med"("s")? SP "all"                         # log every scheduled med not yet taken today
+            / ("/meds" / "meds")                               # today's adherence view (☑/☐ by template)
+            / "/"? "med"("s")? SP TEXT                          # log: a template name → whole template; else a
+                                                               #   single med (auto-created on first use)
+                                                               # NB: "undo" is app-wide — the last dose pops off
+                                                               #   the same stack. There is no "med undo".
+dose        ← TEXT                                              # freeform "5mg" / "1 tablet" — NEVER LLM-guessed
+med_list    ← TEXT ("," / ";" TEXT)*                            # comma/semicolon-separated med names
+clock       ← INT (":" INT)? ("am"/"pm"/"a"/"p")?              # "8", "8am", "8:30", "20:00" → minute_of_day
+# NB: "taken today" is derived from the med's metric_values within the 02:00-rollover day, not a stored flag.
+#   The daily reminder dedups on LOCAL-MIDNIGHT (schedules convention) so "8am" means 8am.
+
 # ── start ──────────────────────────────────────────────────────────────────
 admin       ← "/start"                          # Telegram's Start button: onboarding (new user) | command list (returning)
             # ("/start 3" is NOT this — it matches done_cmd above and starts task 3)
@@ -418,6 +440,13 @@ test reads exactly these lines.
 /recipes
 /weight 182
 /target 1800
+# medication (opt-in): commands route even while off (they offer to turn it on, never "unknown")
+med add amlodipine 5mg
+med amlodipine
+med template morning = amlodipine, metformin
+med all
+med chart amlodipine
+/meds
 /menu
 ```
 <!-- drift:end -->

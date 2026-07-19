@@ -36,7 +36,7 @@ async function helpText() {
 
 test('defaults: every optional module is OFF for a fresh user (but the owner gets Vouch auto-on)', () => {
   allOff();
-  assert.deepEqual(getUserFeatures(uid), { notes: false, lists: false, metrics: false, diet: false, vouch: false, notebook: false, timer: false, journal: false, batches: false, homeassistant: false });
+  assert.deepEqual(getUserFeatures(uid), { notes: false, lists: false, metrics: false, diet: false, vouch: false, notebook: false, timer: false, journal: false, batches: false, homeassistant: false, medication: false });
   // root IS the deployment owner → vouch is effectively on for them despite the stored flag…
   assert.equal(isFeatureOnFor(uid, 'vouch'), true);
   // …but a non-owner with the same blank blob has vouch off.

@@ -555,3 +555,24 @@ table.data-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
   .settings{ padding:16px; }
   .task-editor{ padding:16px; }
 }
+
+/* ── Medication view (opt-in module) — reuses .check/.sub/.hint/.err/.nb-warn/.ghost/.link/.view-toggle ── */
+.med-view .mv-head{ display:flex; justify-content:flex-end; margin-bottom:8px; }
+.med-view .mv-section{ margin:0 0 18px; }
+.med-view .mv-section h3{ margin:0 0 8px; font-size:14px; }
+.med-view .mv-section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.med-view .med-template{ margin:0 0 12px; padding:8px 10px; background:var(--surface); border:1px solid var(--line); border-radius:8px; }
+.med-view .med-template-head{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.med-view .med-remind{ font-size:12px; color:var(--soft); }
+.med-view .med-row{ display:flex; align-items:center; gap:8px; padding:3px 0; }
+.med-view .med-row .med-name{ font-weight:500; }
+.med-view .med-catalog-row, .med-view .med-tpl-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:5px 0; border-bottom:1px solid var(--line); }
+.med-view .med-chart{ flex-basis:100%; margin-top:6px; }
+.med-view .x-inline{ margin-left:auto; background:none; border:none; color:var(--soft); cursor:pointer; font-size:13px; padding:2px 6px; }
+.med-view .x-inline:hover{ color:var(--amber); }
+.med-view .med-tpl-time input{ width:110px; }
+.med-view .med-add{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.med-view .med-add input{ flex:1 1 120px; min-width:0; padding:6px 8px; background:var(--surface); border:1px solid var(--line); border-radius:6px; color:inherit; }
+.med-view .med-add input[type="time"]{ flex:0 0 auto; }
+.med-view .med-disclaimer{ margin-top:14px; padding-top:10px; border-top:1px solid var(--line); font-size:12px; color:var(--soft); }
+.med-view .med-text{ white-space:pre-wrap; font-family:inherit; font-size:13px; line-height:1.5; margin:0; }

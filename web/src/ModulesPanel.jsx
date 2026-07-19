@@ -11,6 +11,7 @@ import BatchesView from './BatchesView.jsx';
 // charting code only downloads when one of these views is opened.
 const MetricsView = lazy(() => import('./MetricsView.jsx'));
 const DietView = lazy(() => import('./DietView.jsx'));
+const MedicationView = lazy(() => import('./MedicationView.jsx'));
 
 // The advanced module views the web offers beyond chat. Tasks + Templates are always available (Tasks is
 // the core engine; Templates is task-adjacent); Notes / Lists / Metrics appear only once the user has opted
@@ -22,6 +23,7 @@ export const MODULE_VIEWS = [
   { key: 'lists', label: 'Lists', icon: '🌳', feature: 'lists' },
   { key: 'metrics', label: 'Metrics', icon: '📊', feature: 'metrics' },
   { key: 'diet', label: 'Diet', icon: '🍽️', feature: 'diet' },
+  { key: 'medication', label: 'Meds', icon: '💊', feature: 'medication' },
   { key: 'journal', label: 'Journal', icon: '📔', feature: 'journal' },
   { key: 'batches', label: 'Batches', icon: '🧪', feature: 'batches' },
   { key: 'templates', label: 'Templates', icon: '📄', always: true },
@@ -33,7 +35,7 @@ export function availableModules(features) {
   return MODULE_VIEWS.filter((m) => m.always || (features && features[m.feature]));
 }
 
-const BODY = { tasks: TaskBoard, notes: NotesView, metrics: MetricsView, diet: DietView, lists: ListsTree, journal: JournalView, batches: BatchesView, templates: TemplatesView };
+const BODY = { tasks: TaskBoard, notes: NotesView, metrics: MetricsView, diet: DietView, medication: MedicationView, lists: ListsTree, journal: JournalView, batches: BatchesView, templates: TemplatesView };
 
 // A tiny GUI / Text segmented control each module view renders in its own header — the "show the current
 // state as text as well as a GUI" half of the feature. Shared so the toggle looks and behaves identically

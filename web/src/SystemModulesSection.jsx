@@ -10,7 +10,7 @@ import * as api from './api.js';
 const MODULES = [
   ['notes', 'Notes'], ['lists', 'Lists'], ['metrics', 'Metrics'], ['diet', 'Diet'], ['vouch', 'Vouch'],
   ['notebook', 'Notebooks'], ['timer', 'Timer'], ['journal', 'Journal'], ['batches', 'Batches'],
-  ['homeassistant', 'Home Assistant'],
+  ['homeassistant', 'Home Assistant'], ['medication', 'Medication'],
 ];
 
 export default function SystemModulesSection() {

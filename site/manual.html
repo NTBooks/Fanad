@@ -282,6 +282,7 @@ details.ex[open]>summary{color:var(--accent)}
             <li><a href="#adv-templates">Templates</a></li>
             <li><a href="#adv-metrics">Metrics</a></li>
             <li><a href="#adv-diet">Diet &amp; foods</a></li>
+            <li><a href="#adv-medication">Medication</a></li>
             <li><a href="#adv-journal">Journal &amp; trends</a></li>
             <li><a href="#adv-journal-howto">How-to: a trend journal</a></li>
             <li><a href="#adv-batches">Batches</a></li>
@@ -1005,7 +1006,7 @@ How about “water the plants”?
     </table>
     <div class="callout" role="note">
       <span class="label">Per-user modules are opt-in</span>
-      <p>Notes, Lists, Metrics, Diet, Vouch, Notebooks, Timer, Journal, Batches, and Home Assistant are all off by default so a fresh account sees only Tasks.
+      <p>Notes, Lists, Metrics, Diet, Medication, Vouch, Notebooks, Timer, Journal, Batches, and Home Assistant are all off by default so a fresh account sees only Tasks.
         Turn on exactly what you want; opting a module back out only hides its data, it never deletes it.</p>
     </div>
   </div>
@@ -1327,6 +1328,47 @@ Log it with: eat 8 oz chili</p>
         <tr><td><span class="cmd">undo</span></td><td>Take back the last logged portion &mdash; <span class="cmd">undo</span> is app-wide, so it pops whatever Fanad did last (see Tasks).</td></tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="subsec" id="adv-medication">
+    <h3>Medication</h3>
+    <p><strong>A logger, not medical advice.</strong> Medication is a calm &ldquo;did I take it?&rdquo; journal:
+      you tell it what you take, tap when you take it, and see today&rsquo;s doses and your streak. It records
+      <em>only what you type</em> &mdash; it never guesses a dose, never offers drug or interaction information,
+      and never suggests changes. For anything about your medications, ask your pharmacist or doctor.
+      <span class="mono-note">(Opt-in &mdash; its own module. Each med is tracked on its own, kept out of the
+      general <a href="#adv-metrics">Metrics</a> tally so it doesn&rsquo;t clutter your numbers.)</span></p>
+    <p>The day changes at <strong>2:00&nbsp;am</strong>, not midnight, so a late bedtime dose still counts toward
+      the right day &mdash; the same rollover Diet and the charts use. A <em>reminder</em> you set fires on the
+      wall-clock minute you picked and only once a day, and it stays quiet once that template&rsquo;s meds are
+      already logged.</p>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">med add &lt;name&gt; [dose]</span></td><td>Add a medication. The dose is a free-text note (&ldquo;5mg&rdquo;, &ldquo;1 tablet&rdquo;) &mdash; Fanad never fills it in for you. <span class="cmd">med list</span> shows your catalog with today&rsquo;s ☑/☐.</td></tr>
+        <tr><td><span class="cmd">med &lt;name&gt;</span></td><td>Log a dose taken today (<span class="cmd">med amlodipine</span>). A med you haven&rsquo;t added yet is created on first use. Take it twice a day? Log it twice. <span class="cmd">undo</span> takes back the last dose.</td></tr>
+        <tr><td><span class="cmd">med template &lt;name&gt; = &lt;m1&gt;, &lt;m2&gt;</span></td><td>Group a time of day (<span class="cmd">med template morning = amlodipine, metformin</span>). Fanad then asks if you want a daily reminder &mdash; reply a time like <span class="cmd">8am</span>, or <span class="cmd">no</span>.</td></tr>
+        <tr><td><span class="cmd">med &lt;template&gt;</span> · <span class="cmd">med all</span></td><td><span class="cmd">med morning</span> logs everything in that template at once; <span class="cmd">med all</span> logs every scheduled med you haven&rsquo;t taken yet today. Meds already done are left as they are.</td></tr>
+        <tr><td><span class="cmd">meds</span></td><td>Today&rsquo;s adherence: each template with a ☑ or ☐ per med. This is the one-tap view of &ldquo;what&rsquo;s left today?&rdquo;.</td></tr>
+        <tr><td><span class="cmd">med chart &lt;name&gt; [range]</span></td><td>Your adherence trend for one med (<span class="cmd">med chart amlodipine 90d</span>). Works whether or not the Metrics module is on.</td></tr>
+        <tr><td><span class="cmd">med template &lt;name&gt; remind &lt;time&#124;off&gt;</span></td><td>Set or clear a template&rsquo;s daily reminder without the prompt (<span class="cmd">med template morning remind 8am</span> · <span class="cmd">&hellip; remind off</span>). <span class="cmd">med templates</span> lists them with their times.</td></tr>
+        <tr><td><span class="cmd">med del &lt;name&gt;</span> · <span class="cmd">med template del &lt;name&gt;</span></td><td>Remove a med or a template. A removed med keeps its dose history, so <span class="cmd">med chart &lt;name&gt;</span> still works.</td></tr>
+      </tbody>
+    </table>
+    <details class="ex"><summary>example</summary>
+    <div class="ex-chat">
+      <p class="ex-you">med add amlodipine 5mg</p>
+      <p class="ex-bot">💊 Added amlodipine (5mg). Log a dose with &ldquo;med amlodipine&rdquo;.</p>
+      <p class="ex-you">med template morning = amlodipine, metformin</p>
+      <p class="ex-bot">💊 Saved &ldquo;morning&rdquo;: amlodipine, metformin.<br>Want a daily reminder? Reply a time like &ldquo;8am&rdquo; (or &ldquo;no&rdquo;).</p>
+      <p class="ex-you">8am</p>
+      <p class="ex-bot">🔔 I&rsquo;ll remind you about morning every day at 08:00.</p>
+      <p class="ex-you">med morning</p>
+      <p class="ex-bot">✅ Logged morning: amlodipine, metformin.<br>Today: 2/2 scheduled meds taken.</p>
+    </div>
+    </details>
+    <p class="mono-note">💊 Medication is an adherence journal, not medical advice, and never suggests doses.
+      Talk to your pharmacist or doctor about your medications.</p>
   </div>
 
   <div class="subsec" id="adv-journal">

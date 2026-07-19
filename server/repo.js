@@ -517,6 +517,7 @@ export const USER_TABLES = [
   'task_outcomes', 'user_profile', 'images', 'task_templates', 'list_items', 'web_sessions', 'timers',
   'journals', 'journal_entries', 'journal_summaries', 'foods', 'recipes', 'recipe_items',
   'llm_usage', 'batches', 'batch_log', 'batch_rejects', 'diet_days', 'cli_tokens', 'undo_stack',
+  'meds', 'med_templates',
 ];
 
 // The per-user keys parked in the otherwise-global app_settings store (dialog state, last listing, paging
@@ -1428,17 +1429,21 @@ export function getMetric(userId, name) {
   return db.prepare('SELECT * FROM metrics WHERE user_id=? AND name=? COLLATE NOCASE').get(userId, name) || null;
 }
 export function getOrCreateMetric(
-  userId, name, { unit = null, aggregation = 'sum', target = null, measurementType = 'tallied' } = {},
+  userId, name, { unit = null, aggregation = 'sum', target = null, measurementType = 'tallied', kind = 'user' } = {},
 ) {
   const existing = getMetric(userId, name);
   if (existing) return existing;
   const info = db.prepare(
-    'INSERT INTO metrics (user_id, name, unit, aggregation, target, measurement_type, enabled, created_at) VALUES (?,?,?,?,?,?,1,?)',
-  ).run(userId, name, unit, aggregation, target, measurementType, Date.now());
+    'INSERT INTO metrics (user_id, name, unit, aggregation, target, measurement_type, kind, enabled, created_at) VALUES (?,?,?,?,?,?,?,1,?)',
+  ).run(userId, name, unit, aggregation, target, measurementType, kind, Date.now());
   return db.prepare('SELECT * FROM metrics WHERE id=? AND user_id=?').get(num(info.lastInsertRowid), userId);
 }
+// Generic listing = the user's OWN metrics only. Med metrics (kind='med') are deliberately excluded here so
+// they stay out of every generic surface (the `tally` roll-up, the Metrics web view, the HA summary); they
+// surface only on the dedicated Medication screen. getMetric (by name) stays unfiltered, so `chart amlodipine`
+// still resolves a med metric on request.
 export function listMetrics(userId) {
-  return db.prepare('SELECT * FROM metrics WHERE user_id=? AND enabled=1 ORDER BY created_at').all(userId);
+  return db.prepare("SELECT * FROM metrics WHERE user_id=? AND enabled=1 AND kind='user' ORDER BY created_at").all(userId);
 }
 export function insertMetricValue({ userId, metricId, value, note = null, entryLabel = null, recordedAt = Date.now() }) {
   const info = db.prepare(
@@ -1847,6 +1852,87 @@ export function listUnseenWakeups(userId) {
 }
 export function markWakeupsSeen(userId, at = Date.now()) {
   db.prepare('UPDATE wakeups SET seen_at=? WHERE user_id=? AND seen_at IS NULL').run(at, userId);
+}
+
+// ─────────────────────────── Medication (opt-in module) ───────────────────────────
+// The `meds` catalog (mirrors `foods`) + `med_templates` (named schedules, mirror `schedules`' dedup
+// columns for the optional daily reminder). A dose is logged as a metric_value on the med's own metric
+// (metrics.kind='med'), so "taken today" is derived, not stored — there's no med-log table. Names are
+// unique per user (COLLATE NOCASE, like foods/journals); plural/singular fallbacks are the caller's job.
+export function getMed(userId, name) {
+  return db.prepare('SELECT * FROM meds WHERE user_id=? AND name=? COLLATE NOCASE').get(userId, name) || null;
+}
+export function getMedById(userId, id) {
+  return db.prepare('SELECT * FROM meds WHERE user_id=? AND id=?').get(userId, id) || null;
+}
+export function listMeds(userId) {
+  return db.prepare('SELECT * FROM meds WHERE user_id=? ORDER BY name COLLATE NOCASE').all(userId);
+}
+// UPSERT by (user, name). metric_id is NOT touched here (set via setMedMetric after the metric exists), so a
+// plain re-add ("med add X 10mg") updates the dose/notes without blanking the adherence metric.
+export function upsertMed(userId, { name, dose = null, notes = null }, at = Date.now()) {
+  db.prepare(
+    `INSERT INTO meds (user_id, name, dose, notes, created_at, updated_at) VALUES (?,?,?,?,?,?)
+     ON CONFLICT(user_id, name) DO UPDATE SET
+       dose = COALESCE(excluded.dose, meds.dose),
+       notes = COALESCE(excluded.notes, meds.notes),
+       updated_at = excluded.updated_at`,
+  ).run(userId, name, dose, notes, at, at);
+  return getMed(userId, name);
+}
+export function setMedMetric(userId, medId, metricId) {
+  db.prepare('UPDATE meds SET metric_id=?, updated_at=? WHERE id=? AND user_id=?').run(metricId, Date.now(), medId, userId);
+}
+export function deleteMed(userId, name) {
+  return num(db.prepare('DELETE FROM meds WHERE user_id=? AND name=? COLLATE NOCASE').run(userId, name).changes) > 0;
+}
+
+export function getMedTemplate(userId, name) {
+  return db.prepare('SELECT * FROM med_templates WHERE user_id=? AND name=? COLLATE NOCASE').get(userId, name) || null;
+}
+export function getMedTemplateById(userId, id) {
+  return db.prepare('SELECT * FROM med_templates WHERE user_id=? AND id=?').get(userId, id) || null;
+}
+// Reminder-bearing templates first (soonest time), then the rest by name — the order the `meds` view shows.
+export function listMedTemplates(userId) {
+  return db.prepare(
+    `SELECT * FROM med_templates WHERE user_id=?
+      ORDER BY (remind_minute_of_day IS NULL), remind_minute_of_day, name COLLATE NOCASE`,
+  ).all(userId);
+}
+// UPSERT the member list by (user, name); reminder fields are preserved on update (set via setMedTemplateReminder).
+export function upsertMedTemplate(userId, { name, medsJson }, at = Date.now()) {
+  db.prepare(
+    `INSERT INTO med_templates (user_id, name, meds_json, created_at, updated_at) VALUES (?,?,?,?,?)
+     ON CONFLICT(user_id, name) DO UPDATE SET meds_json = excluded.meds_json, updated_at = excluded.updated_at`,
+  ).run(userId, name, medsJson, at, at);
+  return getMedTemplate(userId, name);
+}
+// Set (minuteOfDay != null) or clear (null) a template's daily reminder. Clearing last_reminded_day makes a
+// freshly-(re)set reminder eligible to fire again today, mirroring setTaskReminder clearing reminded_at.
+export function setMedTemplateReminder(userId, id, minuteOfDay, enabled = true) {
+  db.prepare(
+    'UPDATE med_templates SET remind_minute_of_day=?, reminder_enabled=?, last_reminded_day=NULL, updated_at=? WHERE id=? AND user_id=?',
+  ).run(minuteOfDay, enabled ? 1 : 0, Date.now(), id, userId);
+  return getMedTemplateById(userId, id);
+}
+export function deleteMedTemplate(userId, name) {
+  return num(db.prepare('DELETE FROM med_templates WHERE user_id=? AND name=? COLLATE NOCASE').run(userId, name).changes) > 0;
+}
+// Templates whose daily reminder is due at this local minute and hasn't fired today — same cross-user
+// delivery join as allDueSchedules (owner's channel ids ride along; a notebook sub-user COALESCEs to its
+// parent; a retired notebook stays silent).
+export function allDueMedReminders(minuteOfDay, day) {
+  return db.prepare(
+    `SELECT mt.*, COALESCE(u.telegram_id, p.telegram_id) AS telegram_id, COALESCE(u.slack_id, p.slack_id) AS slack_id
+       FROM med_templates mt JOIN users u ON u.id = mt.user_id
+       LEFT JOIN users p ON p.id = u.parent_user_id
+      WHERE mt.reminder_enabled=1 AND mt.remind_minute_of_day IS NOT NULL AND mt.remind_minute_of_day=?
+        AND (mt.last_reminded_day IS NULL OR mt.last_reminded_day <> ?) AND u.retired_at IS NULL`,
+  ).all(minuteOfDay, day);
+}
+export function markMedReminderFired(userId, id, day) {
+  db.prepare('UPDATE med_templates SET last_reminded_day=? WHERE id=? AND user_id=?').run(day, id, userId);
 }
 
 // ─────────────────────────── Outcome ledger (learning, §11) ───────────────────────────

@@ -214,6 +214,24 @@ export function feedbackAnswer(text) {
   return null;
 }
 
+// The med_reminder answer (medication.js "want a daily reminder?"): a clock time sets it ("8am", "8:30",
+// "20:00"), a decline skips it ("no", "skip", "off"), a bare yes re-prompts for the time. Anything else
+// returns null and escapes as a new intent — the reminder is optional, so a fresh command never gets trapped.
+export function medReminderAnswer(text) {
+  const s = (text || '').trim().toLowerCase().replace(/[.!]+$/, '');
+  if (!s) return null;
+  if (/^(no|nope|nah|n|none|skip|off|later|no thanks?|no reminder)$/.test(s)) return { type: 'no' };
+  const m = /^(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(?:([ap])\.?m?\.?)?$/i.exec(s);
+  if (m) {
+    let h = Number(m[1]); const min = Number(m[2] || 0); const ap = m[3];
+    if (ap === 'p' && h < 12) h += 12;
+    if (ap === 'a' && h === 12) h = 0;
+    if (h <= 23 && min <= 59) return { type: 'time', minute: h * 60 + min };
+  }
+  if (/^(y|yes|yep|yeah|sure|ok|okay|please)$/.test(s)) return { type: 'yes' };
+  return null;
+}
+
 const FAST_ANSWER = {
   food_confirm: (t) => foodConfirmAnswer(t) != null,
   meal_confirm: (t) => foodConfirmAnswer(t) != null, // save-meal's total confirm reuses the same grammar
@@ -228,6 +246,8 @@ const FAST_ANSWER = {
   journal_delete: (t) => deleteConfirmAnswer(t) != null, // journal erase reuses the strict delete grammar
   batch_delete: (t) => deleteConfirmAnswer(t) != null,   // batches erase reuses it too
   diet_notebook: (t) => notebookGuardAnswer(t) != null,  // diet's switch-to-Main guard
+  med_reminder: (t) => medReminderAnswer(t) != null,     // medication's "want a daily reminder?"
+  med_notebook: (t) => notebookGuardAnswer(t) != null,   // medication's switch-to-Main guard
 };
 
 const CONF_NEW_INTENT = 0.8;
@@ -275,7 +295,8 @@ export async function answersPendingState(ds, text) {
   if (ds.type === 'done_feedback' || ds.type === 'task_reference' || ds.type === 'delete_confirm' || ds.type === 'journal_delete'
     || ds.type === 'batch_delete'
     || ds.type === 'food_confirm' || ds.type === 'meal_confirm' || ds.type === 'eat_meal_confirm'
-    || ds.type === 'eat_qty' || ds.type === 'diet_notebook') {
+    || ds.type === 'eat_qty' || ds.type === 'diet_notebook'
+    || ds.type === 'med_reminder' || ds.type === 'med_notebook') {
     return FAST_ANSWER[ds.type](t) ? 'answer' : 'new_intent';
   }
   if (FAST_ANSWER[ds.type]?.(t)) return 'answer';
