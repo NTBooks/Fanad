@@ -247,6 +247,24 @@ clock       ← INT (":" INT)? ("am"/"pm"/"a"/"p")?              # "8", "8am", "
 # NB: "taken today" is derived from the med's metric_values within the 02:00-rollover day, not a stored flag.
 #   The daily reminder dedups on LOCAL-MIDNIGHT (schedules convention) so "8am" means 8am.
 
+# ── speed dial (OWNER-authored access-control config; a guest's ONLY line to the house) ──────────
+# The owner programs another Telegram account's numbers 0-9, each a free-text HA command (run through the
+# same converse() as "ha <command>", against the one HA connection). A pad-holder fires a bare digit or taps;
+# a LIMITED account can do NOTHING else (short-circuited in route()/handleAction). Owner-only authoring; the
+# guest only ever sends a digit, so their input is never free text to HA or an LLM.
+speeddial   ← "/"? ("sd"/"speeddial")                                       # the owner board (all pads)
+            / "/"? ("sd"/"speeddial") SP "@"? HANDLE                        # show one account's pad
+            / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP DIGIT "=" (label "|")? TEXT  # set a slot (0-9)
+            / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP DIGIT SP "clear"    # clear one slot
+            / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP ("clear"/"remove"/"delete")  # clear / drop the pad
+            / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP "limit" SP ("on"/"off")       # lock to speed dial only
+            / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP "test" SP DIGIT     # owner fires a slot (verify)
+pad_use     ← DIGIT                                                          # pad-holder: fire slot 0-9 (bare digit)
+            / "/"? "dial" SP? "#"? DIGIT                                     # fire slot N (unambiguous form)
+            / "/"? ("pad"/"dial")                                           # show my pad
+DIGIT       ← [0-9]                                                          # a speed-dial slot
+label       ← TEXT                                                          # optional slot label before "|"
+
 # ── start ──────────────────────────────────────────────────────────────────
 admin       ← "/start"                          # Telegram's Start button: onboarding (new user) | command list (returning)
             # ("/start 3" is NOT this — it matches done_cmd above and starts task 3)
@@ -447,6 +465,11 @@ med template morning = amlodipine, metformin
 med all
 med chart amlodipine
 /meds
+# speed dial (owner): program another Telegram account's 0-9 Home Assistant pad (the guest fires a bare digit)
+sd
+sd @alice 1 = turn off the kitchen lights
+sd @alice limit on
+sd @alice
 /menu
 ```
 <!-- drift:end -->

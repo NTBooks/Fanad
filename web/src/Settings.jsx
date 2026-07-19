@@ -4,6 +4,7 @@ import AiLog from './AiLog.jsx';
 import ModulesSection from './ModulesSection.jsx';
 import SystemModulesSection from './SystemModulesSection.jsx';
 import HomeAssistantSection from './HomeAssistantSection.jsx';
+import SpeedDialSection from './SpeedDialSection.jsx';
 import ThemeSection from './ThemeSection.jsx';
 
 const FALLBACK_URL = 'http://127.0.0.1:1234/v1'; // shown only before the provider catalog has loaded
@@ -635,6 +636,7 @@ export default function Settings({ onClose, theme = 'auto', onTheme = () => {} }
                     <label>Only respond to <span className="sub">— optional; your @username, keeps strangers out</span>
                       <input value={tg.allowedUsername} onChange={(e) => setTg({ ...tg, allowedUsername: e.target.value })} placeholder="@yourusername" />
                     </label>
+                    <p className="hint">Manage individual accounts and Home Assistant speed dial in the <strong>Access</strong> tab.</p>
                     <label className="check">
                       <input type="checkbox" checked={tg.enabled} onChange={(e) => setTg({ ...tg, enabled: e.target.checked })} />
                       Enable Telegram
@@ -684,6 +686,7 @@ export default function Settings({ onClose, theme = 'auto', onTheme = () => {} }
 
             {cat === 'access' && (
               <div className="settings-cat">
+                <SpeedDialSection />
                 {vouches ? (
                   <div className="tg-section">
                     <h3>Access — vouched-in users</h3>

@@ -476,6 +476,136 @@ export function reclaimStaleDemoSeats({ olderThanMs, now = Date.now() } = {}) {
   return rows.map((r) => r.username);
 }
 
+// ── Speed Dial — owner-curated Home Assistant command pads for OTHER Telegram accounts (migration v42) ──
+// Same shape as vouches: GLOBAL access-control config keyed by the vouched/allowlisted @username, pinned to
+// the numeric telegram_id on first contact (rename/squatter-proof). NOT per-user data — deliberately NO
+// user_id column / USER_TABLES entry, so a guest's /requestdeletion never sweeps the owner's grant record.
+// `speed_dial_accounts` holds the identity + the `speed_dial_only` lockdown flag (an account can exist with
+// no slots yet); `speed_dials` holds the 0-9 command slots. A pad-holder never gets raw `ha` — the pad is
+// their whole line to the house; each slot's owner-authored text runs through the same converse() the
+// `ha <command>` module uses. Runtime lookups resolve by the messaging user's telegram_id then @username.
+
+// The account row for a stored @handle (or null).
+export function getSpeedDialAccount(username) {
+  const u = normUsername(username);
+  if (!u) return null;
+  return db.prepare('SELECT * FROM speed_dial_accounts WHERE username=?').get(u) || null;
+}
+
+// Resolve the account for a messaging identity: pinned telegram_id wins (rename-proof); an unpinned matching
+// @handle is a first contact (linkSpeedDialAccount pins it); a handle pinned to a DIFFERENT id is refused
+// (squatter-proof). Mirrors isVouchedTelegram exactly.
+export function resolveSpeedDialAccount({ telegramId = null, username = null } = {}) {
+  if (telegramId != null) {
+    const byId = db.prepare('SELECT * FROM speed_dial_accounts WHERE telegram_id=?').get(telegramId);
+    if (byId) return byId;
+  }
+  const u = normUsername(username);
+  if (!u) return null;
+  const row = db.prepare('SELECT * FROM speed_dial_accounts WHERE username=?').get(u);
+  if (!row) return null;
+  if (row.telegram_id == null) return row;                 // unpinned — first contact
+  return telegramId != null && Number(row.telegram_id) === Number(telegramId) ? row : null;
+}
+
+// Create/update an account's lockdown flag (idempotent). Returns the fresh row.
+export function upsertSpeedDialAccount({ username, speedDialOnly = false, at = Date.now() }) {
+  const u = normUsername(username);
+  if (!u) return null;
+  db.prepare(
+    `INSERT INTO speed_dial_accounts (username, speed_dial_only, created_at, updated_at)
+     VALUES (?,?,?,?)
+     ON CONFLICT(username) DO UPDATE SET speed_dial_only=excluded.speed_dial_only, updated_at=excluded.updated_at`,
+  ).run(u, speedDialOnly ? 1 : 0, at, at);
+  return getSpeedDialAccount(u);
+}
+
+// Stamp the person's numeric id onto their still-unpinned account on first contact (a no-op otherwise).
+// Mirrors pinVouchTelegramId; called from telegram-handler alongside it.
+export function linkSpeedDialAccount(username, telegramId, at = Date.now()) {
+  const u = normUsername(username);
+  if (!u || telegramId == null) return false;
+  return num(db.prepare(
+    'UPDATE speed_dial_accounts SET telegram_id=?, updated_at=? WHERE username=? AND telegram_id IS NULL',
+  ).run(telegramId, at, u).changes) > 0;
+}
+
+// Delete a whole account (its slots go too — code-managed cascade, like the rest of this section).
+export function deleteSpeedDialAccount(username) {
+  const u = normUsername(username);
+  if (!u) return;
+  db.prepare('DELETE FROM speed_dials WHERE username=?').run(u);
+  db.prepare('DELETE FROM speed_dial_accounts WHERE username=?').run(u);
+}
+
+// The 0-9 slots for a pad, ordered.
+export function listSpeedDialSlots(username) {
+  const u = normUsername(username);
+  if (!u) return [];
+  return db.prepare('SELECT slot, label, command FROM speed_dials WHERE username=? ORDER BY slot').all(u)
+    .map((s) => ({ slot: num(s.slot), label: s.label || '', command: s.command }));
+}
+
+// Set one slot (UPSERT on username+slot); ensures the account row exists so `sd @user N = …` works with no
+// explicit "add account" first. The caller is responsible for authorizing the handle (addVouch).
+export function setSpeedDialSlot({ username, slot, label = '', command, at = Date.now() }) {
+  const u = normUsername(username);
+  if (!u || !Number.isInteger(slot) || slot < 0 || slot > 9 || !String(command || '').trim()) return false;
+  db.prepare('INSERT OR IGNORE INTO speed_dial_accounts (username, speed_dial_only, created_at, updated_at) VALUES (?,0,?,?)').run(u, at, at);
+  db.prepare(
+    `INSERT INTO speed_dials (username, slot, label, command, created_at, updated_at)
+     VALUES (?,?,?,?,?,?)
+     ON CONFLICT(username, slot) DO UPDATE SET label=excluded.label, command=excluded.command, updated_at=excluded.updated_at`,
+  ).run(u, slot, label || null, String(command).trim(), at, at);
+  return true;
+}
+
+export function clearSpeedDialSlot(username, slot) {
+  const u = normUsername(username);
+  if (!u) return;
+  db.prepare('DELETE FROM speed_dials WHERE username=? AND slot=?').run(u, slot);
+}
+
+// Clear every slot but KEEP the account (so its lockdown flag / authorization persist).
+export function clearSpeedDialPad(username) {
+  const u = normUsername(username);
+  if (!u) return;
+  db.prepare('DELETE FROM speed_dials WHERE username=?').run(u);
+}
+
+// Every configured account with its slots — the owner board / web-list feed.
+export function listSpeedDialAccounts() {
+  return db.prepare('SELECT * FROM speed_dial_accounts ORDER BY username').all().map((a) => ({
+    username: a.username,
+    telegramId: a.telegram_id == null ? null : num(a.telegram_id),
+    speedDialOnly: a.speed_dial_only === 1,
+    slots: listSpeedDialSlots(a.username),
+  }));
+}
+
+// ── Runtime helpers keyed by a messaging user's id (route()/the feature have identityId). ──
+function speedDialIdentity(userId) {
+  const u = getUser(userId);
+  return u ? { telegramId: u.telegram_id, username: u.username } : {};
+}
+// The resolved pad for a person: { username, speedDialOnly, slots[] } or null.
+export function getSpeedDialPad(userId) {
+  const acct = resolveSpeedDialAccount(speedDialIdentity(userId));
+  if (!acct) return null;
+  return { username: acct.username, speedDialOnly: acct.speed_dial_only === 1, slots: listSpeedDialSlots(acct.username) };
+}
+// "Has a usable pad" = an account with at least one slot (so a bare digit is only claimed when there's
+// something to fire). A LOCKED account with no slots is caught by isSpeedDialOnly instead (empty-pad message).
+export function hasSpeedDial(userId) {
+  const pad = getSpeedDialPad(userId);
+  return !!(pad && pad.slots.length);
+}
+// Is this account locked to its pad (no tasks/chat)? Independent of whether it has slots yet.
+export function isSpeedDialOnly(userId) {
+  const acct = resolveSpeedDialAccount(speedDialIdentity(userId));
+  return !!(acct && acct.speed_dial_only === 1);
+}
+
 // ── Per-user dossier (behavior profile) ──
 export function getUserProfile(userId) {
   const r = db.prepare('SELECT data_json FROM user_profile WHERE user_id=?').get(userId);

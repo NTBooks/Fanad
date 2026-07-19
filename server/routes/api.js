@@ -49,6 +49,7 @@ import {
 } from '../batches.js';
 import { findFood, findRecipe, recipeAsFood, portionOf, logFood, recipeSummary, ensureCaloriesMetric, recordWeight, setCalorieTarget } from '../diet.js';
 import { todayData as medToday, catalogData as medCatalog, templatesData as medTemplatesData, webSetTaken as medSetTaken, webAddMed, webSaveTemplate, medAll, MED_DISCLAIMER } from '../medication.js';
+import { accountsData, savePadData, addAccountData, removePadData, testSlotData } from '../speeddial.js';
 import { UNIT_TYPES, COUNT_UNIT_TYPES, toFoodUnits } from '../../shared/diet.js';
 import { DAY_ROLLOVER_HOUR, dayStartOf } from '../../shared/timeframe.js';
 import { resolveActingUserId } from '../actingUser.js';
@@ -1938,6 +1939,42 @@ router.post('/vouches/revoke', requireOwner, (req, res) => {
     const platform = req.body?.platform === 'slack' ? 'slack' : 'telegram';
     const revoked = revokeVouchCascade(username, { byUserId: uid(req), platform });
     res.json({ ok: true, revoked });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ── Speed Dial: the owner's per-account Home Assistant command pads, managed from the Access tab's expandable
+// account list. GET returns every allowed Telegram handle (allowlist ∪ vouches ∪ pads) merged with its pad
+// config; the writes create/authorize an account, save its 0-9 slots + lockdown flag, or test-fire a slot
+// against the house. Owner-only, like every access-admin route. All house calls reuse the one HA connection. ──
+router.get('/accounts', requireOwner, (_req, res) => res.json(accountsData()));
+
+router.post('/accounts', requireOwner, (req, res) => {
+  const r = addAccountData(uid(req), (req.body?.username ?? '').toString());
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  res.json(r);
+});
+
+router.put('/accounts/:username', requireOwner, (req, res) => {
+  const r = savePadData(uid(req), req.params.username, {
+    speedDialOnly: req.body?.speedDialOnly === true,
+    slots: Array.isArray(req.body?.slots) ? req.body.slots : [],
+  });
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  res.json({ ...r, ...accountsData() });
+});
+
+router.delete('/accounts/:username/pad', requireOwner, (req, res) => {
+  removePadData(req.params.username);
+  res.json({ ok: true, ...accountsData() });
+});
+
+// Owner "Test" button: fire one slot against the house right now and report what HA said (or why it failed).
+router.post('/accounts/:username/test/:slot', requireOwner, async (req, res) => {
+  try {
+    const r = await testSlotData(req.params.username, Number(req.params.slot));
+    res.json(r);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

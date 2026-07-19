@@ -22,7 +22,7 @@ import {
   saveTemplate, getTemplate, listTemplates, deleteTemplate, materializeTemplate,
   deleteAllUserData,
   getUser, isOwner, isVouched, getActiveVouch, addVouch, listVouchesBy, normUsername,
-  vouchDepthOf, countActiveVouches,
+  vouchDepthOf, countActiveVouches, hasSpeedDial, isSpeedDialOnly,
   getListItem, listChildren, countListChildren, insertListItem, renameListItem, deleteListItem, listItemPath,
   effectiveUserId, accountIdFor, createNotebook, getNotebook, getNotebookByName, listNotebooks, renameNotebook,
   retireNotebook, recoverNotebook, listRetiredNotebooks,
@@ -34,6 +34,7 @@ import { currentWeather } from './weather.js';
 // effect; route()/DIALOG_HANDLERS/handleAction consult the registry at fixed points below.
 import './features/index.js';
 import { tryFeatureCommand, featureDialogHandlers, featureMenuAction } from './features/registry.js';
+import { speedDialGate, padView, fireSlot } from './speeddial.js';
 import { getRetentionConfig, getTelegramConfig, getSiteConfig, getAuthConfig, getUserFeatures, setUserFeatures, OPTIN_FEATURES, getCurrentNotebookId, setCurrentNotebookId, clearCurrentNotebookId, getGuardConfig, setGuardConfig, isSystemModuleOn, getSystemModules, setSystemModules, getHomeAssistantConfig } from './settings.js';
 import { markConfigDirty } from './clientConfig.js';
 import { authModeIsSimple, createWebLinkToken, WEB_LINK_TTL_MS, mintCliToken, CLI_TOKEN_DEFAULT_TTL_DAYS } from './auth.js';
@@ -155,6 +156,9 @@ function setModule(userId, mod, on) {
   // A module disabled system-wide is invisible to non-owners — they can't opt INTO it (a stale m:optin button
   // or the like). Ignore quietly; the owner keeps access, so they may still opt in to preview it.
   if (on && !isSystemModuleOn(mod) && !isOwner(userId)) return null;
+  // A speed-dial pad-holder never gets raw Home Assistant — their curated pad is their whole line to the
+  // house, so block a homeassistant opt-in for them (a stale offer button, etc.). The owner is exempt.
+  if (on && mod === 'homeassistant' && hasSpeedDial(userId) && !isOwner(userId)) return null;
   setUserFeatures(userId, { [mod]: on });
   // Opting OUT of Notebooks returns you to your main space — otherwise you'd be stuck inside a notebook whose
   // switch commands ("notebook main") are now hidden. The notebook data itself is kept (opt-out never deletes).
@@ -2093,6 +2097,12 @@ async function route({ userId, identityId = userId, text, energy = null, channel
   let lower = t.toLowerCase();
   let m;
 
+  // Speed Dial LOCKDOWN — an account the owner limited to speed dial reaches NOTHING but its 0-9 pad. Placed
+  // ahead of the snapshot/command/capture chain so a limited person's messages never file a task or hit the
+  // LLM; a bare 0-9 / "dial N" fires a slot, anything else (incl. a caption-less photo) just re-shows the pad.
+  // The owner is never limited. Button taps take the same gate in handleAction().
+  if (isSpeedDialOnly(identityId) && !isOwner(identityId)) return speedDialGate(identityId, t);
+
   // (2) Capture mood/time for EVERY message (so the status chip + energy stay fresh). Reused by a capture.
   const snap = recordSnapshot({ userId, channel, text: t });
   lastUserMsg.set(userId, snap.messageId);
@@ -2735,6 +2745,12 @@ export async function handleAction(userId, token, { channel = 'web' } = {}) {
   const identityId = userId;
   userId = effectiveUserId(identityId);
   const isOn = makeIsOn(identityId); // per-person module gate for this tap (help/menu chips + the optin/optout toggles)
+
+  // Speed Dial: a pad button tap (m:sd:<n>) fires that slot for the person's OWN account (identity, so being
+  // inside a notebook can't hide the pad). A LIMITED account may tap nothing else — any other token re-shows
+  // the pad (x / hide still dismiss). The owner is never limited.
+  if (d.ns === 'm' && d.verb === 'sd') return fireSlot(identityId, Number(d.value));
+  if (isSpeedDialOnly(identityId) && !isOwner(identityId) && d.ns !== 'x' && !(d.ns === 'm' && d.verb === 'hide')) return padView(identityId);
 
   // Navigation with no task target.
   if (d.ns === 'x') return { text: '', buttons: null };

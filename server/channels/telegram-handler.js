@@ -1,7 +1,7 @@
 // Telegram adapter logic — auth (fail-closed) then hand off to the shared chat brain. Unit-testable
 // without a live bot.
 import { handleMessage, formatStatusText, applyReaction } from '../chat.js';
-import { defaultUserId, getOrCreateTelegramUser, isVouchedTelegram, pinVouchTelegramId } from '../repo.js';
+import { defaultUserId, getOrCreateTelegramUser, isVouchedTelegram, pinVouchTelegramId, linkSpeedDialAccount } from '../repo.js';
 import { getTelegramConfig, setTelegramConfig, getGuardConfig } from '../settings.js';
 
 // Fail-closed access control. Three additive ways in: (1) the manual @username allowlist (cfg.allowedUsername,
@@ -58,6 +58,9 @@ export async function handleIncoming({ text, chatId = null, fromId = null, usern
   // so a later @username rename keeps them in and a squatter claiming the lapsed handle stays out. A no-op
   // for everyone else (only an active, still-unpinned row matching THEIR handle is stamped).
   if (fromId != null && username) pinVouchTelegramId(username, fromId);
+  // Same first-contact stamp for a pre-staged Speed Dial pad: the owner may have programmed this @handle's
+  // numbers before they ever messaged; pin their numeric id so the pad follows them across a later rename.
+  if (fromId != null && username) linkSpeedDialAccount(username, fromId);
 
   // Each Telegram account is its own user; a message with no id (tests) falls back to root.
   const userId = fromId != null ? getOrCreateTelegramUser(fromId, username || null) : defaultUserId();

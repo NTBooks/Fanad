@@ -70,11 +70,12 @@ export function decodeToken(data) {
     // dot-paired like "<batchId>.<pos>"; same value-not-taskId rule as the journal's).
     // m:hacal:<value> (the Home Assistant module's "push to the house calendar" — the value is a TASK id,
     // but it rides in value so the handler can ownership-check + reply on its own terms, like m:tmr).
+    // m:sd:<0-9> (the Speed Dial pad buttons — the value is a slot number, not a task id).
     if (verb === 'list' || verb === 'hub' || verb === 'page' || verb === 'cmd' || verb === 'hide' || verb === 'lnav'
         || verb === 'optin' || verb === 'optout' || verb === 'syson' || verb === 'sysoff' || verb === 'tmr'
         || verb === 'jch' || verb === 'jca' || verb === 'jnt' || verb === 'jop' || verb === 'jsm' || verb === 'jtr'
         || verb === 'bch' || verb === 'bca' || verb === 'blg' || verb === 'bdn' || verb === 'bop' || verb === 'bhi'
-        || verb === 'bas' || verb === 'bsv' || verb === 'hacal') {
+        || verb === 'bas' || verb === 'bsv' || verb === 'hacal' || verb === 'sd') {
       return { ns, verb, taskId: null, value: seg[2] ?? null };
     }
     // m:<act|more|prio|sch|rem|cat>:<taskId>

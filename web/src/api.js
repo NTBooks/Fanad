@@ -77,6 +77,14 @@ export const discoverHomeAssistant = () => req('/api/settings/homeassistant/disc
 // are namespaced by platform (telegram | slack), so revoke carries the row's platform (defaults telegram).
 export const getVouches = () => req('/api/vouches');
 export const revokeVouch = (username, platform = 'telegram') => post('/api/vouches/revoke', { username, platform });
+// Speed Dial (owner only): the expandable account list — every allowed Telegram handle with its 0-9 Home
+// Assistant pad + the "limit to speed dial" flag. Create/authorize an account, save a pad, remove a pad, or
+// test-fire one slot against the house.
+export const getAccounts = () => req('/api/accounts');
+export const addAccount = (username) => post('/api/accounts', { username });
+export const savePad = (username, data) => send(`/api/accounts/${encodeURIComponent(username)}`, 'PUT', data);
+export const removePad = (username) => send(`/api/accounts/${encodeURIComponent(username)}/pad`, 'DELETE');
+export const testSlot = (username, slot) => post(`/api/accounts/${encodeURIComponent(username)}/test/${slot}`, {});
 export const getMetricsSettings = () => req('/api/settings/metrics');
 export const saveMetricsSettings = (data) => post('/api/settings/metrics', data);
 // Per-user module toggles (notes / lists / metrics / vouch / notebook — all default OFF). Booleans.

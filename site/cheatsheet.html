@@ -313,6 +313,19 @@
   </div>
 
   <div class="box">
+    <h2>⚡ Speed Dial <span class="opt">owner-managed</span></h2>
+    <table>
+      <tr><td class="c"><code>1</code> … <code>9</code> · <code>dial 3</code></td><td class="d">a pad-holder fires that number’s house command · <code>pad</code> shows it</td></tr>
+      <tr><td class="c"><code>sd @sam 1 = turn off the kitchen lights</code></td><td class="d">owner: set number 1 (add a label with <code>Label | command</code>)</td></tr>
+      <tr><td class="c"><code>sd @sam limit on</code></td><td class="d">owner: lock @sam to speed dial only (no tasks/chat) · <code>off</code> to unlock</td></tr>
+      <tr><td class="c"><code>sd @sam test 1</code> · <code>sd @sam</code> · <code>sd</code></td><td class="d">owner: test-fire · view one pad · list all pads</td></tr>
+    </table>
+    <div class="note">Give someone a handful of Home Assistant buttons without the run of the house — they send a
+    digit, only your predefined command runs. Set it up in Settings → Access (expand an account). Needs the HA
+    connection (Channels tab).</div>
+  </div>
+
+  <div class="box">
     <h2>📓 Notebooks <span class="opt">optin notebook</span></h2>
     <table>
       <tr><td class="c"><code>notebook work</code></td><td class="d">open (or create) a separate private space</td></tr>

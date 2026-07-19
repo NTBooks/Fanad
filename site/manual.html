@@ -287,6 +287,7 @@ details.ex[open]>summary{color:var(--accent)}
             <li><a href="#adv-journal-howto">How-to: a trend journal</a></li>
             <li><a href="#adv-batches">Batches</a></li>
             <li><a href="#adv-homeassistant">Home Assistant</a></li>
+            <li><a href="#adv-speeddial">Speed Dial</a></li>
             <li><a href="#adv-notebooks">Notebooks</a></li>
             <li><a href="#adv-vouch">Vouching people in</a></li>
             <li><a href="#adv-checkins">Check-ins</a></li>
@@ -1660,6 +1661,57 @@ Calendar: calendar.house
       <span class="cmd">counts</span> event whenever these numbers change &mdash; poll on that instead of a
       timer if your integration can. The payload carries <span class="cmd">version: 1</span>; the shape only
       changes with that number.</p>
+  </div>
+
+  <div class="subsec" id="adv-speeddial">
+    <h3>Speed Dial: give someone a few house buttons</h3>
+    <p>Like the old phone speed dial. You (the owner) give another Telegram person a pad of numbers
+      <span class="cmd">0</span>&ndash;<span class="cmd">9</span>, and set each number to one specific Home
+      Assistant command you write. They send the number &mdash; or tap it &mdash; and only that command runs.
+      It&rsquo;s how you hand a houseguest, a kid, or a roommate a handful of house controls without giving them
+      the run of your whole Home Assistant. A person with a pad never gets the free-text
+      <span class="cmd">ha &lt;command&gt;</span> &mdash; their pad is their only line to the house, and since
+      they only ever send a digit, their words never reach HA. <span class="mono-note">(Owner-managed; needs the
+      Home Assistant connection set up.)</span></p>
+    <p>Each person can be one of two kinds, your choice per account:</p>
+    <ul>
+      <li><strong>Full account + pad</strong> &mdash; a normal Fanad user (their own tasks and chat) who also
+        has the pad.</li>
+      <li><strong>Limited to speed dial</strong> &mdash; the account can do <em>nothing but</em> its
+        <span class="cmd">0</span>&ndash;<span class="cmd">9</span> pad: no tasks, no chat, no other commands.
+        Anything else they send just shows the pad again.</li>
+    </ul>
+    <table class="cmd-table">
+      <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr><td><span class="cmd">0</span>&ndash;<span class="cmd">9</span></td><td>The person with a pad sends a bare digit to fire that number&rsquo;s command.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">1</p>
+        <p class="ex-bot">🏠 1️⃣ Kitchen lights → Turned off the light</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">dial &lt;n&gt;</span></td><td>Fire number <em>n</em> the unambiguous way (handy if they&rsquo;re also using Fanad for other things).</td></tr>
+        <tr><td><span class="cmd">pad</span></td><td>Show my pad &mdash; the numbers with labels and tappable buttons.</td></tr>
+        <tr><td><span class="cmd">sd @user &lt;n&gt; = &lt;command&gt;</span></td><td><em>Owner.</em> Set number <em>n</em> for that person to a Home Assistant command &mdash; the same free text you&rsquo;d type after <span class="cmd">ha</span>. Add a label with <span class="cmd">Label | command</span>.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">sd @sam 1 = Kitchen | turn off the kitchen lights</p>
+        <p class="ex-bot">✓ @sam 1️⃣ Kitchen — turn off the kitchen lights</p>
+      </div>
+      </details></td></tr>
+        <tr><td><span class="cmd">sd @user limit on|off</span></td><td><em>Owner.</em> Lock that account to speed dial only (<span class="cmd">on</span>), or let it be a full account that still has the pad (<span class="cmd">off</span>).</td></tr>
+        <tr><td><span class="cmd">sd @user test &lt;n&gt;</span></td><td><em>Owner.</em> Fire that number against the house yourself, to check it works.</td></tr>
+        <tr><td><span class="cmd">sd @user</span> &middot; <span class="cmd">sd</span></td><td><em>Owner.</em> Show one person&rsquo;s pad, or list every pad you&rsquo;ve set up.</td></tr>
+      </tbody>
+    </table>
+    <p class="mono-note">Setup (owner): in Settings &rarr; <em>Access</em>, every allowed Telegram account is a
+      row you can expand. Add a person by <span class="cmd">@username</span> (they can then reach the bot), open
+      their row, fill the numbers you want, tick <em>Limit to speed dial only</em> if you want them locked to it,
+      and Save. You can program a pad <em>before</em> the person has ever messaged &mdash; it links to them on
+      their first message. Numbers run against the one Home Assistant connection you set in the Channels tab, so
+      set that up first. Each person&rsquo;s row has a <span class="cmd">🖨 Sheet</span> button that prints a
+      hand-out card of their numbers &mdash; give it to them like an old speed-dial card.</p>
   </div>
 
   <div class="subsec" id="adv-notebooks">

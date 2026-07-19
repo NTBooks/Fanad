@@ -1011,6 +1011,41 @@ export const MIGRATIONS = [
         CHECK (kind IN ('user','med'));
     `);
   },
+
+  // v41 -> v42: SPEED DIAL — owner-curated Home Assistant command pads for OTHER Telegram accounts. Like the
+  // old phone speed dial, the owner programs a person's numbers 0-9, each mapped to a specific HA command the
+  // owner authored; that person sends a bare digit (or taps a button) and it fires ONLY that predefined command
+  // (converse() → HA Assist). GLOBAL access-control config keyed by the vouched/allowlisted @username (the same
+  // handle the Telegram allowlist + vouches match on), pinned to the numeric telegram_id on first contact —
+  // deliberately NO user_id column / USER_TABLES entry, exactly like `vouches`: it's the OWNER's grant record,
+  // not the guest's per-user data, so a /requestdeletion erase never sweeps it. `speed_dial_only` locks an
+  // account to its pad (no tasks/chat); off = a normal account that ALSO has the pad. A pad-holder never gets
+  // raw `ha` — the curated pad is their whole line to the house. Slots run via the same converse() passthrough
+  // the `ha <command>` module uses, against the owner's single HA connection.
+  (d) => {
+    d.exec(`
+      CREATE TABLE speed_dial_accounts (
+        id              INTEGER PRIMARY KEY,
+        username        TEXT NOT NULL COLLATE NOCASE,   -- telegram @handle, lowercased, no '@' (the whitelist key)
+        telegram_id     INTEGER,                        -- pinned on first contact (rename/squatter-proof, like vouch)
+        speed_dial_only INTEGER NOT NULL DEFAULT 0,     -- 1 = locked to the 0-9 pad (no tasks/chat); 0 = full account + pad
+        created_at      INTEGER NOT NULL,
+        updated_at      INTEGER NOT NULL,
+        UNIQUE (username)
+      );
+      CREATE TABLE speed_dials (
+        id         INTEGER PRIMARY KEY,
+        username   TEXT NOT NULL COLLATE NOCASE,   -- the pad owner's @handle (speed_dial_accounts.username)
+        slot       INTEGER NOT NULL CHECK (slot BETWEEN 0 AND 9),
+        label      TEXT,                            -- "Kitchen lights" (owner-set or derived from the command)
+        command    TEXT NOT NULL,                   -- owner-authored free text → converse() (HA Assist)
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE (username, slot)
+      );
+      CREATE INDEX idx_speed_dials_username ON speed_dials(username);
+    `);
+  },
 ];
 
 export function migrate() {

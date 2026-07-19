@@ -5,7 +5,8 @@
 // ringing the satellites/script/notify outputs) lives in scheduler.js → services/homeassistant.js;
 // the owner-only connection settings (URL + encrypted token + output targets) live in settings.js and
 // are edited in web Settings — secrets never travel through chat.
-import { getTask, isOwner } from '../repo.js';
+import { getTask, isOwner, hasSpeedDial } from '../repo.js';
+import { padView } from '../speeddial.js';
 import { resolveListing, clearDialogState } from '../dialog.js';
 import { taskEventTime } from '../calendar.js';
 import { getHomeAssistantConfig } from '../settings.js';
@@ -108,7 +109,13 @@ registerFeature({
       const bare = /^ha(?:\s|$)/i.test(lower);
       return slash || (bare && isOn('homeassistant'));
     },
-    run: ({ userId, t, isOn, offerOn }) => {
+    run: ({ userId, identityId = userId, t, isOn, offerOn }) => {
+      // A speed-dial pad-holder never gets raw `ha` — the curated 0-9 pad is the whole house access the owner
+      // granted them. Redirect to their pad instead of the Assist passthrough (and never offer the opt-in).
+      if (hasSpeedDial(identityId) && !isOwner(identityId)) {
+        const pad = padView(identityId);
+        return { text: 'You control the house with your speed dial — send a number, or tap below.', buttons: pad.buttons };
+      }
       if (!isOn('homeassistant')) return offerOn('homeassistant'); // only reachable via the slash form
       clearDialogState(userId);
       let m;
