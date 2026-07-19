@@ -12,14 +12,19 @@ export const ARGLESS_COMMANDS = [
 // lone letter runs an arg-free command ("w"), 'both' = either shape works ("j" and "j new food").
 // `feature` gates the row to an opt-in module (null = core). `menuOnly` marks rows route() dispatches
 // through its own branch (bare "c" → the command menu) — excluded from the derived maps below.
+// `under` names a parent letter for display-only nesting in the web legend (e.g. "add step" only
+// acts on a task, so it sits indented under "t"). Order here IS the legend order, so a child row must
+// follow its parent. Routing ignores `under` (the derived maps read only key/command/kind/menuOnly).
+// Invariant: a child's `feature` must be at least as strict as its parent's, so the parent can never be
+// hidden while an orphaned indented child shows (here r/n share 'notes'; d/k/s and t are all core).
 export const SHORTCUTS = [
   { key: 'n', command: '/note',    label: 'note',           kind: 'with_text', feature: 'notes' },
+  { key: 'r', command: '/recall',  label: 'recall notes',   kind: 'with_text', feature: 'notes', under: 'n' },
   { key: 't', command: '/task',    label: 'task',           kind: 'with_text', feature: null },
-  { key: 'd', command: '/done',    label: 'done',           kind: 'with_text', feature: null },
-  { key: 'k', command: '/drop',    label: 'drop',           kind: 'with_text', feature: null },
+  { key: 'd', command: '/done',    label: 'done',           kind: 'with_text', feature: null, under: 't' },
+  { key: 'k', command: '/drop',    label: 'drop',           kind: 'with_text', feature: null, under: 't' },
+  { key: 's', command: '/step',    label: 'add step',       kind: 'with_text', feature: null, under: 't' },
   { key: 'u', command: '/undo',    label: 'undo',           kind: 'bare',      feature: null },
-  { key: 's', command: '/step',    label: 'add step',       kind: 'with_text', feature: null },
-  { key: 'r', command: '/recall',  label: 'recall notes',   kind: 'with_text', feature: 'notes' },
   { key: 'g', command: '/guide',   label: 'guide',          kind: 'with_text', feature: null },
   { key: 'x', command: '/today',   label: 'due today',      kind: 'with_text', feature: null },
   { key: 'j', command: '/journal', label: 'journal',        kind: 'both',      feature: 'journal' },

@@ -33,7 +33,7 @@ export function LegendPanel({ cfg, features, onInsert, onSend }) {
         <h4>Shortcuts</h4>
         {shortcuts.map((s) => (
           <button
-            key={s.key} type="button" className="legend-row"
+            key={s.key} type="button" className={`legend-row${s.under ? ' legend-row--sub' : ''}`}
             title={s.kind === 'bare' ? `Run ${s.command}` : `Start a message with “${s.key} ” (${s.command})`}
             onClick={() => (s.kind === 'bare' ? onSend(s.command) : onInsert(`${s.key} `))}
           >
