@@ -1,7 +1,38 @@
-# Fanad → Home Assistant Sensor Guide
+# Fanad → Home Assistant Guide
 
-*A practical runbook for wiring Fanad's numbers onto an HA dashboard. Everything here shipped
-2026-07-18 (payload `version: 1`). This is just how to do it.*
+*A practical, agent-oriented runbook for wiring Fanad into Home Assistant: read-only sensors, a
+dashboard, charts, a calendar, per-notebook switching, and the privacy story. Written so whoever
+(human or agent) does this next skips the walls we walked into. Payload `version: 1`.*
+
+> **Setup assumed:** Fanad runs externally (e.g. Coolify) reached over your LAN; HA holds a
+> **read-only** view and all writes stay in Telegram/web. Replace `<fanad-host>`, `<ha-host>`,
+> and `<read-token>` throughout with your own. **Never commit a real token or a private URL.**
+
+## 0. Read this first — the traps (each of these cost hours)
+
+- **ApexCharts can't render a heatmap.** `apexcharts-card` accepts a `chart_type` of only
+  line/scatter/pie/donut/radialBar; `apex_config.chart.type: heatmap` *silently renders a line*
+  and `series[].type: heatmap` is rejected. Use **column** (bars) or **line** for daily history.
+- **`resource_template` renders ONCE at setup and never re-renders.** A `rest:` sensor whose URL
+  depends on an `input_select` will NOT follow it — not on `update_entity`, not on `rest.reload`,
+  not on the scan interval. A dropdown-driven URL needs **trigger template sensors + `rest_command`** (§7).
+- **`rest_command` loads only at HA startup** (it isn't reloadable) → adding one needs a **restart**.
+- **`/local/` is served only if `/config/www` exists at boot.** Create `www` on a running HA and
+  `/local/...` still 404s until you **restart** (the static route registers at startup). This looks
+  like a custom card that "won't load" — but it's a 404, not a bad config.
+- **Swapping a sensor's platform orphans its `entity_id`.** Drop a `rest:` sensor and add a
+  `template:` sensor with the same `unique_id`, and HA hands the new one `sensor.x_2` because the
+  orphaned registry entry still holds `sensor.x`. Delete the orphan first (§7).
+- **HA has no per-entity read ACL.** The admin flag gates config, not entity data — *any* logged-in
+  user can `get_states` and read your sensor attributes (task titles, note text). Restrict the
+  *dashboard* to admins; keep content out of attributes if that isn't enough (§8).
+- **You can't embed an authed Fanad in an iframe panel.** Cross-origin + `SameSite`/third-party
+  cookies mean the login won't stick; the panel keeps asking for a token. HA is visibility-only —
+  open Fanad in a tab / via the `/web` link instead (§8).
+- **The read token can read a *specific* notebook** via `?notebook=<id>` — but only one the token's
+  account owns; anything else falls back to the current space (§2, §7).
+
+The rest is how-to. **Treat the YAML as *example*** — HA drifts, so trust the shapes over exact keys.
 
 ## 1. Mint a read-only token (once)
 
@@ -159,7 +190,145 @@ actions:
       message: "You have {{ states('sensor.fanad_overdue') }} overdue items on the pad."
 ```
 
-## 4. Live updates (instead of polling harder)
+## 4. Building the dashboard (over the WebSocket API)
+
+Storage-mode dashboards are created/edited over HA's authenticated WebSocket API, not YAML. Auth
+handshake: connect `ws://<ha-host>:8123/api/websocket` → on `auth_required` send
+`{type:"auth", access_token:"<HA long-lived token>"}` → `auth_ok`. Then the commands you need:
+
+- `lovelace/dashboards/list` → each has `id` (storage id) and `url_path`.
+- `lovelace/dashboards/create` `{url_path, title, icon, show_in_sidebar, require_admin, mode:"storage"}`
+  — a **new** dashboard, so it can't clobber an existing one.
+- `lovelace/config/save` `{url_path, config}` — the full dashboard config (a `views:` object).
+- `lovelace/config` `{url_path}` — read it back to verify.
+- `lovelace/dashboards/update` `{dashboard_id, require_admin, show_in_sidebar, icon, title}` and
+  `lovelace/dashboards/delete` `{dashboard_id}`.
+
+Use the modern **sections** view with `tile` / `heading` cards, plus `markdown` for lists. To show
+the actual open-task LIST, point a sensor at `/api/tasks` with `json_attributes: [tasks]`, then a
+markdown card filters that attribute:
+
+```yaml
+type: markdown
+content: >
+  {% set ts = state_attr('sensor.fanad_open_tasks','tasks') or [] %}
+  {% for t in ts | rejectattr('slept_at') | selectattr('status','in',['available','in_progress','snoozed']) %}
+  - {{ '▶ ' if t.status == 'in_progress' else '' }}{{ t.summary }}
+  {% endfor %}
+```
+
+Note `/api/tasks` returns the whole board (done rows too); filter in the card. It's larger than the
+summary — fine in a live attribute, but exclude that sensor from the recorder if you care about DB size.
+
+## 5. Charts with ApexCharts (install + the heatmap trap)
+
+HA has no native heatmap/chiclet card. The community `apexcharts-card` is the usual choice — but it
+**cannot draw a heatmap** (see §0). Use **column** bars for daily counts and **line** for trends.
+
+**Installing a custom card on HAOS (no HACS):**
+1. Download the card's built JS from its GitHub *release* (jsdelivr can't serve it — the `dist/`
+   isn't in the repo). ~1.6 MB.
+2. Ensure `/config/www` exists. If newfolder/downloader/save can't create it, the **File-editor
+   add-on's `POST <ingress>/api/exec_command {command:"mkdir -p /config/www"}`** does (it's a shell
+   hook that works when the file APIs won't create dirs).
+3. Write the JS to `/config/www/apexcharts-card.js` via the File-editor ingress `POST api/save`
+   (the ingress accepts ~2 MB bodies fine).
+4. Register the resource: WS `lovelace/resources/create` `{res_type:"module", url:"/local/apexcharts-card.js"}`.
+5. **Restart HA** (so `/local/` is served — see §0), then hard-reload the browser.
+
+A daily bar chart (one bar/day, tight window so recent data fills the card):
+
+```yaml
+type: custom:apexcharts-card
+graph_span: 9w
+header: { show: true, title: Calories / day }
+series:
+  - entity: sensor.fanad_diet_report      # holds a `days: [{date,total}]` attribute
+    type: column
+    data_generator: |
+      return (entity.attributes.days||[]).map(d => [new Date(d.date+'T12:00:00').getTime(), d.total]);
+apex_config: { chart: { height: 150 }, yaxis: [{ min: 0 }], grid: { show: false } }
+```
+
+`data_generator` reads a sensor **attribute** (so history shows immediately, no recorder wait).
+Validate a card offline before shipping: serve the card JS on localhost, load it in a real browser,
+`el.setConfig(cfg)` (catches config errors), then `el.hass = mockHass; append; inspect shadowRoot`
+for `.apexcharts-bar-area` vs `path.apexcharts-line` (catches the heatmap trap).
+
+## 6. A calendar of scheduled tasks
+
+Create a **Local Calendar** (config flow, handler `local_calendar`, a `calendar_name`) → entity
+`calendar.<name>`. Then sync Fanad's dated tasks in as all-day events with `calendar.create_event`
+(`summary`, `start_date`, `end_date` = next day). Mark status in the summary (✓ done / ⚠ missed /
+📌 open) so both history and upcoming read clearly. It's a **one-shot sync** — re-run it when tasks
+change (or drive it from an automation). A native **Calendar card** then renders it.
+
+## 7. Notebook switching (a dropdown that changes the whole view)
+
+Goal: pick a notebook and the whole board switches to it, read-only, without changing Fanad's real
+current notebook. Fanad supports `?notebook=<id>` on the read endpoints (§2). The HA side is the
+hard part, because `resource_template` doesn't re-render (§0). The pattern that works:
+
+1. **Helpers:** `input_select.fanad_notebook` (options: `Main` + notebook names) and
+   `input_button.fanad_refresh`. Create via WS `input_select/create` / `input_button/create`.
+2. **One `rest_command`** for authed GETs:
+   ```yaml
+   rest_command:
+     fanad_get:
+       url: "http://<fanad-host>:8787{{ path }}"
+       method: GET
+       headers: { Authorization: "Bearer <read-token>" }
+   ```
+3. **Trigger-based template sensors** (this is the key — they re-fetch when the dropdown changes):
+   ```yaml
+   template:
+     - trigger:
+         - platform: homeassistant
+           event: start
+         - platform: state
+           entity_id: input_select.fanad_notebook
+         - platform: state
+           entity_id: input_button.fanad_refresh
+         - platform: time_pattern
+           minutes: "/1"
+       action:
+         - variables:
+             # selection -> notebook id; hardcode a name->id map (re-sync if notebooks change)
+             nb: "{% set m = {'work':12,'home':7} %}{{ m.get(states('input_select.fanad_notebook'),'main') }}"
+         - service: rest_command.fanad_get
+           continue_on_error: true
+           response_variable: summ
+           data: { path: "/api/ha/summary?titles=1&notebook={{ nb }}" }
+         # ...repeat for /api/tasks, /api/diet/report, /api/notes into tk/dr/nt
+       sensor:
+         - name: Fanad tasks open
+           unique_id: fanad_tasks_open
+           state: "{{ summ.content.tasks.open if (summ is defined and summ.content is defined) else none }}"
+         # ...the rest read summ/tk/dr/nt .content (rest_command auto-parses JSON into .content)
+   ```
+   Notes: keep the **same `unique_id`s** as your old rest sensors so the dashboard cards keep
+   working; the account's notebook *list* stays a plain `rest:` sensor (it isn't notebook-scoped);
+   the **Refresh button presses `input_button.fanad_refresh`** — `homeassistant.update_entity` is a
+   no-op on template sensors.
+4. **Migrating from `rest:` to `template:` sensors (the `_2` trap):** after saving the new config,
+   `rest.reload` (orphans the old rest sensors), then **delete each orphaned entry** (WS
+   `config/entity_registry/remove {entity_id}`) to free `sensor.fanad_*`, THEN **restart** (loads
+   `rest_command` + the template sensors, which now claim the freed ids). Validate first with
+   `homeassistant.check_config` and read `persistent_notification/get` — the supervisor `/core/check`
+   WS proxy can return an empty `unknown_error` for a plain token and is not a reliable signal.
+
+## 8. Privacy (who can actually see this)
+
+- **Entity states have no per-user ACL in core HA.** Non-admins can't open Developer Tools, but any
+  authenticated account can `get_states` (and mint its own long-lived token) and read your
+  `sensor.fanad_*` attributes — including task titles and note text. The admin flag only gates config.
+- **Lock the dashboard, not the data.** Set `require_admin: true` (WS `lovelace/dashboards/update`)
+  so non-admins don't see it in the sidebar/UI. If you need to defeat even an API query, **keep
+  content out of attributes** (counts-only sensors) — that's the only way to hide it from other accounts.
+- **No embedded app panel.** Embedding an authed, cross-origin, http Fanad in an HA iframe fails on
+  browser cookie policy (§0). Keep HA as the read-only view; reach the app via Telegram `/web`.
+
+## 9. Live updates (instead of polling harder)
 
 `GET /api/stream` (same Bearer token) is an SSE channel. It emits a `counts` event whenever
 the summary numbers change (task/timer/diet mutations, debounced to one event per change
@@ -175,7 +344,7 @@ SSE http://FANAD:8787/api/stream  --(event: counts)-->  action: homeassistant.up
 
 Keep `scan_interval: 300` as the fallback either way.
 
-## 5. Troubleshooting
+## 10. Troubleshooting
 
 | Symptom | Cause / fix |
 |---|---|
@@ -186,8 +355,12 @@ Keep `scan_interval: 300` as the fallback either way.
 | Counts differ from the raw DB | `open` excludes auto-slept tasks on purpose (matches the app's open list; see `tasks.slept`) |
 | Titles missing | By design; add `?titles=1` to the resource URL only if you accept titles in HA's recorder |
 | Sensors went stale | Token hit its 90-day TTL — mint a fresh one, or mint with `--ttl 0` |
+| Custom card won't load / "Configuration error" | `/local/<card>.js` 404s — `www` was created after boot; **restart** (§0, §5). If it loads but a chart is wrong, it's the ApexCharts heatmap trap — use column/line |
+| Notebook dropdown changes nothing | `resource_template` doesn't re-render (§0) — you need trigger template sensors + `rest_command` (§7) |
+| New sensors came up as `sensor.x_2` | Orphaned old registry entries still hold `sensor.x` — delete them, then restart (§7) |
+| A trigger template sensor is `unknown` | Its `rest_command` isn't loaded (needs a **restart**), or the fetch failed — check the `continue_on_error` / `is defined` guards |
 
-## 6. What's next (not built yet)
+## 11. What's next (not built yet)
 
 The HACS companion integration (`fanad-hacs`) will replace the YAML with a config flow (host
 + read-only token), native sensors fed by
