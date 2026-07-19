@@ -106,6 +106,20 @@ const uid = (req) => req.userId;
 // notebook is active (the default), dataUid === uid, so nothing changes.
 const dataUid = (req) => effectiveUserId(uid(req));
 
+// Optional ?notebook=<id|main> override for READ endpoints only (the HA dashboard's notebook picker). The id
+// must be a notebook OWNED by the acting account — anything unknown/foreign falls back to the current
+// effective user, so a token can only ever read its own account's spaces. "main"/"0" = the account's main
+// space. Reads only: writes keep using dataUid (the real current notebook the operator switched into).
+const dataUidForRead = (req) => {
+  const nb = req.query?.notebook;
+  if (nb == null || nb === '') return dataUid(req);
+  const account = uid(req);
+  if (nb === 'main' || nb === '0') return account;
+  const id = Number(nb);
+  if (Number.isInteger(id) && id > 0 && listNotebooks(account).some((n) => n.id === id)) return id;
+  return dataUid(req);
+};
+
 // A positive-integer route/query param, or null. Garbage in ":id" must not reach the SQL binding layer as
 // NaN (an opaque driver error at best, an uncaught 500 on routes without a try/catch) — reject it here.
 const idParam = (v) => { const n = Number(v); return Number.isInteger(n) && n > 0 ? n : null; };
@@ -307,7 +321,7 @@ router.post('/ingest', async (req, res) => {
 // expire past-deadline, auto-sleep the stale) so the board reflects reality, then return every non-archived
 // task — slept ones included (client filters them into the "Slept" drawer by slept_at). ──
 router.get('/tasks', (req, res) => {
-  const u = dataUid(req);
+  const u = dataUidForRead(req);
   sweepSnoozed(u); expireDueTasks(u); sleepStaleTasks(u);
   res.json({ tasks: listTasks(u) });
 });
@@ -583,7 +597,7 @@ router.post('/suggest/task', async (req, res) => {
 });
 
 // ── notes: self-voicemail inbox (§15) ──
-router.get('/notes', (req, res) => res.json({ notes: listNotes(dataUid(req), { status: req.query.status || null }) }));
+router.get('/notes', (req, res) => res.json({ notes: listNotes(dataUidForRead(req), { status: req.query.status || null }) }));
 
 router.get('/recall', async (req, res) => {
   try { res.json({ notes: await recallNotes(dataUid(req), (req.query.q || '').toString()) }); }
@@ -974,7 +988,7 @@ router.delete('/diet/log/:id', requireFeature('diet'), (req, res) => {
 
 // The report: daily calorie totals for the last N days (today last) + the weight series, one read.
 router.get('/diet/report', requireFeature('diet'), (req, res) => {
-  const u = dataUid(req);
+  const u = dataUidForRead(req);
   const days = Math.min(365, Math.max(1, Number(req.query.days) || 30));
   const todayStart = localDayStart(localDateKey());
   const start = todayStart - (days - 1) * 86400000;
@@ -1514,7 +1528,9 @@ router.get('/sidebar', (req, res) => {
 // read the same as /api/sidebar. Pair it with a read-scoped claim token (Security panel → Read-only). ──
 router.get('/ha/summary', (req, res) => {
   const titles = req.query.titles === '1' || req.query.titles === 'true';
-  res.json(buildHaSummary(uid(req), dataUid(req), { titles }));
+  // uid drives the module gates (per account); dataUidForRead is the space to count — the current notebook,
+  // or a specific owned one when the HA dashboard's picker passes ?notebook=<id|main>.
+  res.json(buildHaSummary(uid(req), dataUidForRead(req), { titles }));
 });
 
 router.get('/settings/llm', (_req, res) => res.json(redactLlm(getLlmConfig())));

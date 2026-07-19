@@ -138,6 +138,32 @@ test("mutations emit ONE debounced 'counts' poke per user per tick", async () =>
   }
 });
 
+test('?notebook=<id> reads a specific OWNED notebook read-only; main + foreign resolve safely', async () => {
+  const { createNotebook } = await import('../server/repo.js');
+  const nb = createNotebook(uid, 'ha-nb-test').notebook;
+  // Two tasks in the notebook's isolated space (scoped to the notebook sub-user id).
+  insertTask({ userId: nb.id, summary: 'notebook-only task' });
+  insertTask({ userId: nb.id, summary: 'another nb task' });
+
+  const mainOpen = (await (await GET('/ha/summary')).json()).tasks.open; // the account's current (main) space
+
+  const nbSummary = await (await GET(`/ha/summary?notebook=${nb.id}`)).json();
+  assert.equal(nbSummary.tasks.open, 2, 'the notebook space reports its own 2 open tasks');
+
+  // "main"/"0" → the account's main space, same as no param.
+  assert.equal((await (await GET('/ha/summary?notebook=main')).json()).tasks.open, mainOpen);
+  assert.equal((await (await GET('/ha/summary?notebook=0')).json()).tasks.open, mainOpen);
+
+  // An unknown / not-owned notebook id must NEVER leak another account's data — it falls back to current.
+  assert.equal((await (await GET('/ha/summary?notebook=99999')).json()).tasks.open, mainOpen);
+  assert.equal((await (await GET('/ha/summary?notebook=abc')).json()).tasks.open, mainOpen);
+
+  // /tasks honors it too — the actual notebook rows come back.
+  const nbTasks = (await (await GET(`/tasks?notebook=${nb.id}`)).json()).tasks;
+  assert.equal(nbTasks.length, 2);
+  assert.ok(nbTasks.every((t) => /nb task|notebook-only/.test(t.summary)), 'only the notebook rows, not main');
+});
+
 test('migration v39 backfilled existing rows: the scope column defaults to full', () => {
   const cols = db.prepare("SELECT name, dflt_value FROM pragma_table_info('cli_tokens') WHERE name='scope'").get();
   assert.ok(cols, 'cli_tokens.scope exists');

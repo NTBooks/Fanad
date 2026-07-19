@@ -71,7 +71,10 @@ Rules to remember:
 - **"Today" rolls at 02:00**, Fanad's logical day — not midnight. Today-sensors reset then.
 - A task due earlier today is in BOTH `due_today` and `overdue` — that's intentional.
 - The data follows the token's user and their **current notebook** — if you switch into a
-  notebook, the numbers follow.
+  notebook, the numbers follow. To read a **specific** notebook without switching, add
+  `?notebook=<id>` (ids from `/api/notebooks`) — or `?notebook=main` for the main space — to
+  the read endpoints (`/api/ha/summary`, `/api/tasks`, `/api/diet/report`, `/api/notes`).
+  Read-only and safe: the id must be a notebook YOU own, or it falls back to your current space.
 - `version` only changes when the shape does; pin your templates to it mentally.
 
 ## 3. HA REST sensors (copy-paste)
