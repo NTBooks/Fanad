@@ -1046,6 +1046,13 @@ export const MIGRATIONS = [
       CREATE INDEX idx_speed_dials_username ON speed_dials(username);
     `);
   },
+
+  // v42 -> v43: remember the one-time "welcome" pad shown to a pad-holder on their first message, so a
+  // full-account pad-holder discovers their house buttons once (a limited account already sees the pad every
+  // message). Null until first contact; stamped with the epoch-ms of that greeting.
+  (d) => {
+    d.exec('ALTER TABLE speed_dial_accounts ADD COLUMN welcomed_at INTEGER;');
+  },
 ];
 
 export function migrate() {

@@ -605,6 +605,17 @@ export function isSpeedDialOnly(userId) {
   const acct = resolveSpeedDialAccount(speedDialIdentity(userId));
   return !!(acct && acct.speed_dial_only === 1);
 }
+// First-contact greeting bookkeeping: have we shown this pad-holder their pad once (the welcome)? Stamped by
+// route() on their first message so a full-account pad-holder discovers their buttons; a limited account sees
+// the pad every message regardless. Keyed by the messaging identity, like getSpeedDialPad/hasSpeedDial.
+export function speedDialWelcomed(userId) {
+  const acct = resolveSpeedDialAccount(speedDialIdentity(userId));
+  return !!(acct && acct.welcomed_at != null);
+}
+export function markSpeedDialWelcomed(userId, at = Date.now()) {
+  const acct = resolveSpeedDialAccount(speedDialIdentity(userId));
+  if (acct) db.prepare('UPDATE speed_dial_accounts SET welcomed_at=? WHERE id=?').run(at, acct.id);
+}
 
 // ── Per-user dossier (behavior profile) ──
 export function getUserProfile(userId) {

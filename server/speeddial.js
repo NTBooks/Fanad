@@ -47,7 +47,19 @@ export function padView(userId, pad = getSpeedDialPad(userId)) {
     return { text: '⚡ Your speed dial is empty — ask the owner to set up your numbers.', buttons: null };
   }
   const lines = pad.slots.map((s) => `${KEYCAP[s.slot]} ${slotName(s)}`);
-  return { text: `⚡ Speed dial — tap a number, or send it:\n${lines.join('\n')}`, buttons: padButtons(pad.slots) };
+  return { text: `⚡ Speed dial — tap a number, or send it (send 0 anytime to bring this back):\n${lines.join('\n')}`, buttons: padButtons(pad.slots) };
+}
+
+// The one-time first-contact greeting: route() stamps welcomed_at and returns this on a pad-holder's very
+// first message, so they discover their numbers (a limited account sees the pad every message anyway).
+export function welcomePad(userId) {
+  const pad = getSpeedDialPad(userId);
+  if (!pad || !pad.slots.length) return padView(userId, pad);
+  const lines = pad.slots.map((s) => `${KEYCAP[s.slot]} ${slotName(s)}`);
+  return {
+    text: `👋 You’re connected to the house. Here’s your speed dial — tap a number, or just send it (send 0 anytime to bring this back):\n${lines.join('\n')}`,
+    buttons: padButtons(pad.slots),
+  };
 }
 
 // Fire slot `n` for a messaging person. Empty slot → their pad; house down → a gentle note; otherwise run the
@@ -62,11 +74,14 @@ export async function fireSlot(userId, n) {
   return { text: `🏠 ${KEYCAP[n]} ${slotName(slot)} → ${said.speech}`, buttons: padButtons(pad.slots) };
 }
 
-// The lockdown-gate entry for a limited account: a bare 0-9 / "dial N" fires; anything else shows the pad.
+// The lockdown-gate entry for a limited account: "0" (or anything unrecognized) shows the pad; a bare 1-9 or
+// "dial N" fires. "0" is the reserved "show my pad" key (an old phone's operator/menu); "dial 0" is the one
+// way left to fire slot 0.
 export function speedDialGate(userId, text) {
   const t = String(text || '').trim();
   let m;
-  if ((m = /^\/?dial\s*#?([0-9])$/i.exec(t)) || (m = /^([0-9])$/.exec(t))) return fireSlot(userId, Number(m[1]));
+  if (/^0$/.test(t)) return padView(userId);
+  if ((m = /^\/?dial\s*#?([0-9])$/i.exec(t)) || (m = /^([1-9])$/.exec(t))) return fireSlot(userId, Number(m[1]));
   return padView(userId); // no tasks, no chat — only the pad
 }
 
@@ -183,6 +198,15 @@ export async function ownerCommand(ownerUserId, text) {
 }
 
 // ── Web-payload helpers (the /accounts routes return JSON, never the chat text) ──────────────────────────
+
+// A compact pad for the web left-hint bar (rides /api/sidebar): filled slots as { slot, name }, or null when
+// the person has no usable pad. The web sends "dial <n>" on tap — the SAME gesture a chat digit triggers,
+// firing via the feature for a full account or the lockdown gate for a limited one. Keyed by the identity.
+export function padSummary(userId) {
+  const pad = getSpeedDialPad(userId);
+  if (!pad || !pad.slots.length) return null;
+  return { slots: pad.slots.map((s) => ({ slot: s.slot, name: slotName(s) })) };
+}
 
 // The expandable-account-list feed: one row per allowed Telegram handle (allowlist ∪ active vouches ∪ pads),
 // each with its speed-dial config. Merged so the owner sees everyone in one place.

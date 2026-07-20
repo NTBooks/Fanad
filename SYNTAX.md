@@ -249,9 +249,12 @@ clock       ← INT (":" INT)? ("am"/"pm"/"a"/"p")?              # "8", "8am", "
 
 # ── speed dial (OWNER-authored access-control config; a guest's ONLY line to the house) ──────────
 # The owner programs another Telegram account's numbers 0-9, each a free-text HA command (run through the
-# same converse() as "ha <command>", against the one HA connection). A pad-holder fires a bare digit or taps;
-# a LIMITED account can do NOTHING else (short-circuited in route()/handleAction). Owner-only authoring; the
-# guest only ever sends a digit, so their input is never free text to HA or an LLM.
+# same converse() as "ha <command>", against the one HA connection). A pad-holder fires a bare 1-9 or taps;
+# a bare "0" is the reserved "show my pad" key (slot 0 fires only via tap or "dial 0"). On first contact,
+# a FULL-account pad-holder's pad rides ALONGSIDE their normal first reply (welcomed_at, once — handleMessage
+# appends it, so their message still files/answers); a LIMITED account can do NOTHING else (short-circuited in
+# route()/handleAction) and so already sees its pad on every message. Owner-only authoring; the guest only ever
+# sends a digit, so their input is never free text to HA or an LLM.
 speeddial   ← "/"? ("sd"/"speeddial")                                       # the owner board (all pads)
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE                        # show one account's pad
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP DIGIT "=" (label "|")? TEXT  # set a slot (0-9)
@@ -259,8 +262,9 @@ speeddial   ← "/"? ("sd"/"speeddial")                                       # 
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP ("clear"/"remove"/"delete")  # clear / drop the pad
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP "limit" SP ("on"/"off")       # lock to speed dial only
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP "test" SP DIGIT     # owner fires a slot (verify)
-pad_use     ← DIGIT                                                          # pad-holder: fire slot 0-9 (bare digit)
-            / "/"? "dial" SP? "#"? DIGIT                                     # fire slot N (unambiguous form)
+pad_use     ← "0"                                                            # pad-holder: show my pad (reserved "menu" key)
+            / [1-9]                                                          # fire slot 1-9 (bare digit)
+            / "/"? "dial" SP? "#"? DIGIT                                     # fire slot N incl. 0 (unambiguous form)
             / "/"? ("pad"/"dial")                                           # show my pad
 DIGIT       ← [0-9]                                                          # a speed-dial slot
 label       ← TEXT                                                          # optional slot label before "|"

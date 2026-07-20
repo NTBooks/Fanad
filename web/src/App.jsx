@@ -847,7 +847,7 @@ export default function App() {
           onClick={() => setGutters(!gutters)}
         >{gutters ? '»' : '«'}</button>
       )}
-      {showGutters && <LegendPanel cfg={cfg} features={features} onInsert={insertIntoComposer} onSend={(t) => send(null, t)} />}
+      {showGutters && <LegendPanel cfg={cfg} features={features} speedDial={sidebar?.speedDial} onInsert={insertIntoComposer} onSend={(t) => send(null, t)} />}
       {showGutters && (
         <StatusPanel
           sidebar={sidebar} notebooks={notebooks} isOwner={isOwner}

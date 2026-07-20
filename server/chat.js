@@ -22,7 +22,7 @@ import {
   saveTemplate, getTemplate, listTemplates, deleteTemplate, materializeTemplate,
   deleteAllUserData,
   getUser, isOwner, isVouched, getActiveVouch, addVouch, listVouchesBy, normUsername,
-  vouchDepthOf, countActiveVouches, hasSpeedDial, isSpeedDialOnly,
+  vouchDepthOf, countActiveVouches, hasSpeedDial, isSpeedDialOnly, speedDialWelcomed, markSpeedDialWelcomed,
   getListItem, listChildren, countListChildren, insertListItem, renameListItem, deleteListItem, listItemPath,
   effectiveUserId, accountIdFor, createNotebook, getNotebook, getNotebookByName, listNotebooks, renameNotebook,
   retireNotebook, recoverNotebook, listRetiredNotebooks,
@@ -34,7 +34,7 @@ import { currentWeather } from './weather.js';
 // effect; route()/DIALOG_HANDLERS/handleAction consult the registry at fixed points below.
 import './features/index.js';
 import { tryFeatureCommand, featureDialogHandlers, featureMenuAction } from './features/registry.js';
-import { speedDialGate, padView, fireSlot } from './speeddial.js';
+import { speedDialGate, padView, fireSlot, welcomePad } from './speeddial.js';
 import { getRetentionConfig, getTelegramConfig, getSiteConfig, getAuthConfig, getUserFeatures, setUserFeatures, OPTIN_FEATURES, getCurrentNotebookId, setCurrentNotebookId, clearCurrentNotebookId, getGuardConfig, setGuardConfig, isSystemModuleOn, getSystemModules, setSystemModules, getHomeAssistantConfig } from './settings.js';
 import { markConfigDirty } from './clientConfig.js';
 import { authModeIsSimple, createWebLinkToken, WEB_LINK_TTL_MS, mintCliToken, CLI_TOKEN_DEFAULT_TTL_DAYS } from './auth.js';
@@ -77,7 +77,11 @@ function makeIsOn(userId) {
     // System-wide gate: a module the owner has disabled for the whole deployment is off for every non-owner,
     // whatever their opt-in. The owner keeps access (preview/test a "dark" module before releasing it).
     if (!owner && !isSystemModuleOn(name)) return false;
-    if (name === 'vouch') return owner || f.vouch;
+    // Vouch is owner-auto-on, else per-user opt-in — BUT a speed-dial-limited (locked-down) account never gets
+    // it: their whole surface is the 0-9 pad, and vouching lets anyone grow the access whitelist, so a locked
+    // account could vouch in a NOT-limited alt and slip its own lockdown. Denying vouch here (the single gate)
+    // keeps that shut on every surface, not just the route()/handleAction() short-circuits. Owner is exempt.
+    if (name === 'vouch') return owner || (f.vouch && !isSpeedDialOnly(userId));
     return !!f[name]; // notes · lists · metrics — default off
   };
 }
@@ -2155,8 +2159,10 @@ async function route({ userId, identityId = userId, text, energy = null, channel
 
   // Speed Dial LOCKDOWN — an account the owner limited to speed dial reaches NOTHING but its 0-9 pad. Placed
   // ahead of the snapshot/command/capture chain so a limited person's messages never file a task or hit the
-  // LLM; a bare 0-9 / "dial N" fires a slot, anything else (incl. a caption-less photo) just re-shows the pad.
-  // The owner is never limited. Button taps take the same gate in handleAction().
+  // LLM; a bare 1-9 / "dial N" fires a slot, "0" or anything else (incl. a caption-less photo) re-shows the
+  // pad — so a limited account already sees its pad on first contact. The owner is never limited. Button taps
+  // take the same gate in handleAction(). (A FULL-account pad-holder's first-contact welcome rides ALONGSIDE
+  // their normal reply instead of swallowing it — handleMessage, below.)
   if (isSpeedDialOnly(identityId) && !isOwner(identityId)) return speedDialGate(identityId, t);
 
   // (2) Capture mood/time for EVERY message (so the status chip + energy stay fresh). Reused by a capture.
@@ -3005,6 +3011,19 @@ function shapeRefreshedListing(userId) {
   return { reply: rl.text ?? '', buttons: rl.buttons || null, html: !!rl.html, listing: true, listKind: 'task' };
 }
 
+// Ride the first-contact pad welcome ALONGSIDE a full-account pad-holder's normal first reply — append it below
+// and add its tappable numbers — instead of swallowing their message (they still get their task filed / question
+// answered). A reaction-only reply (mood/note/ack) or a dismissed list has no bubble to append to, so there the
+// pad simply becomes the reply. One-time; the caller stamps welcomed_at.
+function ridePadWelcome(r, userId) {
+  const pad = welcomePad(userId);
+  if (!pad?.text) return r;
+  if (!r.text || r.hide || r.kind === 'note' || r.kind === 'mood' || r.kind === 'ack') {
+    return { text: pad.text, buttons: pad.buttons };
+  }
+  return { ...r, text: `${r.text}\n\n${pad.text}`, buttons: [...(r.buttons || []), ...(pad.buttons || [])] };
+}
+
 export async function handleMessage(args = {}) {
   // The channel hands us the IDENTITY account; a turn's data/dialog/mood/transcript all belong to the space
   // (notebook or main) that identity is currently in — so resolve the effective user once and use it for the
@@ -3023,7 +3042,15 @@ export async function handleMessage(args = {}) {
     else if (err?.code === 'LLM_BUSY') out = { text: 'I’m helping a lot of people right now — give me a minute and try again.' };
     else throw err;
   }
-  const r = typeof out === 'string' ? { text: out } : (out || { text: '' });
+  let r = typeof out === 'string' ? { text: out } : (out || { text: '' });
+  // First contact for a FULL-account pad-holder: ride their pad ALONGSIDE this reply (don't swallow the
+  // message), once. Only on a typed message (never a button tap — a tapped menu/dialog step is no place to
+  // graft the pad). A limited account already sees its pad on every message (route()'s gate); the owner is
+  // never a guest. Stamp welcomed_at here so the pad rides exactly one turn.
+  if (!args.action && !isOwner(identityId) && hasSpeedDial(identityId) && !isSpeedDialOnly(identityId) && !speedDialWelcomed(identityId)) {
+    markSpeedDialWelcomed(identityId);
+    r = ridePadWelcome(r, identityId);
+  }
   const ds = getDialogState(userId);
   // Consume the "a task's list-state changed" flag ONCE here, for every channel, so it never leaks into the
   // next turn (Telegram/Slack read result.refreshList; the web also gets a re-rendered list to swap in).

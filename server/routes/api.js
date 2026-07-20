@@ -49,7 +49,7 @@ import {
 } from '../batches.js';
 import { findFood, findRecipe, recipeAsFood, portionOf, logFood, recipeSummary, ensureCaloriesMetric, recordWeight, setCalorieTarget } from '../diet.js';
 import { todayData as medToday, catalogData as medCatalog, templatesData as medTemplatesData, webSetTaken as medSetTaken, webAddMed, webSaveTemplate, medAll, MED_DISCLAIMER } from '../medication.js';
-import { accountsData, savePadData, addAccountData, removePadData, testSlotData } from '../speeddial.js';
+import { accountsData, savePadData, addAccountData, removePadData, testSlotData, padSummary } from '../speeddial.js';
 import { UNIT_TYPES, COUNT_UNIT_TYPES, toFoodUnits } from '../../shared/diet.js';
 import { DAY_ROLLOVER_HOUR, dayStartOf } from '../../shared/timeframe.js';
 import { resolveActingUserId } from '../actingUser.js';
@@ -1518,6 +1518,9 @@ router.get('/sidebar', (req, res) => {
     upcoming,
     mood: latestMood(u, dayStart),
     day: { start: dayStart, label: new Date(dayStart).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) },
+    // The person's own speed-dial pad, if they have one, so the wide-screen legend can surface it (keyed to the
+    // identity — the pad follows the account, not the current notebook). Null for everyone without a pad.
+    speedDial: padSummary(uid(req)),
   });
 });
 

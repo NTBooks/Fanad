@@ -16,7 +16,7 @@ process.env.EMBED_PROVIDER = 'mock';
 const { migrate, db } = await import('../server/db.js');
 migrate();
 const settings = await import('../server/settings.js');
-const { handleMessage, handleAction } = await import('../server/chat.js');
+const { handleMessage, handleAction, isFeatureOnFor } = await import('../server/chat.js');
 const { clearDialogState } = await import('../server/dialog.js');
 const repo = await import('../server/repo.js');
 const sd = await import('../server/speeddial.js');
@@ -165,6 +165,57 @@ test('a LIMITED account tapping m:sd fires that slot', async () => {
   } finally { restore(); }
 });
 
+// ── "0" is the reserved "show my pad" key + the one-time first-contact welcome ───────────────────────────
+
+test('first contact rides the pad ALONGSIDE a full-account pad-holder’s first reply, once', async () => {
+  await sd.ownerCommand(owner, 'sd @erin 1 = turn off everything'); // full account + pad (not limited)
+  const erin = repo.getOrCreateTelegramUser(90090, 'erin');
+  repo.linkSpeedDialAccount('erin', 90090);
+  assert.ok(repo.hasSpeedDial(erin) && !repo.speedDialWelcomed(erin));
+
+  const before = taskCount(erin);
+  const first = await reply(erin, 'buy milk on the way home'); // first message → filed AND the pad shown
+  assert.match(first, /speed dial/i, 'the pad rides alongside the first reply');
+  assert.equal(taskCount(erin), before + 1, 'the first message is still processed (task filed), not swallowed');
+  assert.ok(repo.speedDialWelcomed(erin), 'the welcome is stamped so it only rides once');
+
+  const second = await reply(erin, 'buy bread on the way home'); // normal from here on — no pad
+  assert.doesNotMatch(second, /speed dial/i, 'the pad rides only on the first contact');
+  assert.equal(taskCount(erin), before + 2, 'normal flow continues');
+});
+
+test('sending a bare 0 shows the pad instead of firing slot 0; "dial 0" still fires it', async () => {
+  await sd.ownerCommand(owner, 'sd @zoe 0 = arm the alarm');
+  await sd.ownerCommand(owner, 'sd @zoe 1 = turn off the lights'); // full account + pad
+  const zoe = repo.getOrCreateTelegramUser(91091, 'zoe');
+  repo.linkSpeedDialAccount('zoe', 91091);
+  await reply(zoe, 'hello'); // consume the welcome
+
+  const restore = stubHouse('Alarm armed');
+  try {
+    const bare = await reply(zoe, '0');
+    assert.match(bare, /speed dial/i, 'bare 0 shows the pad');
+    assert.doesNotMatch(bare, /Alarm armed/, 'bare 0 did NOT fire slot 0');
+    const dialed = await reply(zoe, 'dial 0');
+    assert.match(dialed, /Alarm armed/, '"dial 0" still fires slot 0');
+  } finally { restore(); }
+});
+
+test('a LIMITED account sending 0 gets its pad back (never fires slot 0)', async () => {
+  await sd.ownerCommand(owner, 'sd @quinn 0 = arm the alarm');
+  await sd.ownerCommand(owner, 'sd @quinn limit on');
+  const quinn = repo.getOrCreateTelegramUser(92092, 'quinn');
+  repo.linkSpeedDialAccount('quinn', 92092);
+  // A limited account has no separate welcome (it sees the pad on every message via the lockdown gate).
+
+  const restore = stubHouse('Alarm armed');
+  try {
+    const r = await reply(quinn, '0');
+    assert.match(r, /speed dial/i, 'a limited account sending 0 sees the pad');
+    assert.doesNotMatch(r, /Alarm armed/, 'a bare 0 does not fire slot 0, even when limited');
+  } finally { restore(); }
+});
+
 // ── "a pad-holder never gets raw ha" ────────────────────────────────────────────────────────────────────
 
 test('a non-limited pad-holder is redirected from raw "ha <command>" to their pad', async () => {
@@ -172,6 +223,7 @@ test('a non-limited pad-holder is redirected from raw "ha <command>" to their pa
   const dave = repo.getOrCreateTelegramUser(80080, 'dave');
   repo.linkSpeedDialAccount('dave', 80080);
   assert.ok(repo.hasSpeedDial(dave) && !repo.isSpeedDialOnly(dave));
+  await reply(dave, 'hi'); // consume the one-time first-contact welcome so the /ha path below is exercised
 
   // Only reachable once HA is released system-wide (while it ships dark, the module is invisible to non-owners
   // — a stronger form of "no raw ha"). With it on, the slash form reaches the module's run(), where the guard
@@ -215,4 +267,30 @@ test('accountsData merges pad accounts and reports house-connected state', () =>
   const alice = d.accounts.find((a) => a.username === 'alice');
   assert.ok(alice, 'a configured account appears in the list');
   assert.equal(typeof d.houseConnected, 'boolean');
+});
+
+// ── web left-hint-bar pad summary (rides /api/sidebar) ──────────────────────────────────────────────────
+
+test('padSummary returns the filled slots for a pad-holder, null for everyone else', () => {
+  const dave = repo.getOrCreateTelegramUser(80080, 'dave'); // pad, slot 1 = "turn off the lights"
+  const s = sd.padSummary(dave);
+  assert.ok(s && Array.isArray(s.slots) && s.slots.length >= 1, 'a pad-holder gets slots');
+  assert.deepEqual(s.slots.find((x) => x.slot === 1), { slot: 1, name: 'turn off the lights' });
+
+  const nobody = repo.getOrCreateTelegramUser(99099, 'nopad');
+  assert.equal(sd.padSummary(nobody), null, 'no pad → null (no card in the hint bar)');
+});
+
+// ── a locked-down account never gets vouch (can't grow the whitelist past its own lockdown) ──────────────
+
+test('a LIMITED account is denied vouch even if the flag is on; a full-account pad-holder keeps it', () => {
+  const carol = repo.getOrCreateTelegramUser(70070, 'carol'); // limit ON
+  const dave = repo.getOrCreateTelegramUser(80080, 'dave');   // pad, limit OFF
+  assert.ok(repo.isSpeedDialOnly(carol) && !repo.isSpeedDialOnly(dave));
+
+  settings.setUserFeatures(carol, { vouch: true });
+  settings.setUserFeatures(dave, { vouch: true });
+  assert.equal(isFeatureOnFor(carol, 'vouch'), false, 'a locked-down account can never vouch');
+  assert.equal(isFeatureOnFor(dave, 'vouch'), true, 'a non-limited pad-holder is a full account — vouch stands');
+  assert.equal(isFeatureOnFor(owner, 'vouch'), true, 'the owner always vouches');
 });

@@ -43,7 +43,8 @@
     html, body { background: #fff; }
     body { color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .sheet { box-shadow: none; margin: 0; width: auto; min-height: auto; }
-    /* Two sides of one card: force the back onto a fresh sheet, keep each side from splitting across pages. */
+    /* Each .sheet is its own printed page (core, then two module pages): force every sheet after the first
+       onto a fresh sheet, and keep each box from splitting across a page break. */
     .sheet + .sheet { break-before: page; }
     .box, header, footer { break-inside: avoid; }
     /* Command "chips": swap the faint teal tint for a solid light-gray fill + hairline border. The border
@@ -237,7 +238,7 @@
 <header>
   <h1>Fanad</h1>
   <div class="tag">The opt-in modules.</div>
-  <div class="side">Back · flip for the core</div>
+  <div class="side">Page 2 · 3</div>
 </header>
 
 <div class="grid">
@@ -299,6 +300,20 @@
     <div class="note">A timer is a ding, not a task — nothing to clean up after.</div>
   </div>
 
+</div>
+</div>
+
+<!-- ============================ PAGE 3 — house, spaces &amp; the web app ============================ -->
+<div class="sheet">
+
+<header>
+  <h1>Fanad</h1>
+  <div class="tag">Modules &amp; the web app.</div>
+  <div class="side">Page 3 · 3</div>
+</header>
+
+<div class="grid">
+
   <div class="box">
     <h2>🏠 Home Assistant <span class="opt">optin ha</span></h2>
     <table>
@@ -315,7 +330,7 @@
   <div class="box">
     <h2>⚡ Speed Dial <span class="opt">owner-managed</span></h2>
     <table>
-      <tr><td class="c"><code>1</code> … <code>9</code> · <code>dial 3</code></td><td class="d">a pad-holder fires that number’s house command · <code>pad</code> shows it</td></tr>
+      <tr><td class="c"><code>1</code> … <code>9</code> · <code>dial 3</code></td><td class="d">a pad-holder fires that number’s house command · <code>0</code> or <code>pad</code> shows the pad (also shown on first contact)</td></tr>
       <tr><td class="c"><code>sd @sam 1 = turn off the kitchen lights</code></td><td class="d">owner: set number 1 (add a label with <code>Label | command</code>)</td></tr>
       <tr><td class="c"><code>sd @sam limit on</code></td><td class="d">owner: lock @sam to speed dial only (no tasks/chat) · <code>off</code> to unlock</td></tr>
       <tr><td class="c"><code>sd @sam test 1</code> · <code>sd @sam</code> · <code>sd</code></td><td class="d">owner: test-fire · view one pad · list all pads</td></tr>

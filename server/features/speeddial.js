@@ -20,20 +20,21 @@ registerFeature({
       run: ({ identityId, t }) => ownerCommand(identityId, t),
     },
     {
-      // A pad-holder fires an explicit "dial 3" / "/dial 3".
+      // "0" / "pad" / "dial" shows the pad. "0" is the reserved "show my numbers" key — available any time,
+      // like an old phone's operator/menu (so slot 0 is fired only by tap or "dial 0", never a bare "0").
+      match: ({ lower, identityId }) => hasSpeedDial(identityId) && /^(?:\/?(?:pad|dial)|0)$/i.test(lower),
+      run: ({ identityId }) => padView(identityId),
+    },
+    {
+      // A pad-holder fires an explicit "dial 3" / "/dial 3" (the only way to fire slot 0 now: "dial 0").
       match: ({ lower, identityId }) => hasSpeedDial(identityId) && /^\/?dial\s*#?[0-9]$/i.test(lower),
       run: ({ identityId, t }) => fireSlot(identityId, Number((/([0-9])\s*$/.exec(t) || [])[1])),
     },
     {
-      // A pad-holder sends a bare digit — the phone-speed-dial gesture. Gated on hasSpeedDial so everyone
-      // else's "3" still files as a task exactly as before.
-      match: ({ lower, identityId }) => hasSpeedDial(identityId) && /^[0-9]$/.test(lower),
+      // A pad-holder sends a bare 1-9 — the phone-speed-dial gesture (0 is reserved for "show pad" above).
+      // Gated on hasSpeedDial so everyone else's "3" still files as a task exactly as before.
+      match: ({ lower, identityId }) => hasSpeedDial(identityId) && /^[1-9]$/.test(lower),
       run: ({ identityId, t }) => fireSlot(identityId, Number(t.trim())),
-    },
-    {
-      // "pad" / "dial" (no number) shows the pad.
-      match: ({ lower, identityId }) => hasSpeedDial(identityId) && /^\/?(pad|dial)$/i.test(lower),
-      run: ({ identityId }) => padView(identityId),
     },
   ],
 });

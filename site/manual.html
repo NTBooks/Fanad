@@ -1679,20 +1679,21 @@ Calendar: calendar.house
         has the pad.</li>
       <li><strong>Limited to speed dial</strong> &mdash; the account can do <em>nothing but</em> its
         <span class="cmd">0</span>&ndash;<span class="cmd">9</span> pad: no tasks, no chat, no other commands.
-        Anything else they send just shows the pad again.</li>
+        Anything else they send just shows the pad again. A limited account also can&rsquo;t vouch anyone
+        in &mdash; the pad is its whole reach, so it can&rsquo;t grow the guest list around its own limit.</li>
     </ul>
     <table class="cmd-table">
       <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
       <tbody>
-        <tr><td><span class="cmd">0</span>&ndash;<span class="cmd">9</span></td><td>The person with a pad sends a bare digit to fire that number&rsquo;s command.
+        <tr><td><span class="cmd">1</span>&ndash;<span class="cmd">9</span></td><td>The person with a pad sends a bare digit to fire that number&rsquo;s command.
       <details class="ex"><summary>example</summary>
       <div class="ex-chat">
         <p class="ex-you">1</p>
         <p class="ex-bot">🏠 1️⃣ Kitchen lights → Turned off the light</p>
       </div>
       </details></td></tr>
-        <tr><td><span class="cmd">dial &lt;n&gt;</span></td><td>Fire number <em>n</em> the unambiguous way (handy if they&rsquo;re also using Fanad for other things).</td></tr>
-        <tr><td><span class="cmd">pad</span></td><td>Show my pad &mdash; the numbers with labels and tappable buttons.</td></tr>
+        <tr><td><span class="cmd">0</span> &middot; <span class="cmd">pad</span></td><td>Show my pad &mdash; the numbers with labels and tappable buttons. <span class="cmd">0</span> is the always-there &ldquo;show my pad&rdquo; key, so a bare <span class="cmd">0</span> never fires slot 0 (use <span class="cmd">dial 0</span> or tap it for that). Fanad also shows a new pad-holder their pad alongside the reply to their first message.</td></tr>
+        <tr><td><span class="cmd">dial &lt;n&gt;</span></td><td>Fire number <em>n</em> the unambiguous way (handy if they&rsquo;re also using Fanad for other things &mdash; and the only way to fire slot <span class="cmd">0</span>).</td></tr>
         <tr><td><span class="cmd">sd @user &lt;n&gt; = &lt;command&gt;</span></td><td><em>Owner.</em> Set number <em>n</em> for that person to a Home Assistant command &mdash; the same free text you&rsquo;d type after <span class="cmd">ha</span>. Add a label with <span class="cmd">Label | command</span>.
       <details class="ex"><summary>example</summary>
       <div class="ex-chat">

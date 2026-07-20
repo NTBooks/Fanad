@@ -21,14 +21,29 @@ function fmtAt(at) {
 // The letter legend + the one-tap commands that have no letter. A with-text row INSERTS its letter into
 // the composer (the point is teaching the shortcut, and the command wants arguments); a bare row and the
 // one-tap chips SEND immediately — they're argument-free by construction.
-export function LegendPanel({ cfg, features, onInsert, onSend }) {
+export function LegendPanel({ cfg, features, speedDial, onInsert, onSend }) {
   if (!cfg?.shortcuts) return null;
   const on = (f) => !f || features?.[f] === true;
   const shortcuts = cfg.shortcuts.filter((s) => on(s.feature));
   const hasLetter = new Set(cfg.shortcuts.map((s) => s.command));
   const oneTaps = (cfg.argless || []).filter((c) => !hasLetter.has(c) && on(cfg.commandFeatures?.[c]));
+  const pad = speedDial?.slots || [];
   return (
     <aside className="gutter gutter-left" aria-label="Shortcut legend">
+      {pad.length > 0 && (
+        <div className="gutter-card">
+          <h4>⚡ Speed dial</h4>
+          {pad.map((s) => (
+            <button
+              key={s.slot} type="button" className="legend-row"
+              title={`Send ${s.slot} to run “${s.name}”`}
+              onClick={() => onSend(`dial ${s.slot}`)}
+            >
+              <kbd>{s.slot}</kbd><span className="legend-label">{s.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="gutter-card">
         <h4>Shortcuts</h4>
         {shortcuts.map((s) => (
