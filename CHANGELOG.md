@@ -4,6 +4,16 @@ All notable changes to Fanad are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-07-19
+
+### Added
+- Shareable no-login "remote control" links: the host can mint a link (`/r/<token>`) that exposes just
+  one guest's speed-dial pad (its 0-9 buttons) as a responsive page, hand it to someone with no Telegram
+  account or login, and revoke it any time. Fail-closed by design: minting and use both require web login
+  (auth mode `simple`), only the predefined pad slots fire, requests are per-token rate limited and
+  noindex/no-store, and the share token authenticates nothing on the API. Manage them in Settings, Access:
+  1 / 7 / 30-day expiry, an optional label, and an active-link list with revoke.
+
 ## [0.5.0] - 2026-07-19
 
 ### Added
