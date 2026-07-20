@@ -4,6 +4,27 @@ All notable changes to Fanad are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-19
+
+### Added
+- Home Assistant notebook selector: the read endpoints accept `?notebook=<id|main>`, so a read-only
+  token can pull a specific owned notebook's data without switching the account's current notebook.
+  A Home Assistant dashboard can now offer a notebook picker. Reads only; unknown or foreign ids fall
+  back safely to the account's own current space.
+- Speed dial in the web sidebar: a pad-holder's 0-9 pad now appears at the top of the wide-screen left
+  hint bar, and each row sends "dial N". A bare "0" is the reserved "show my pad" key.
+
+### Changed
+- Zero-checkout CLI connect: the connect line handed back with a token is now
+  `npx github:NTBooks/Fanad <server> <token>`, so the CLI client runs from a fresh terminal (Node 24+)
+  with nothing pre-installed. npx fetches, caches, and builds it on first run.
+- A full-account pad-holder now sees their speed-dial pad alongside their normal first reply, rather
+  than the pad replacing that first message.
+
+### Fixed
+- A locked-down (speed-dial-only) account is now denied `vouch` in the central access gate, so it
+  cannot grow the whitelist beyond its own lockdown.
+
 ## [0.4.0] - 2026-07-19
 
 ### Added
