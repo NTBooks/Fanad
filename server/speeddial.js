@@ -8,12 +8,14 @@
 // converse() runs an owner-authored, stored string. It is shared by the registry feature (non-limited
 // pad-holders, features/speeddial.js) AND the limited-account lockdown gate (chat.js). Owner authoring
 // (add/set/limit/test/board) mirrors the web panel so the two surfaces stay at parity.
+import { randomBytes, createHash } from 'node:crypto';
 import {
   getSpeedDialPad, listSpeedDialSlots, listSpeedDialAccounts, getSpeedDialAccount,
   upsertSpeedDialAccount, setSpeedDialSlot, clearSpeedDialSlot, clearSpeedDialPad,
   deleteSpeedDialAccount, addVouch, getUser, normUsername, listVouches,
+  createSpeedDialShare, resolveSpeedDialShareHash, listSpeedDialShares, revokeSpeedDialShare,
 } from './repo.js';
-import { getHomeAssistantConfig, getTelegramConfig } from './settings.js';
+import { getHomeAssistantConfig, getTelegramConfig, getSiteConfig, getAuthConfig } from './settings.js';
 import { converse } from './services/homeassistant.js';
 import { sanitizeForLlm } from './services/llm/sanitize.js';
 
@@ -213,7 +215,7 @@ export function padSummary(userId) {
 export function accountsData() {
   const rows = new Map(); // username → row
   const row = (u) => {
-    if (!rows.has(u)) rows.set(u, { username: u, sources: [], voucher: null, speedDialOnly: false, linked: false, slots: [] });
+    if (!rows.has(u)) rows.set(u, { username: u, sources: [], voucher: null, speedDialOnly: false, linked: false, slots: [], shares: [] });
     return rows.get(u);
   };
   // (1) the raw allowlist CSV
@@ -229,15 +231,20 @@ export function accountsData() {
     r.voucher = v.voucher_username || 'owner';
     if (v.vouched_telegram_id != null) r.linked = true;
   }
-  // (3) speed-dial accounts (the pad config + lock flag)
+  // (3) speed-dial accounts (the pad config + lock flag + any active remote-control links)
   for (const a of listSpeedDialAccounts()) {
     const r = row(a.username);
     r.speedDialOnly = a.speedDialOnly;
     r.slots = a.slots;
+    r.shares = listSpeedDialShares(a.username);
     if (a.telegramId != null) r.linked = true;
     if (!r.sources.length) r.sources.push('speeddial');
   }
-  return { accounts: [...rows.values()].sort((a, b) => a.username.localeCompare(b.username)), houseConnected: configured(getHomeAssistantConfig()) };
+  return {
+    accounts: [...rows.values()].sort((a, b) => a.username.localeCompare(b.username)),
+    houseConnected: configured(getHomeAssistantConfig()),
+    loginOn: getAuthConfig().mode === 'simple', // gates the "Generate link" affordance in the panel
+  };
 }
 
 // Save an account's lock flag + slots from the web panel (replace-all for the 0-9 set).
@@ -274,4 +281,72 @@ export async function testSlotData(username, slot) {
   if (!s) return { ok: false, error: `no #${slot}` };
   const r = await runHouseCommand(s.command);
   return r.ok ? { ok: true, speech: r.speech } : { ok: false, error: r.text };
+}
+
+// ── Shareable "remote control" links (the no-login guest surface; see repo.js + db.js v44) ───────────────
+// Speed dial is really for the GUESTS of whoever runs Fanad — the host texts a guest a link and the guest
+// taps a few house buttons, no Telegram account and no login required. A link is scoped to ONE pad and only
+// fires its owner-authored slots, so a leaked link is bounded (predefined commands, an expiry, revocable) and
+// still can't send free text to HA. The raw token lives only in the URL; the DB keeps only its sha256.
+const SHARE_PREFIX = 'fsd1_';                 // recognizable/greppable like the CLI's fnd1_ (leak triage)
+export const SHARE_TTL_DAYS = [1, 7, 30];      // the only expiries offered (no non-expiring link by design)
+export const DEFAULT_SHARE_TTL_DAYS = 7;
+const sha256 = (t) => createHash('sha256').update(String(t)).digest('hex');
+
+// Mint a link for an EXISTING pad. Clamps ttlDays to the offered set (default 7d). Returns the raw token +
+// full URL ONCE (never recoverable after — hash-only storage); `url` is null until the owner sets a Site URL,
+// in which case the panel falls back to the browser origin. The caller (route) is owner-gated.
+export function mintShareLink(username, { ttlDays = DEFAULT_SHARE_TTL_DAYS, label = '' } = {}) {
+  // A share link lives on the Fanad origin, and its whole promise is "only these buttons, nothing else". That
+  // only holds if everything ELSE on the origin requires auth: with web login off, the app + /api are open to
+  // anyone who can reach the box, so the link wouldn't actually be limited. Refuse to mint until login is on.
+  if (getAuthConfig().mode !== 'simple') {
+    return { ok: false, needsLogin: true, error: 'Turn on web login (Settings → Security) before sharing a link — without it, anyone who can reach this address can use the whole app, not just these buttons.' };
+  }
+  const u = normUsername(username);
+  if (!u) return { ok: false, error: 'bad username' };
+  if (!getSpeedDialAccount(u)) return { ok: false, error: `No pad for @${u} yet — set a number first.` };
+  const days = SHARE_TTL_DAYS.includes(Number(ttlDays)) ? Number(ttlDays) : DEFAULT_SHARE_TTL_DAYS;
+  const now = Date.now();
+  const expiresAt = now + days * 86400000;
+  const token = SHARE_PREFIX + randomBytes(32).toString('base64url');
+  const id = createSpeedDialShare({ username: u, tokenHash: sha256(token), label: String(label || '').trim().slice(0, 80) || null, expiresAt, at: now });
+  if (!id) return { ok: false, error: 'could not create link' };
+  const site = getSiteConfig().url;
+  const path = `/r/${token}`;
+  return { ok: true, id, token, path, url: site ? `${site}${path}` : null, expiresAt, ttlDays: days };
+}
+
+// A raw token from the URL → the pad it controls ({ id, username, expiresAt }) or null (bad prefix, unknown,
+// revoked, or expired). The prefix check short-circuits the hash for anything that clearly isn't ours.
+export function resolveShare(token) {
+  const t = String(token || '');
+  if (!t.startsWith(SHARE_PREFIX)) return null;
+  return resolveSpeedDialShareHash(sha256(t));
+}
+
+// Fire slot `n` of a pad addressed BY USERNAME (the remote page has no messaging userId — this is the twin of
+// fireSlot, which keys by userId). Runs the owner-authored command through the same converse() a digit uses.
+export async function fireShareSlot(username, n) {
+  const u = normUsername(username);
+  const slot = listSpeedDialSlots(u).find((s) => s.slot === Number(n));
+  if (!slot) return { ok: false, text: `There’s no #${n} on this pad.` };
+  const said = await runHouseCommand(slot.command);
+  if (!said.ok) return { ok: false, text: said.text };
+  return { ok: true, speech: said.speech, name: slotName(slot), slot: slot.slot };
+}
+
+// The remote page's pad payload: filled slots as { slot, name } + whether the house is reachable. Deliberately
+// carries NO @handle — a guest sees only the numbers and their labels, never whose pad it is.
+export function shareRemoteData(username) {
+  const u = normUsername(username);
+  return {
+    slots: listSpeedDialSlots(u).map((s) => ({ slot: s.slot, name: slotName(s) })),
+    houseConnected: configured(getHomeAssistantConfig()),
+  };
+}
+
+// Owner "revoke this link" — scoped to the pad so a stray id can't kill another pad's link.
+export function revokeShareData(username, id) {
+  return { ok: revokeSpeedDialShare(id, username) };
 }

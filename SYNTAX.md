@@ -255,6 +255,10 @@ clock       ← INT (":" INT)? ("am"/"pm"/"a"/"p")?              # "8", "8am", "
 # appends it, so their message still files/answers); a LIMITED account can do NOTHING else (short-circuited in
 # route()/handleAction) and so already sees its pad on every message. Owner-only authoring; the guest only ever
 # sends a digit, so their input is never free text to HA or an LLM.
+# WEB-ONLY (no chat grammar): the owner can also mint a no-login "remote control" share link for a pad from
+# Settings -> Access -> Generate link. It serves GET /r/<fsd1_ token> (a page of just that pad's buttons) and
+# POST /r/<token>/fire (runs one predefined slot) OUTSIDE the /api auth gate, so a guest needs no account. The
+# token is expiring (1/7/30d) + revocable, hash-stored, and scoped to one pad — see server/routes/remote.js.
 speeddial   ← "/"? ("sd"/"speeddial")                                       # the owner board (all pads)
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE                        # show one account's pad
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP DIGIT "=" (label "|")? TEXT  # set a slot (0-9)

@@ -1053,6 +1053,30 @@ export const MIGRATIONS = [
   (d) => {
     d.exec('ALTER TABLE speed_dial_accounts ADD COLUMN welcomed_at INTEGER;');
   },
+
+  // v43 -> v44: shareable "remote control" links for a speed-dial pad. Speed dial is really for the GUESTS of
+  // whoever runs Fanad — a guest shouldn't need their own Telegram account to tap a few house buttons. A share
+  // is a no-login, expiring, revocable link ({siteUrl}/r/<fsd1_ token>) that exposes ONLY that one pad's 0-9
+  // buttons; tapping fires the same owner-authored converse() a digit does, so guest input never reaches HA as
+  // free text (the pad's core safety property carries over). Same storage rule as cli_tokens/sessions: the raw
+  // token never lands in the DB, only its SHA-256. Keyed by @username like the rest of the speed-dial tables —
+  // GLOBAL access-control config, NOT per-user data, so deliberately NO user_id column / USER_TABLES entry (a
+  // guest's /requestdeletion must never sweep the owner's grant record). Revoked/expired rows are KEPT so the
+  // owner's Access panel can show a link's fate; deleteSpeedDialAccount code-cascades them, like the slots.
+  (d) => {
+    d.exec(`
+      CREATE TABLE speed_dial_shares (
+        id         INTEGER PRIMARY KEY,
+        token_hash TEXT NOT NULL UNIQUE,          -- sha256 of the raw fsd1_ token (raw never stored)
+        username   TEXT NOT NULL COLLATE NOCASE,  -- the pad this link controls (speed_dial_accounts.username)
+        label      TEXT,                           -- optional owner note ("for the dog sitter")
+        created_at INTEGER NOT NULL,
+        expires_at INTEGER,                         -- epoch-ms; null would be non-expiring (UI never mints one)
+        revoked_at INTEGER                          -- soft revoke; row kept so the panel can show what happened
+      );
+      CREATE INDEX idx_speed_dial_shares_username ON speed_dial_shares(username);
+    `);
+  },
 ];
 
 export function migrate() {

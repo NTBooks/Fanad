@@ -85,6 +85,10 @@ export const addAccount = (username) => post('/api/accounts', { username });
 export const savePad = (username, data) => send(`/api/accounts/${encodeURIComponent(username)}`, 'PUT', data);
 export const removePad = (username) => send(`/api/accounts/${encodeURIComponent(username)}/pad`, 'DELETE');
 export const testSlot = (username, slot) => post(`/api/accounts/${encodeURIComponent(username)}/test/${slot}`, {});
+// Shareable "remote control" link for a pad: mint returns the raw URL/token ONCE (hash-only storage) plus the
+// refreshed accounts; revoke kills one active link by id. The host texts the link to a guest for no-login access.
+export const mintShareLink = (username, data) => post(`/api/accounts/${encodeURIComponent(username)}/share`, data);
+export const revokeShareLink = (username, id) => send(`/api/accounts/${encodeURIComponent(username)}/share/${id}`, 'DELETE');
 export const getMetricsSettings = () => req('/api/settings/metrics');
 export const saveMetricsSettings = (data) => post('/api/settings/metrics', data);
 // Per-user module toggles (notes / lists / metrics / vouch / notebook — all default OFF). Booleans.

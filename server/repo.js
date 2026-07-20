@@ -530,11 +530,13 @@ export function linkSpeedDialAccount(username, telegramId, at = Date.now()) {
   ).run(telegramId, at, u).changes) > 0;
 }
 
-// Delete a whole account (its slots go too — code-managed cascade, like the rest of this section).
+// Delete a whole account (its slots AND any share links go too — code-managed cascade, like the rest of this
+// section). Removing a pad must kill its outstanding remote-control links: the buttons they point at are gone.
 export function deleteSpeedDialAccount(username) {
   const u = normUsername(username);
   if (!u) return;
   db.prepare('DELETE FROM speed_dials WHERE username=?').run(u);
+  db.prepare('DELETE FROM speed_dial_shares WHERE username=?').run(u);
   db.prepare('DELETE FROM speed_dial_accounts WHERE username=?').run(u);
 }
 
@@ -615,6 +617,57 @@ export function speedDialWelcomed(userId) {
 export function markSpeedDialWelcomed(userId, at = Date.now()) {
   const acct = resolveSpeedDialAccount(speedDialIdentity(userId));
   if (acct) db.prepare('UPDATE speed_dial_accounts SET welcomed_at=? WHERE id=?').run(at, acct.id);
+}
+
+// ── Shareable "remote control" links (a pad handed to a guest with no login; see the db.js v44 note). ──
+// Same storage contract as cli_tokens/sessions: the caller (speeddial.js) hashes the raw fsd1_ token and we
+// only ever store/compare the hash. Keyed by @username so a link controls exactly one pad and nothing else.
+
+// Store a freshly minted link. `tokenHash` = sha256(raw token); `expiresAt` epoch-ms or null (never). Returns
+// the new row id (so the engine can echo which link it is), or null on a bad username/hash.
+export function createSpeedDialShare({ username, tokenHash, label = null, expiresAt = null, at = Date.now() }) {
+  const u = normUsername(username);
+  if (!u || !tokenHash) return null;
+  const info = db.prepare(
+    'INSERT INTO speed_dial_shares (token_hash, username, label, created_at, expires_at) VALUES (?,?,?,?,?)',
+  ).run(tokenHash, u, label ? String(label).slice(0, 80) : null, at, expiresAt == null ? null : Number(expiresAt));
+  return num(info.lastInsertRowid);
+}
+
+// A hash → the live share it addresses ({ id, username, expiresAt }) or null. Rejects unknown, revoked, and
+// expired rows (mirrors resolveCliToken). The engine still checks the pad has the requested slot before firing.
+export function resolveSpeedDialShareHash(tokenHash, now = Date.now()) {
+  if (!tokenHash) return null;
+  const row = db.prepare('SELECT id, username, expires_at, revoked_at FROM speed_dial_shares WHERE token_hash=?').get(tokenHash);
+  if (!row || row.revoked_at != null) return null;
+  if (row.expires_at != null && Number(row.expires_at) <= now) return null;
+  return { id: num(row.id), username: row.username, expiresAt: row.expires_at == null ? null : num(row.expires_at) };
+}
+
+// The active (not revoked, not expired) links for a pad — the owner's Access panel list. Raw tokens are never
+// recoverable (hash-only storage), so the panel shows only id/label/created/expiry, never the URL again.
+export function listSpeedDialShares(username, now = Date.now()) {
+  const u = normUsername(username);
+  if (!u) return [];
+  return db.prepare(
+    `SELECT id, label, created_at, expires_at FROM speed_dial_shares
+     WHERE username=? AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > ?) ORDER BY created_at DESC`,
+  ).all(u, now).map((s) => ({
+    id: num(s.id), label: s.label || '', createdAt: num(s.created_at),
+    expiresAt: s.expires_at == null ? null : num(s.expires_at),
+  }));
+}
+
+// Soft-revoke one link (kill it without deleting the audit row). Scoped to `username` when given so the owner
+// route can't revoke a different pad's link by id. Returns whether a live row was actually revoked.
+export function revokeSpeedDialShare(id, username = null, at = Date.now()) {
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0) return false;
+  const u = username == null ? null : normUsername(username);
+  const res = u
+    ? db.prepare('UPDATE speed_dial_shares SET revoked_at=? WHERE id=? AND username=? AND revoked_at IS NULL').run(at, n, u)
+    : db.prepare('UPDATE speed_dial_shares SET revoked_at=? WHERE id=? AND revoked_at IS NULL').run(at, n);
+  return num(res.changes) > 0;
 }
 
 // ── Per-user dossier (behavior profile) ──

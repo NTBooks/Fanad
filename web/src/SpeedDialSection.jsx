@@ -16,6 +16,10 @@ export default function SpeedDialSection() {
   const [newUser, setNewUser] = useState('');
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [shareTtl, setShareTtl] = useState(7);   // 1 | 7 | 30 days (no non-expiring link)
+  const [shareLabel, setShareLabel] = useState('');
+  const [minted, setMinted] = useState(null);    // { url, expiresAt, hadSiteUrl } — shown ONCE after generating
+  const [copied, setCopied] = useState(false);
 
   const load = () => api.getAccounts().then(setData).catch((e) => setMsg(e.message));
   useEffect(() => { load(); }, []);
@@ -27,6 +31,7 @@ export default function SpeedDialSection() {
     setDraft({ speedDialOnly: acct.speedDialOnly, slots });
     setOpen(acct.username);
     setMsg(null);
+    setMinted(null); setShareLabel(''); setShareTtl(7); setCopied(false);
   }
 
   const setSlot = (n, p) => setDraft((d) => ({ ...d, slots: { ...d.slots, [n]: { ...d.slots[n], ...p } } }));
@@ -62,6 +67,33 @@ export default function SpeedDialSection() {
     try { const r = await api.testSlot(username, n); setMsg(r.ok ? `🏠 #${n}: ${r.speech}` : `#${n} failed: ${r.error}`); }
     catch (e) { setMsg(e.message); }
   }
+
+  // Mint a no-login "remote control" link for this saved pad. The raw URL is shown ONCE (the server keeps only
+  // its hash), so we surface it with a copy button; the refreshed accounts carry the active-link list.
+  async function generateShare(username) {
+    setBusy(true); setMsg(null); setMinted(null); setCopied(false);
+    try {
+      const res = await api.mintShareLink(username, { ttlDays: shareTtl, label: shareLabel.trim() });
+      setData(res);
+      setMinted({ url: res.url || (window.location.origin + res.path), expiresAt: res.expiresAt, hadSiteUrl: !!res.url });
+      setShareLabel('');
+    } catch (e) { setMsg(e.message); } finally { setBusy(false); }
+  }
+
+  async function copyLink() {
+    if (!minted) return;
+    try { await navigator.clipboard.writeText(minted.url); setCopied(true); }
+    catch { setMsg('Copy failed — select the link and copy it manually.'); }
+  }
+
+  async function revokeShare(username, id) {
+    if (!window.confirm('Turn off this link? Anyone holding it loses access immediately.')) return;
+    setBusy(true); setMsg(null);
+    try { const res = await api.revokeShareLink(username, id); setData(res); if (minted) setMinted(null); }
+    catch (e) { setMsg(e.message); } finally { setBusy(false); }
+  }
+
+  const fmtDate = (ms) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
   // Open a print-ready sheet of this person's numbers so the host can hand them a physical card
   // ("1 = Kitchen lights…"). Client-side — no auth/new-tab concerns; prints the SAVED pad (a.slots).
@@ -109,7 +141,7 @@ export default function SpeedDialSection() {
   }
 
   if (!data) return <p className="hint">Loading…</p>;
-  const { accounts, houseConnected } = data;
+  const { accounts, houseConnected, loginOn } = data;
 
   const sourceLabel = (a) => {
     if (a.sources.includes('allowlist')) return 'allowlisted';
@@ -171,6 +203,55 @@ export default function SpeedDialSection() {
               <div className="settings-foot">
                 <button className="ghost danger" onClick={() => remove(a.username)} disabled={busy}>Remove pad</button>
                 <button className="primary" onClick={() => save(a.username)} disabled={busy}>Save pad</button>
+              </div>
+
+              <div className="sd-share">
+                <h4>Share a remote-control link</h4>
+                <p className="sub">Text a guest a link to just these buttons — no login, no Telegram account.
+                  {' '}The link controls only this pad and expires on its own.</p>
+                {!loginOn && (
+                  <p className="bad">Turn on <strong>web login</strong> (Settings → Security) before sharing a link.
+                    {' '}Without it, anyone who can reach this address can use the whole app, not just these buttons.</p>
+                )}
+                {a.slots.length === 0 ? (
+                  <p className="sub">Save at least one number above before you can share it.</p>
+                ) : (
+                  <>
+                    <div className="sd-share-form">
+                      <input className="sd-share-label" value={shareLabel} placeholder="who's it for? (optional)"
+                        maxLength={80} disabled={!loginOn} onChange={(e) => setShareLabel(e.target.value)} />
+                      <select value={shareTtl} disabled={!loginOn} onChange={(e) => setShareTtl(Number(e.target.value))}>
+                        <option value={1}>Expires in 1 day</option>
+                        <option value={7}>Expires in 7 days</option>
+                        <option value={30}>Expires in 30 days</option>
+                      </select>
+                      <button className="primary" onClick={() => generateShare(a.username)} disabled={busy || !loginOn}>Generate link</button>
+                    </div>
+                    {minted && (
+                      <div className="sd-minted">
+                        <p className="sub">Here's the link — copy it now, it won't be shown again. Expires {fmtDate(minted.expiresAt)}.</p>
+                        <div className="sd-minted-row">
+                          <input readOnly value={minted.url} onFocus={(e) => e.target.select()} />
+                          <button className="ghost" onClick={copyLink}>{copied ? 'Copied ✓' : 'Copy'}</button>
+                        </div>
+                        {!minted.hadSiteUrl && (
+                          <p className="sub">Tip: set a <strong>Site URL</strong> in Security so this link works away from your network.</p>
+                        )}
+                      </div>
+                    )}
+                    {a.shares && a.shares.length > 0 && (
+                      <ul className="sd-shares">
+                        {a.shares.map((s) => (
+                          <li key={s.id}>
+                            <span className="sd-share-name">{s.label || 'Remote link'}</span>
+                            <span className="sub">{s.expiresAt ? `expires ${fmtDate(s.expiresAt)}` : 'never expires'}</span>
+                            <button className="ghost danger" onClick={() => revokeShare(a.username, s.id)} disabled={busy}>Revoke</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}

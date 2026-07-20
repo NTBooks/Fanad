@@ -85,6 +85,9 @@ section{padding-block:var(--section-y)}
 .btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;text-decoration:none}
 .btn-ghost{background:transparent;color:var(--ink)}
 .btn-ghost:hover{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+/* A row of buttons: flex so they keep even gaps and wrap onto clean, separated rows (inline-block buttons in
+   a <p> collide vertically when they wrap). gap covers both the column and the row spacing. */
+.btn-row{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center}
 .site-header{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--rule-2)}
 .site-header .shell{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding-block:var(--space-3)}
 .brandmark{font-family:var(--font-display);font-weight:600;font-size:1.3rem;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
@@ -221,10 +224,10 @@ details.ex[open]>summary{color:var(--accent)}
     <p>Everything you can say to Fanad, in the order you'll need it: start here, learn the
       everyday moves, then reach for the advanced pieces and the admin setup only when you
       want them. The whole tool fits in three rules &mdash; and a leading slash is always optional.</p>
-    <p style="margin-top:var(--space-5)"><a class="btn" href="#quickstart">Start with the quickstart</a>
-      <a class="btn btn-ghost" href="./happy-path-installer.html" style="margin-left:var(--space-3)">Install &amp; set up</a>
-      <a class="btn btn-ghost" href="./cheatsheet.html" style="margin-left:var(--space-3)">Printable cheat sheet</a>
-      <a class="btn btn-ghost" href="./index.html" style="margin-left:var(--space-3)">What is Fanad?</a></p>
+    <div class="btn-row" style="margin-top:var(--space-5)"><a class="btn" href="#quickstart">Start with the quickstart</a>
+      <a class="btn btn-ghost" href="./happy-path-installer.html">Install &amp; set up</a>
+      <a class="btn btn-ghost" href="./cheatsheet.html">Printable cheat sheet</a>
+      <a class="btn btn-ghost" href="./index.html">What is Fanad?</a></div>
   </div>
 </section>
 
@@ -1713,6 +1716,22 @@ Calendar: calendar.house
       their first message. Numbers run against the one Home Assistant connection you set in the Channels tab, so
       set that up first. Each person&rsquo;s row has a <span class="cmd">🖨 Sheet</span> button that prints a
       hand-out card of their numbers &mdash; give it to them like an old speed-dial card.</p>
+    <p><strong>Share a remote-control link (no Telegram needed).</strong> Speed dial is really for your
+      <em>guests</em>, and a guest shouldn&rsquo;t have to install Telegram to flip a light. In a person&rsquo;s
+      row, under <em>Share a remote-control link</em>, pick how long it should last (1, 7, or 30 days), optionally
+      note who it&rsquo;s for, and <span class="cmd">Generate link</span>. You get a plain web link like
+      <span class="mono-note">https://your-fanad/r/&hellip;</span> &mdash; text it to the guest and they open a
+      simple page of just <em>their</em> buttons. No login, no account, no app. Tapping a button runs that same
+      owner-authored command, so the link can only ever do what the pad can do &mdash; nothing else in Fanad, and
+      still no free text to the house. The link <strong>expires on its own</strong> and you can <em>Revoke</em> it
+      any time from the same row. <span class="mono-note">(Copy the link when it&rsquo;s shown &mdash; for your
+      security it isn&rsquo;t stored and can&rsquo;t be shown again; generate a fresh one if you lose it. For a
+      link to work away from your home network, set a <em>Site URL</em> in Settings &rarr; Security.)</span></p>
+    <p class="mono-note"><strong>Web login must be on.</strong> A share link lives at your Fanad address, and the
+      promise is &ldquo;only these buttons&rdquo;. That only holds if everything <em>else</em> at that address is
+      locked, so Fanad won&rsquo;t generate a link until you&rsquo;ve turned on web login (Settings &rarr;
+      Security) &mdash; and a link <em>stops working</em> the moment login is turned back off, so a guest can
+      never reach the buttons while the rest of the app is open.</p>
   </div>
 
   <div class="subsec" id="adv-notebooks">

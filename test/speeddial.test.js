@@ -3,7 +3,7 @@
 // (rename-proof pin, like vouches), the runtime pad lookup, firing a slot (converse() stubbed — no network),
 // the "limited account" lockdown (reaches NOTHING but its 0-9 pad), and the "a pad-holder never gets raw ha"
 // guard. All offline: HA is only "configured" for the fire tests, with global.fetch stubbed to a canned reply.
-import { test } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,6 +20,7 @@ const { handleMessage, handleAction, isFeatureOnFor } = await import('../server/
 const { clearDialogState } = await import('../server/dialog.js');
 const repo = await import('../server/repo.js');
 const sd = await import('../server/speeddial.js');
+const remote = await import('../server/routes/remote.js');
 
 const owner = repo.defaultUserId(); // root (id 1) is always the owner
 const say = (userId, text) => { clearDialogState(userId); return handleMessage({ userId, text, channel: 'telegram' }); };
@@ -32,6 +33,17 @@ function stubHouse(speech = 'Turned off the light') {
   const real = global.fetch;
   global.fetch = async () => ({ ok: true, json: async () => ({ response: { speech: { plain: { speech } } } }), text: async () => '' });
   return () => { global.fetch = real; };
+}
+
+// Minimal Express res double for exercising the public remote-control route handlers directly.
+function fakeRes() {
+  const res = { statusCode: 200, headers: {}, body: null };
+  res.status = (c) => { res.statusCode = c; return res; };
+  res.json = (o) => { res.body = o; return res; };
+  res.send = (s) => { res.body = s; return res; };
+  res.type = () => res;
+  res.set = (k, v) => { res.headers[k] = v; return res; };
+  return res;
 }
 
 // ── owner authoring ──────────────────────────────────────────────────────────────────────────────────────
@@ -293,4 +305,164 @@ test('a LIMITED account is denied vouch even if the flag is on; a full-account p
   assert.equal(isFeatureOnFor(carol, 'vouch'), false, 'a locked-down account can never vouch');
   assert.equal(isFeatureOnFor(dave, 'vouch'), true, 'a non-limited pad-holder is a full account — vouch stands');
   assert.equal(isFeatureOnFor(owner, 'vouch'), true, 'the owner always vouches');
+});
+
+// ── shareable "remote control" links (the no-login guest surface) ────────────────────────────────────────
+// A share link may only be minted on a box where everything ELSE on the origin requires auth, so these run
+// with web login ON (the before hook). dave (id 80080) has slot 1 = "turn off the lights" from above.
+describe('remote-control share links', () => {
+  before(() => settings.setAuthConfig({ mode: 'simple' }));
+  after(() => settings.setAuthConfig({ mode: 'none' }));
+
+  test('minting is refused while web login is off — the link would not actually be limited', () => {
+    settings.setAuthConfig({ mode: 'none' }); // login off: the whole origin is open, so no share link
+    const r = sd.mintShareLink('dave', {});
+    assert.ok(!r.ok && r.needsLogin, 'no link is minted without login');
+    assert.equal(sd.accountsData().loginOn, false, 'the panel is told login is off (Generate is disabled)');
+    settings.setAuthConfig({ mode: 'simple' });
+    assert.equal(sd.accountsData().loginOn, true, 'and told when it is on');
+  });
+
+  // A link minted under login must FAIL CLOSED if the operator later drops the box back to open (mode 'none',
+  // where /api is unauthenticated and impersonation, if set, is live). Checked at request time, not just mint.
+  test('a live link stops working the moment web login is turned off', async () => {
+    const m = sd.mintShareLink('dave', {}); // minted while login is on (the suite default)
+    settings.setAuthConfig({ mode: 'none' });
+    try {
+      const page = fakeRes();
+      remote.remotePageHandler({ params: { token: m.token } }, page);
+      assert.doesNotMatch(page.body, /turn off the lights/, 'no buttons are served while the box is open');
+      assert.match(page.body, /unavailable/i, 'the guest sees an unavailable notice, not the pad');
+      const fire = fakeRes();
+      await remote.remoteFireHandler({ params: { token: m.token }, body: { slot: 1 } }, fire);
+      assert.equal(fire.statusCode, 403, 'firing is refused while login is off');
+    } finally {
+      settings.setAuthConfig({ mode: 'simple' });
+    }
+  });
+
+  test('mintShareLink mints an fsd1_ token that resolves back to its pad', () => {
+    const m = sd.mintShareLink('dave', { ttlDays: 7 });
+    assert.ok(m.ok && m.token.startsWith('fsd1_'), 'a prefixed token comes back');
+    assert.ok(m.path.startsWith('/r/fsd1_'), 'the path is the textable /r/<token>');
+    const share = sd.resolveShare(m.token);
+    assert.equal(share?.username, 'dave', 'the token resolves to its pad');
+    assert.ok(share.expiresAt > Date.now(), 'it carries a future expiry');
+  });
+
+  test('mintShareLink clamps ttl to the offered set (default 7) and refuses an unknown pad', () => {
+    assert.equal(sd.mintShareLink('dave', { ttlDays: 999 }).ttlDays, 7, 'a bad ttl falls back to the default');
+    assert.equal(sd.mintShareLink('dave', { ttlDays: 1 }).ttlDays, 1, 'an offered ttl is honored');
+    assert.equal(sd.mintShareLink('ghostpad', {}).ok, false, 'no pad → no link');
+  });
+
+  test('resolveShare rejects a bad prefix, an unknown, a revoked, and an expired token', () => {
+    assert.equal(sd.resolveShare('nope'), null, 'wrong prefix');
+    assert.equal(sd.resolveShare('fsd1_deadbeef'), null, 'unknown token');
+    const revoked = sd.mintShareLink('dave', {});
+    sd.revokeShareData('dave', revoked.id);
+    assert.equal(sd.resolveShare(revoked.token), null, 'revoked token is dead');
+    const aged = sd.mintShareLink('dave', {});
+    db.prepare('UPDATE speed_dial_shares SET expires_at=? WHERE id=?').run(Date.now() - 1000, aged.id);
+    assert.equal(sd.resolveShare(aged.token), null, 'expired token is dead');
+  });
+
+  test('shareRemoteData exposes only slot+name — never the @handle of whose pad it is', () => {
+    const rd = sd.shareRemoteData('dave');
+    assert.ok(rd.slots.find((s) => s.slot === 1 && s.name === 'turn off the lights'));
+    assert.equal(typeof rd.houseConnected, 'boolean');
+    assert.ok(!('username' in rd), 'the payload never carries the pad-holder handle');
+  });
+
+  test('fireShareSlot runs the stored command by username; a missing slot is a gentle no', async () => {
+    const restore = stubHouse('Lights off');
+    try {
+      const r = await sd.fireShareSlot('dave', 1);
+      assert.ok(r.ok && /Lights off/.test(r.speech), 'the owner-authored command fires');
+      const miss = await sd.fireShareSlot('dave', 5);
+      assert.equal(miss.ok, false, 'a slot the pad does not have returns ok:false, no throw');
+    } finally { restore(); }
+  });
+
+  test('accountsData folds the active share links into the pad row', () => {
+    const m = sd.mintShareLink('dave', { ttlDays: 30, label: 'dog sitter' });
+    const dave = sd.accountsData().accounts.find((a) => a.username === 'dave');
+    const link = dave.shares.find((s) => s.id === m.id);
+    assert.ok(link && link.label === 'dog sitter' && link.expiresAt > Date.now(), 'the link shows up for the owner panel');
+  });
+
+  test('the public POST /r/:token/fire runs a predefined slot for a no-login guest', async () => {
+    const m = sd.mintShareLink('dave', {});
+    const restore = stubHouse('All off');
+    try {
+      const res = fakeRes();
+      await remote.remoteFireHandler({ params: { token: m.token }, body: { slot: 1 } }, res);
+      assert.equal(res.statusCode, 200);
+      assert.ok(res.body.ok && /All off/.test(res.body.speech), 'the house ran the command');
+    } finally { restore(); }
+  });
+
+  test('the public fire route rejects a revoked link and an out-of-range slot', async () => {
+    const m = sd.mintShareLink('dave', {});
+    const bad = fakeRes();
+    await remote.remoteFireHandler({ params: { token: m.token }, body: { slot: 42 } }, bad);
+    assert.equal(bad.statusCode, 400, 'only 0-9 is a button');
+    sd.revokeShareData('dave', m.id);
+    const dead = fakeRes();
+    await remote.remoteFireHandler({ params: { token: m.token }, body: { slot: 1 } }, dead);
+    assert.equal(dead.statusCode, 403, 'a revoked link fires nothing');
+  });
+
+  test('the public GET /r/:token renders the buttons but never the pad-holder handle; a dead token shows an expired page', () => {
+    const m = sd.mintShareLink('dave', {});
+    const restore = stubHouse();
+    try {
+      const page = fakeRes();
+      remote.remotePageHandler({ params: { token: m.token } }, page);
+      assert.match(page.body, /turn off the lights/, 'the slot label renders');
+      assert.doesNotMatch(page.body, /dave/, 'the guest never sees whose pad it is');
+      assert.equal(page.headers['X-Robots-Tag'], 'noindex, nofollow', 'a share link is not indexable');
+    } finally { restore(); }
+    const gone = fakeRes();
+    remote.remotePageHandler({ params: { token: 'fsd1_nope' } }, gone);
+    assert.match(gone.body, /isn.t active/i, 'a bad token gets a friendly expired page');
+  });
+
+  test('removing a pad cascades: its share links die with it', () => {
+    sd.addAccountData(owner, 'grace');
+    db.prepare("INSERT INTO speed_dials (username, slot, label, command, created_at, updated_at) VALUES ('grace',1,NULL,'open the garage',?,?)")
+      .run(Date.now(), Date.now());
+    const m = sd.mintShareLink('grace', {});
+    assert.ok(sd.resolveShare(m.token), 'link is live while the pad exists');
+    repo.deleteSpeedDialAccount('grace');
+    assert.equal(sd.resolveShare(m.token), null, 'removing the pad kills the link');
+    assert.deepEqual(repo.listSpeedDialShares('grace'), [], 'no share rows survive the pad');
+  });
+
+  // THE core scoping guarantee: a share link can ONLY drive its pad's fire route — it is not an API credential,
+  // so it reaches nothing else on the box (tasks, notes, settings, another pad). Locked in as a regression.
+  test('a share token unlocks ONLY the /r pad routes — never the /api surface', async () => {
+    const auth = await import('../server/auth.js');
+    const m = sd.mintShareLink('dave', {});
+
+    assert.ok(sd.resolveShare(m.token), 'the share token drives its own remote page');
+    // A share token is a DIFFERENT species from the CLI/API bearer (fnd1_): resolveCliToken refuses it outright.
+    assert.equal(auth.resolveCliToken(m.token), null, 'a share token is not an API bearer token');
+
+    // With the CLI surface on and login on (this suite), presenting it as Authorization: Bearer stamps NO
+    // identity, so apiAuthGate 401s it — it can reach nothing under /api.
+    settings.setAuthConfig({ cliEnabled: true });
+    try {
+      const req = { method: 'GET', headers: { authorization: `Bearer ${m.token}` }, webSession: null };
+      auth.cliTokenMiddleware(req, {}, () => {});
+      assert.equal(req.cliAuth, null, 'the share token grants no API identity');
+      const res = fakeRes();
+      let passed = false;
+      auth.apiAuthGate(req, res, () => { passed = true; });
+      assert.equal(passed, false, 'no fall-through to the API');
+      assert.equal(res.statusCode, 401, 'the API is closed to a share token');
+    } finally {
+      settings.setAuthConfig({ cliEnabled: false });
+    }
+  });
 });

@@ -49,7 +49,7 @@ import {
 } from '../batches.js';
 import { findFood, findRecipe, recipeAsFood, portionOf, logFood, recipeSummary, ensureCaloriesMetric, recordWeight, setCalorieTarget } from '../diet.js';
 import { todayData as medToday, catalogData as medCatalog, templatesData as medTemplatesData, webSetTaken as medSetTaken, webAddMed, webSaveTemplate, medAll, MED_DISCLAIMER } from '../medication.js';
-import { accountsData, savePadData, addAccountData, removePadData, testSlotData, padSummary } from '../speeddial.js';
+import { accountsData, savePadData, addAccountData, removePadData, testSlotData, padSummary, mintShareLink, revokeShareData } from '../speeddial.js';
 import { UNIT_TYPES, COUNT_UNIT_TYPES, toFoodUnits } from '../../shared/diet.js';
 import { DAY_ROLLOVER_HOUR, dayStartOf } from '../../shared/timeframe.js';
 import { resolveActingUserId } from '../actingUser.js';
@@ -1997,6 +1997,26 @@ router.post('/accounts/:username/test/:slot', requireOwner, async (req, res) => 
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// Mint a shareable "remote control" link for this pad — the host texts a guest {siteUrl}/r/<token> and they
+// tap the pad's buttons with no login (routes/remote.js). The raw token + URL come back ONCE (hash-only
+// storage), so the panel can show it for copying; the refreshed accountsData carries the active-link list.
+router.post('/accounts/:username/share', requireOwner, (req, res) => {
+  const r = mintShareLink(req.params.username, {
+    ttlDays: Number(req.body?.ttlDays),
+    label: (req.body?.label ?? '').toString(),
+  });
+  if (!r.ok) return res.status(400).json({ error: r.error });
+  res.json({ ...r, ...accountsData() });
+});
+
+// Revoke one of this pad's remote-control links (kills it without deleting the audit row). Scoped to the
+// username so a stray id can't turn off another pad's link.
+router.delete('/accounts/:username/share/:id', requireOwner, (req, res) => {
+  const r = revokeShareData(req.params.username, Number(req.params.id));
+  if (!r.ok) return res.status(404).json({ error: 'No such active link.' });
+  res.json({ ok: true, ...accountsData() });
 });
 
 // Today's per-user LLM spend, heaviest first — the demo host's cost dashboard beside the vouch admin.

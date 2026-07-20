@@ -17,6 +17,7 @@ import { backfillLinkPreviews } from './linkBackfill.js';
 import apiRouter from './routes/api.js';
 import authRouter, { webLinkPageHandler, webLinkLoginHandler } from './routes/auth.js';
 import { demoPageHandler, demoRequestHandler } from './routes/demo.js';
+import { remotePageHandler, remoteFireHandler } from './routes/remote.js';
 import { sessionMiddleware, cliTokenMiddleware, apiAuthGate, authModeIsSimple, applyAuthResetIfRequested } from './auth.js';
 import { ipGate } from './ipGate.js';
 
@@ -96,6 +97,13 @@ app.post('/web/:token', webLinkLoginHandler);
 // construction (it isn't under the /api gate), and behind ipGate like everything else.
 app.get('/demo', demoPageHandler);
 app.post('/demo', demoRequestHandler);
+// The speed-dial "remote control" share links (routes/remote.js): a host texts a guest {siteUrl}/r/<token>
+// and the guest taps that one pad's Home Assistant buttons — no login, no Telegram. Top-level (short, textable
+// URL) and mounted before static + the SPA catch-all so /r/* never falls through to index.html. The GET only
+// renders; the POST fires one predefined slot. Open to logged-out visitors by construction (not under /api),
+// behind ipGate like the rest — the token is the only credential, vetted per request by resolveShare.
+app.get('/r/:token', remotePageHandler);
+app.post('/r/:token/fire', remoteFireHandler);
 // TODO (later phases): suggestions §4, metrics §13, notes §15, actions §16.
 
 // The bundled guide (site/: brochure + manual) at /docs — linked from the web header. Mounted before the

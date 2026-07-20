@@ -366,6 +366,23 @@ a.gear{ text-decoration:none; display:inline-block; }
   .sd-slot .sd-cmd{ flex:1 1 100%; }
 }
 
+/* Shareable "remote control" link block (per pad) — a host mints a no-login guest link here. */
+.sd-share{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); }
+.sd-share h4{ margin:0 0 4px; font-size:13px; }
+.sd-share-form{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0; }
+.sd-share-form .sd-share-label{ flex:1; min-width:140px; }
+.sd-share-form select{ flex:0 0 auto; }
+.sd-minted{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 11px; margin:8px 0; }
+.sd-minted-row{ display:flex; gap:8px; align-items:center; }
+.sd-minted-row input{ flex:1; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; }
+.sd-minted-row .ghost{ border:1px solid var(--line); background:var(--card,var(--surface)); border-radius:8px; padding:6px 12px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
+.sd-shares{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.sd-shares li{ display:flex; align-items:center; gap:10px; }
+.sd-shares .sd-share-name{ font-weight:600; }
+.sd-shares li .sub{ flex:1; }
+.sd-shares .ghost{ border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:4px 10px; font:inherit; font-size:12px; cursor:pointer; }
+.sd-shares .ghost.danger{ color:var(--danger,#b23b32); }
+
 /* Web login (auth mode 'simple') — a centered card reusing the Settings chrome, shown instead of the app. */
 .login-wrap{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px; }
 .login-card{ max-width:400px; }
