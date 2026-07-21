@@ -612,8 +612,8 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <LazyMotion features={domMax} strict>
     <div className="app" data-weather={wx}>
-      {/* Build tag, baked in by vite.config.js at build time (schema.commitsSinceMigration) — shows
-          which bundle the browser is actually running, so a cached deploy is visible at a glance. */}
+      {/* Version tag, baked in by vite.config.js at build time from package.json — shows which release
+          the browser is actually running, so a stale/cached deploy is visible at a glance. */}
       <div className="build-tag">v{__CLIENT_BUILD__}</div>
       {mode === 'bokeh' && <OceanBackdrop />}
       <header className="hdr">
