@@ -74,8 +74,7 @@ export async function fireSlot(userId, n) {
   if (!slot) return { text: `You don’t have a #${n} set.`, buttons: padButtons(pad.slots) };
   const r = await runSlot(pad.username, slot);
   if (!r.ok) return { text: r.text, buttons: padButtons(pad.slots) };
-  const state = r.toggle ? ` (${r.on ? 'on' : 'off'})` : '';
-  return { text: `🏠 ${KEYCAP[n]} ${slotName(slot)}${state} → ${r.speech}`, buttons: padButtons(pad.slots) };
+  return { text: `🏠 ${KEYCAP[n]} ${slotName(slot)} → ${r.speech}`, buttons: padButtons(pad.slots) };
 }
 
 // The lockdown-gate entry for a limited account: "0" (or anything unrecognized) shows the pad; a bare 1-9 or
@@ -106,23 +105,21 @@ const isToggle = (s) => !!(s && String(s.commandOff || '').trim());
 // Fire one slot, honoring a toggle. A plain slot always runs its `command`. A toggle runs whichever command
 // the remembered position calls for (currently-off → run ON; currently-on → run OFF) and, on success, flips
 // the server-tracked position so the next press does the other one. `username` is the pad owner's @handle,
-// needed to persist the flip. Returns { ok, speech?, text?, toggle, on? } — `on` is the NEW state (toggles only).
+// needed to persist the flip. The position is only ever a GUESS of the last command we sent — we can't read
+// the device back from HA — so it drives WHICH command fires but is never surfaced as an on/off state.
 async function runSlot(username, s) {
   const toggle = isToggle(s);
   const turningOn = toggle ? !s.toggleOn : true;      // a plain slot is always an "on" (single) press
   const command = turningOn ? s.command : s.commandOff;
   const said = await runHouseCommand(command);
-  if (!said.ok) return { ok: false, text: said.text, toggle };
+  if (!said.ok) return { ok: false, text: said.text };
   if (toggle) setSpeedDialToggleState(username, s.slot, turningOn);
-  return { ok: true, speech: said.speech, toggle, on: toggle ? turningOn : undefined };
+  return { ok: true, speech: said.speech };
 }
 
-// The per-slot shape both web pad surfaces send to a browser: { slot, name } for a one-shot, plus { toggle, on }
-// for a toggle so the button can show/repaint its On/Off state. Never includes the raw command (privacy).
-function padSlotView(s) {
-  const base = { slot: s.slot, name: slotName(s) };
-  return isToggle(s) ? { ...base, toggle: true, on: !!s.toggleOn } : base;
-}
+// The per-slot shape sent to a browser pad surface: { slot, name } only — never the raw command, and NO on/off
+// state (it would be a server guess we can't verify against HA, so a wrong badge is worse than none).
+const padSlotView = (s) => ({ slot: s.slot, name: slotName(s) });
 
 // ── Owner authoring (chat commands; the web panel calls the same repo helpers via the routes) ────────────
 
@@ -366,12 +363,12 @@ export async function fireShareSlot(username, n) {
   if (!slot) return { ok: false, text: `There’s no #${n} on this pad.` };
   const r = await runSlot(u, slot);
   if (!r.ok) return { ok: false, text: r.text };
-  return { ok: true, speech: r.speech, name: slotName(slot), slot: slot.slot, toggle: r.toggle, on: r.on };
+  return { ok: true, speech: r.speech, name: slotName(slot), slot: slot.slot };
 }
 
-// The remote page's pad payload: filled slots (each { slot, name }, plus { toggle, on } for a toggle so the
-// button can show/repaint its state) + whether the house is reachable. Deliberately carries NO @handle and NO
-// raw command — a guest sees only the numbers and their labels, never the command or whose pad it is.
+// The remote page's pad payload: filled slots (each { slot, name }) + whether the house is reachable.
+// Deliberately carries NO @handle, NO raw command, and NO on/off state — a guest sees only the numbers and
+// their labels, never the command, whose pad it is, or a state we can't actually read back from HA.
 export function shareRemoteData(username) {
   const u = normUsername(username);
   return {

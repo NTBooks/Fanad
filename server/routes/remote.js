@@ -50,17 +50,23 @@ const HEAD = `<meta charset="utf-8">
   h1 { font-size:1.4rem; margin:0 0 4px; }
   .sub { color:var(--sub); font-size:.95rem; margin:0; line-height:1.45; }
   .pad { display:flex; flex-direction:column; gap:12px; }
-  .key { display:flex; align-items:center; gap:16px; width:100%; text-align:left; cursor:pointer;
+  .key { position:relative; overflow:hidden; display:flex; align-items:center; gap:16px; width:100%; text-align:left; cursor:pointer;
          background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:16px;
          padding:18px 20px; font-size:1.1rem; box-shadow:var(--shadow); transition:transform .06s ease, filter .15s ease; }
   .key:hover { filter:brightness(1.03); }
   .key:active { transform:scale(.98); }
   .key:disabled { opacity:.55; cursor:default; box-shadow:none; }
+  /* Press feedback: a color washes across the button over ~1.8s and doubles as a re-tap lock (taps are ignored
+     while it fills). We deliberately show NO on/off state — it could only ever be a guess, since the device
+     can't be read back from Home Assistant, and a wrong "On/Off" badge is worse than none. */
+  .key .fill { position:absolute; inset:0; z-index:0; background:var(--accent); opacity:.16; border-radius:inherit;
+               transform:scaleX(0); transform-origin:left; pointer-events:none; }
+  .key.pressed .fill { animation: keyfill 1.8s ease-out forwards; }
+  @keyframes keyfill { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+  .num, .lbl { position:relative; z-index:1; }
   .num { flex:0 0 auto; width:44px; height:44px; border-radius:12px; background:var(--accent); color:var(--accentink);
          display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; }
   .lbl { font-weight:650; }
-  .state { margin-left:auto; flex:0 0 auto; font-size:.8rem; font-weight:700; padding:4px 11px; border-radius:999px; border:1px solid var(--line); color:var(--sub); }
-  .state.on { background:var(--accent); color:var(--accentink); border-color:transparent; }
   .empty, .banner { text-align:center; color:var(--sub); background:var(--card); border:1px solid var(--line);
                     border-radius:14px; padding:20px; box-shadow:var(--shadow); line-height:1.5; }
   .banner.warn { color:#8a5a00; }
@@ -92,8 +98,8 @@ export function remotePageHandler(req, res) {
   const body = !slots.length
     ? '<p class="empty">There are no buttons on this remote yet. Ask whoever shared it to set some up.</p>'
     : `<div class="pad">${slots.map((s) => `
-        <button class="key" data-slot="${s.slot}"${s.toggle ? ' data-toggle="1"' : ''}${houseConnected ? '' : ' disabled'}>
-          <span class="num">${s.slot}</span><span class="lbl">${esc(s.name)}</span>${s.toggle ? `<span class="state ${s.on ? 'on' : 'off'}">${s.on ? 'On' : 'Off'}</span>` : ''}
+        <button class="key" data-slot="${s.slot}"${houseConnected ? '' : ' disabled'}>
+          <span class="fill"></span><span class="num">${s.slot}</span><span class="lbl">${esc(s.name)}</span>
         </button>`).join('')}</div>`;
 
   const houseBanner = houseConnected ? '' : '<p class="banner warn" style="margin-bottom:16px">The house isn’t reachable right now — buttons are disabled. Try again later.</p>';
@@ -123,9 +129,12 @@ export function remotePageHandler(req, res) {
   }
   document.querySelectorAll('.key').forEach(function (btn) {
     btn.addEventListener('click', async function () {
-      if (btn.disabled) return;
+      // Ignore taps while the house is unreachable, or while this button is still "filling" from the last tap
+      // — the fill IS a ~2s cooldown, so a quick double-tap can't fire the command twice.
+      if (btn.disabled || btn.classList.contains('pressed')) return;
+      btn.classList.add('pressed');
+      setTimeout(function () { btn.classList.remove('pressed'); }, 2000);
       var slot = Number(btn.getAttribute('data-slot'));
-      btn.disabled = true; toast('Sending…');
       try {
         var r = await fetch('/r/' + encodeURIComponent(token) + '/fire', {
           method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
@@ -133,15 +142,8 @@ export function remotePageHandler(req, res) {
         });
         var d = await r.json().catch(function () { return {}; });
         if (!r.ok || !d.ok) toast(d.error || 'That didn’t go through — try again.', true);
-        else {
-          if (btn.getAttribute('data-toggle') && typeof d.on === 'boolean') {
-            var pill = btn.querySelector('.state');
-            if (pill) { pill.textContent = d.on ? 'On' : 'Off'; pill.className = 'state ' + (d.on ? 'on' : 'off'); }
-          }
-          toast('🏠 ' + (d.speech || 'Done.'));
-        }
+        else toast('🏠 ' + (d.speech || 'Done.'));
       } catch (e) { toast('Couldn’t reach the house — check your connection.', true); }
-      finally { btn.disabled = false; }
     });
   });
 </script>
@@ -164,7 +166,7 @@ export async function remoteFireHandler(req, res) {
   try {
     const r = await fireShareSlot(share.username, slot);
     if (!r.ok) return res.status(502).json({ error: r.text || 'The house didn’t answer.' });
-    return res.json({ ok: true, speech: r.speech, name: r.name, slot: r.slot, on: r.on });
+    return res.json({ ok: true, speech: r.speech, name: r.name, slot: r.slot });
   } catch (err) {
     return res.status(502).json({ error: `Couldn’t reach the house: ${err.message}` });
   }

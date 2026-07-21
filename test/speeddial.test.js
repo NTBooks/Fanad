@@ -174,18 +174,17 @@ describe('on/off toggle slots', () => {
     assert.equal(two.commandOff, '', 'a one-shot slot has no OFF command');
   });
 
-  test('fireSlot alternates on↔off and flips the server-tracked position', async () => {
+  test('fireSlot alternates the toggle command and flips the server-tracked position', async () => {
     const king = repo.getOrCreateTelegramUser(40040, 'king');
     const h = stubHouseCapturing('done');
     try {
       const on = await sd.fireSlot(king, 1);
       assert.match(h.last(), /turn on king boo/, 'first press runs the ON command');
-      assert.match(on.text, /\(on\)/, 'the reply says it is now on');
+      assert.doesNotMatch(on.text, /\(on\)|\(off\)/, 'the reply reports the house speech, NOT a guessed on/off state');
       assert.equal(repo.listSpeedDialSlots('king').find((s) => s.slot === 1).toggleOn, true, 'position flipped to on');
 
-      const off = await sd.fireSlot(king, 1);
+      await sd.fireSlot(king, 1);
       assert.match(h.last(), /turn off king boo/, 'the next press runs the OFF command');
-      assert.match(off.text, /\(off\)/, 'the reply says it is now off');
       assert.equal(repo.listSpeedDialSlots('king').find((s) => s.slot === 1).toggleOn, false, 'position flipped back to off');
     } finally { h.restore(); }
   });
@@ -201,27 +200,23 @@ describe('on/off toggle slots', () => {
     } finally { h.restore(); }
   });
 
-  test('fireShareSlot alternates too, and reports the new state to the remote page', async () => {
+  test('fireShareSlot alternates the toggle command too, and reports NO on/off state back', async () => {
     const h = stubHouseCapturing('done');
     try {
       const on = await sd.fireShareSlot('king', 1);
-      assert.match(h.last(), /turn on king boo/);
-      assert.equal(on.toggle, true);
-      assert.equal(on.on, true, 'the remote page is told the light is now on');
-      const off = await sd.fireShareSlot('king', 1);
-      assert.match(h.last(), /turn off king boo/);
-      assert.equal(off.on, false, 'and now off');
+      assert.match(h.last(), /turn on king boo/, 'first press runs the ON command');
+      assert.ok(on.ok && !('on' in on) && !('toggle' in on), 'no server-guessed state is sent to the remote page');
+      await sd.fireShareSlot('king', 1);
+      assert.match(h.last(), /turn off king boo/, 'the next press runs the OFF command');
+      assert.equal(repo.listSpeedDialSlots('king').find((s) => s.slot === 1).toggleOn, false, 'position flipped back');
     } finally { h.restore(); }
   });
 
-  test('shareRemoteData flags a toggle + its state but never leaks either command', () => {
+  test('shareRemoteData sends only { slot, name } — no command, and no guessed on/off state', () => {
     const rd = sd.shareRemoteData('king');
-    const one = rd.slots.find((s) => s.slot === 1);
-    assert.equal(one.toggle, true, 'the remote page knows #1 is a toggle');
-    assert.equal(typeof one.on, 'boolean', 'and its current on/off state');
-    assert.equal(one.name, 'King Boo');
+    assert.deepEqual(rd.slots.find((s) => s.slot === 1), { slot: 1, name: 'King Boo' }, 'a toggle is a bare { slot, name } too');
+    assert.deepEqual(rd.slots.find((s) => s.slot === 2), { slot: 2, name: 'Door' });
     assert.doesNotMatch(JSON.stringify(rd), /turn (on|off) king boo/, 'the raw commands never reach the browser');
-    assert.deepEqual(rd.slots.find((s) => s.slot === 2), { slot: 2, name: 'Door' }, 'a one-shot stays a bare { slot, name }');
   });
 
   test('the owner Test button fires the command TYPED in the panel, saved or not', async () => {
@@ -535,6 +530,8 @@ describe('remote-control share links', () => {
       assert.match(page.body, /turn off the lights/, 'the slot label renders');
       assert.doesNotMatch(page.body, /dave/, 'the guest never sees whose pad it is');
       assert.equal(page.headers['X-Robots-Tag'], 'noindex, nofollow', 'a share link is not indexable');
+      assert.match(page.body, /class="fill"/, 'each button carries the press-fill element');
+      assert.doesNotMatch(page.body, /class="state/, 'no on/off state pill is rendered (we can\'t read the device)');
     } finally { restore(); }
     const gone = fakeRes();
     remote.remotePageHandler({ params: { token: 'fsd1_nope' } }, gone);
