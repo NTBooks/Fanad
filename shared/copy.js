@@ -437,6 +437,7 @@ export const COMMAND_SECTIONS = [
       '• /tasks — counts by kind; pick one to see the top 10, then “next” for more · /tasks all — everything · /tasks today — due today',
       '• /today call the pharmacy — file it due today (or just “x call the pharmacy”)',
       '• /done 3 · /start 3 — finish or start item 3 (a few: /done 1 2 3) · /drop 3 — clear it off your list',
+      '• /view 3 — open item 3’s full detail (your original words, the fuller read, its steps) and edit its steps WITHOUT starting it (every row shows a tappable 👁 /view link)',
       '• unstart — put the task you started back on the list without finishing it (or /unstart 2 by position)',
       '• undo — take back the last thing I did (a capture, a done, a drop, a snooze, a logged entry, a timer…)',
       '• /whatdo — what should I do right now? (then reply yes · no · smaller) · /whatdo today — only what’s due today',

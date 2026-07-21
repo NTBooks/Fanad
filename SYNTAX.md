@@ -93,7 +93,14 @@ command intent (`whatdo`, `summary`, `tasks`, `notes`, `recall`, `mood_set`, `do
 **The leading `/` is an optional prefix that never changes _what_ a command does.** Its only jobs
 are to escape an open question (step 5) and to aid discovery. So `/sleeping` ≡ `sleeping`,
 `/done 3` ≡ `done 3`. Some commands accept _only_ the slash form (noted), because the bare word is
-too common in ordinary speech to hijack (`/today`, `/cal`, `/pic`, `/summary`, `/recall`, …).
+too common in ordinary speech to hijack (`/today`, `/cal`, `/pic`, `/view`, `/summary`, `/recall`, …).
+
+One deliberate exception to "the slash never changes the outcome": **`done` / `finish` / `start`
+followed by _words_ (not a number).** A position always acts (`done 3` ≡ `/done 3` ≡ `/done_3`), but a
+verb + words only matches an open task by name in the **slash** form (`/done clean the garage`). The
+bare form (`start the doc`, `done the dishes`) is read as a task statement and filed — these three are
+the everyday English verbs most likely to collide with something you actually want captured, so the
+bare form must never silently start or complete a task by name.
 
 ```
 command ← capture / list / lists_cmd / act / schedule / organize / suggest / guide / metrics / admin
@@ -445,6 +452,7 @@ test reads exactly these lines.
 /unsnooze 1
 /unstart
 /undo
+/view 1
 /pic 1
 /cal 1
 /summary

@@ -542,20 +542,25 @@ function meaningfullyDifferent(s, base) {
   const a = normForCompare(s); const b = normForCompare(base);
   return !!a && a !== b && !b.includes(a) && !a.includes(b);
 }
-// The lines shown when a task is started: the started line, then ALWAYS your verbatim words when they aren't
-// an exact restatement of the title (the LLM title trims context, so it can be a perfect prefix yet still
-// drop the part you cared about), then the fuller LLM paragraph (only when it adds beyond both).
-function startedHeader(task) {
-  // Bold title (clickable when the task carries a link); the verbatim 📄 line stays plain-but-escaped (your
-  // own words, read straight); the fuller LLM paragraph is dimmed (a secondary paraphrase). All html — the
-  // started reply is html:true. A single-task card keeps Telegram's preview card — informative here.
-  const link = parseLink(task);
-  const name = link ? b(html`“${a(link.url, task.summary)}”`) : title(`“${task.summary}”`);
-  const lines = [html`▶ Started: ${name}.`.toString()];
+// The verbatim + fuller-read lines shared by the started card and the /view detail card: ALWAYS your verbatim
+// words when they aren't an exact restatement of the title (the LLM title trims context, so it can be a perfect
+// prefix yet still drop the part you cared about), then the fuller LLM paragraph (only when it adds beyond both).
+// The verbatim 📄 line stays plain-but-escaped (your own words, read straight); the fuller LLM paragraph is
+// dimmed (a secondary paraphrase). Both html — every caller is an html:true reply.
+function fullReadLines(task) {
+  const lines = [];
   if (differsFrom(task.original_text, task.summary)) lines.push(html`📄 ${task.original_text.trim()}`.toString());
   if (meaningfullyDifferent(task.llm_summary, task.summary)
       && meaningfullyDifferent(task.llm_summary, task.original_text)) lines.push(em(task.llm_summary.trim()).toString());
   return lines;
+}
+// The lines shown when a task is started: the started line, then the shared full-read lines.
+function startedHeader(task) {
+  // Bold title (clickable when the task carries a link). All html — the started reply is html:true. A single-
+  // task card keeps Telegram's preview card — informative here.
+  const link = parseLink(task);
+  const name = link ? b(html`“${a(link.url, task.summary)}”`) : title(`“${task.summary}”`);
+  return [html`▶ Started: ${name}.`.toString(), ...fullReadLines(task)];
 }
 // A light re-render of the checklist + step buttons (used after each tick; doesn't repeat the header).
 function stepsView(task) {
@@ -591,12 +596,13 @@ function picMarker(task, withPic, n) {
 }
 
 // Tappable per-task action links on a listing row, right next to the task — "▶ /start_N" (only when it
-// isn't already running) and "✓ /done_N". The underscore form is what Telegram auto-links into one command
-// (like /pic_N / /cal_N), and the web renders "/verb_N" as a one-tap command too. `n` is the row position,
+// isn't already running), "✓ /done_N", and "👁 /view_N" (open the detail card — full read + steps + edit —
+// WITHOUT starting the task). The underscore form is what Telegram auto-links into one command (like
+// /pic_N / /cal_N), and the web renders "/verb_N" as a one-tap command too. `n` is the row position,
 // resolved against the current listing — so the action hits the task you're looking at.
 function actionMarkers(task, n) {
   const start = task.status === 'in_progress' ? '' : ` · ▶ /start_${n}`;
-  return `${start} · ✓ /done_${n}`;
+  return `${start} · ✓ /done_${n} · 👁 /view_${n}`;
 }
 
 // A tappable "📅 /cal_N" tail on a row whose task has a DATE — drop it into your own calendar (and make it
@@ -622,7 +628,7 @@ function withCalendar(reply, task) {
 // own line, BOLD; an indented META line — category · difficulty · any priority/deadline marks — de-emphasised
 // as ONE italic unit (no literal brackets; the styling IS the de-emphasis, and keeping it a single tag means
 // an emoji+word marker like "🔴 high" stays contiguous so the wire text never splits it); then the tappable
-// CONTROLS on their own line (▶ /start_N · ✓ /done_N · 📷 /pic_N · 📅 /cal_N) — left bare so /start_N
+// CONTROLS on their own line (▶ /start_N · ✓ /done_N · 👁 /view_N · 📷 /pic_N · 📅 /cal_N) — left bare so /start_N
 // auto-links on Telegram and chips on the web. `pad` indents grouped rows under their category header; the
 // two meta lines sit one step further in. `category` is dropped in the grouped view (the header says it).
 function taskRow(t, n, withPic, { category = true, pad = '' } = {}) {
@@ -2376,6 +2382,20 @@ async function route({ userId, identityId = userId, text, energy = null, channel
       ? { buttons: [[{ text: '🏠 To HA calendar', data: `m:hacal:${task.id}` }]] } : null;
     return withCalendar({ text: `📅 Add “${task.summary}” to your calendar`, ...(haCal || {}) }, task);
   }
+  // 👁 /view N — open the Nth listed task's DETAIL card (full read + steps + action buttons) WITHOUT starting
+  // it. Tapping the "/view_N" link on a row fires this; "/view 3", "/view_3", "/view3" and the /details alias
+  // all resolve here. N is a position on the current list (like /done N). The card's 🪜 Steps / 💡 Suggest
+  // steps buttons edit the checklist without starting — the whole point of the "why must I start to look?" fix.
+  if (/^\/(?:view|details)\s*$/i.test(lower)) {
+    return 'Which one? Run /tasks, then tap the “👁 /view_N” link on a task.';
+  }
+  if ((m = /^\/(?:view|details)[\s_]*#?(\d+)\s*$/i.exec(t))) {
+    const { pairs, total } = resolveListing(userId, 'task', [Number(m[1])]);
+    if (!pairs.length) return noListingReply(total, 'task');
+    const task = getTask(userId, pairs[0].id);
+    if (!task) return 'That task’s gone now.';
+    return detailCard(task, hasLiveList(userId));
+  }
   // Page the current task slice. Only when a paged listing is actually open, so "next"/"back" aren't
   // stolen from normal use; whole-word match so "next-door fence" still files as a task.
   if (getPageState(userId) && /^\/?(next|more|prev|back|previous)$/i.test(lower)) {
@@ -2526,7 +2546,10 @@ async function route({ userId, identityId = userId, text, energy = null, channel
   }
 
   // "done 3" / "start 3" — and the tappable underscore form "/done_3" / "/start_3" on a listing row (the
-  // [\s_]+ separator accepts both). The same handler resolves a position OR matches a task by name.
+  // [\s_]+ separator accepts both) — act on those POSITIONS. A verb followed by WORDS is a command ONLY via
+  // the explicit slash form ("/done clean the garage" matches a task by name); a BARE "start the doc" /
+  // "done the dishes" is natural speech and files as a task — see the tail below. (These are the everyday
+  // English verbs most likely to collide with a real task statement, so the bare form must never hijack one.)
   if ((m = /^\/?(done|finish|start)[\s_]+(.+)$/i.exec(t))) {
     const status = /start/i.test(m[1]) ? 'in_progress' : 'done';
     const positions = parsePositionList(m[2]);
@@ -2548,12 +2571,18 @@ async function route({ userId, identityId = userId, text, energy = null, channel
       if (pairs.length === 1 && !missing.length) return transitionTask(userId, pairs[0].id, status);
       return transitionTasks(userId, pairs, status, missing);
     }
-    const task = captureSnippetWords(userId, m[2]);
-    if (task) return transitionTask(userId, task.id, status);
-    // No matching task — and the slash is just an optional prefix, so "/done laundry" and bare "done
-    // laundry" MUST agree. done/finish/start are common task VERBS, so we file the REMAINDER (m[2], the
-    // text after the verb) as a new task — never a verb-named "done laundry". captureSnippet's "did you
-    // mean…?" guard still fires if those words partly match an open task.
+    // No number after the verb. done/finish/start are the commonest task VERBS in plain speech, so a BARE
+    // "start the doc" / "done the dishes" is a task statement, NOT a command — never match an open task by
+    // name from the bare form (that silent start/complete was the complaint). Only the EXPLICIT slash form is
+    // a deliberate command that still resolves a task by name. The optional-slash rule bends here on purpose:
+    // the slash is the user's "I really mean the command" signal for these collision-prone verbs.
+    if (t.startsWith('/')) {
+      const task = captureSnippetWords(userId, m[2]);
+      if (task) return transitionTask(userId, task.id, status);
+    }
+    // Both forms that reach here file the REMAINDER (m[2] — the verb stripped, so no "finish edits…" title)
+    // as a task. captureSnippet's "did you mean…?" guard still flags an overlap with an open task, so a
+    // genuine "start the doc" that matches one offers to act on it — it just never does so silently.
     return captureSnippet({ userId, text: m[2].trim(), channel, messageId: snap.messageId, snapshotId: snap.snapshotId, imageId, isOn });
   }
   // A bare finish/stop word (no id) closes whatever you most recently started — never files a task. Kept
@@ -2776,6 +2805,25 @@ const taskHomeMenu = (task, list = false) => {
   // Top slot: stepless → offer the LLM guess; has steps → open the 🪜 checklist (edit without starting).
   return taskActionMenu(task, { guess: stepless, steps: !stepless, list });
 };
+
+// The /view detail card: everything worth READING about a task without committing to it (starting) — the
+// title, the dimmed meta line (category · difficulty · priority · deadline), your verbatim words + the fuller
+// LLM read, and the steps checklist — under the task's usual action buttons. Those buttons already edit steps
+// WITHOUT starting: 🪜 Steps (has steps) opens the editable checklist, 💡 Suggest steps (stepless) decomposes
+// this task. A richer sibling of card() (which is only the one-line taskLine). html:true, like startedHeader.
+function detailCard(task, list = false) {
+  const link = parseLink(task);
+  const name = link ? b(html`“${a(link.url, task.summary)}”`) : title(`“${task.summary}”`);
+  const flag = task.status === 'in_progress' ? ' ▶' : '';
+  const lead = `${catLabel(task.category)} · ${task.effort_level}`;
+  const lines = [html`👁 ${name}${raw(flag)}`.toString(), taskMetaLine(lead, task).toString(), ...fullReadLines(task)];
+  const steps = parseSteps(task);
+  if (steps.length) {
+    const done = steps.filter((s) => s.done).length;
+    lines.push(`Steps (${done}/${steps.length}):\n${stepsChecklist(steps)}`);
+  }
+  return { text: lines.join('\n'), buttons: taskHomeMenu(task, list), html: true };
+}
 
 // Re-render the listing a task card came from, so "‹ Back" returns to the SAME page, not page 1.
 function relistTasks(userId) {

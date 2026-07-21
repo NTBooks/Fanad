@@ -313,7 +313,7 @@ test('step adds a step under a just-filed task, and start writes it out', async 
   clearDialogState(1);
   assert.match((await handleMessage({ text: 'organize the garage shelves today' })).reply, /Filed/);
   assert.match((await handleMessage({ text: 'step empty the bins' })).reply, /Step 1 added/);
-  assert.match((await handleMessage({ text: 'start organize the garage shelves' })).reply, /empty the bins/);
+  assert.match((await handleMessage({ text: '/start organize the garage shelves' })).reply, /empty the bins/); // slash = deliberate start-by-name
 });
 
 // ── link-preview rendering: a URL task's title becomes a clickable <a>; a linkless task's doesn't ──
@@ -340,6 +340,6 @@ test('the started card links the title when the task carries a URL', async (t) =
   const uid = getOrCreateTelegramUser(8889, 'link-start-tester');
   globalThis.fetch = async () => new Response('<meta property="og:title" content="The Doc">', { status: 200, headers: { 'content-type': 'text/html' } });
   await handleMessage({ userId: uid, text: 'https://example.org/guide' });
-  const started = await handleMessage({ userId: uid, text: 'start the doc' });
+  const started = await handleMessage({ userId: uid, text: '/start the doc' }); // slash form still matches a task by name
   assert.match(started.reply, /<a href="https:\/\/example\.org\/guide">/);
 });

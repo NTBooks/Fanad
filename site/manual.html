@@ -490,6 +490,17 @@ Tap a kind or difficulty below to see its top 7 — or grab 📅 Today / 📋 Al
         <p class="ex-bot">▶ Started: “bake sourdough”.</p>
       </div>
       </details></td></tr>
+        <tr><td><span class="cmd">/view</span></td><td>Open task N&rsquo;s full detail &mdash; your original words, the fuller read, and its steps &mdash; with its action buttons, all <em>without</em> starting it. Tap a row&rsquo;s 👁 <span class="cmd">/view_N</span> link, or type <span class="cmd">/view 3</span> (<span class="cmd">/details</span> works too). From there 🪜 Steps edits the checklist without starting.
+      <details class="ex"><summary>example</summary>
+      <div class="ex-chat">
+        <p class="ex-you">/view 3</p>
+        <p class="ex-bot">👁 “renew the passport” · Admin · medium · ⏳ due friday
+📄 renew the passport before the italy trip
+Steps (0/2):
+☐ 1. dig out the old one
+☐ 2. book a photo booth</p>
+      </div>
+      </details></td></tr>
         <tr><td><span class="cmd">unstart</span></td><td>Put the task you started back &mdash; not started, not finished, nothing lost. Bare <span class="cmd">unstart</span> means the one in progress; <span class="cmd">unstart 2</span> targets row N. There&rsquo;s a ⏸ Unstart button on the started card too.
       <details class="ex"><summary>example</summary>
       <div class="ex-chat">
@@ -659,11 +670,11 @@ How about “water the plants”?
       <div class="ex-chat">
         <p class="ex-you">/tasks all</p>
         <p class="ex-bot">1. call the pharmacy · Errands · trivial · ⏳ due today
-▶ /start_1 · ✓ /done_1
+▶ /start_1 · ✓ /done_1 · 👁 /view_1
 2. clear the gutters · Home · medium
-▶ /start_2 · ✓ /done_2
+▶ /start_2 · ✓ /done_2 · 👁 /view_2
 3. renew the passport · Admin · medium · ⏳ due friday
-▶ /start_3 · ✓ /done_3 · 📅 /cal_3</p>
+▶ /start_3 · ✓ /done_3 · 👁 /view_3 · 📅 /cal_3</p>
       </div>
       </details></td></tr>
         <tr><td><span class="cmd">/tasks today</span></td><td>Show only the tasks due by the end of today.
