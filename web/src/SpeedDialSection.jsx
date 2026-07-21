@@ -266,7 +266,7 @@ export default function SpeedDialSection() {
                 <button className="primary" onClick={() => save(a.username)} disabled={busy}>Save pad</button>
               </div>
 
-              <div className="sd-share">
+              <div className="sd-remote">
                 <h4>Share a remote-control link</h4>
                 <p className="sub">Text a guest a link to just these buttons — no login, no Telegram account.
                   {' '}The link controls only this pad and expires on its own.</p>
@@ -278,8 +278,8 @@ export default function SpeedDialSection() {
                   <p className="sub">Save at least one number above before you can share it.</p>
                 ) : (
                   <>
-                    <div className="sd-share-form">
-                      <input className="sd-share-label" value={shareLabel} placeholder="who's it for? (optional)"
+                    <div className="sd-remote-form">
+                      <input className="sd-remote-label" value={shareLabel} placeholder="who's it for? (optional)"
                         maxLength={80} disabled={!loginOn} onChange={(e) => setShareLabel(e.target.value)} />
                       <select value={shareTtl} disabled={!loginOn} onChange={(e) => setShareTtl(Number(e.target.value))}>
                         <option value={1}>Expires in 1 day</option>
@@ -301,10 +301,10 @@ export default function SpeedDialSection() {
                       </div>
                     )}
                     {a.shares && a.shares.length > 0 && (
-                      <ul className="sd-shares">
+                      <ul className="sd-remotes">
                         {a.shares.map((s) => (
                           <li key={s.id}>
-                            <span className="sd-share-name">{s.label || 'Remote link'}</span>
+                            <span className="sd-remote-name">{s.label || 'Remote link'}</span>
                             <span className="sub">{s.expiresAt ? `expires ${fmtDate(s.expiresAt)}` : 'never expires'}</span>
                             <button className="ghost danger" onClick={() => revokeShare(a.username, s.id)} disabled={busy}>Revoke</button>
                           </li>
