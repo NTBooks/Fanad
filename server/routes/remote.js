@@ -111,7 +111,7 @@ export function remotePageHandler(req, res) {
   </header>
   ${houseBanner}
   ${body}
-  <footer>Powered by Fanad · this link only reaches these buttons.</footer>
+  <footer><a href="https://fanad.org" target="_blank" rel="noopener noreferrer">Powered by Fanad</a> · this link only reaches these buttons.</footer>
 </main>
 <div id="say" role="status" aria-live="polite"></div>
 <script>
