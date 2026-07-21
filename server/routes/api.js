@@ -1992,7 +1992,7 @@ router.delete('/accounts/:username/pad', requireOwner, (req, res) => {
 // Owner "Test" button: fire one slot against the house right now and report what HA said (or why it failed).
 router.post('/accounts/:username/test/:slot', requireOwner, async (req, res) => {
   try {
-    const r = await testSlotData(req.params.username, Number(req.params.slot));
+    const r = await testSlotData(req.params.username, Number(req.params.slot), req.body?.command);
     res.json(r);
   } catch (err) {
     res.status(400).json({ error: err.message });

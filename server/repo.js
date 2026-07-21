@@ -544,22 +544,32 @@ export function deleteSpeedDialAccount(username) {
 export function listSpeedDialSlots(username) {
   const u = normUsername(username);
   if (!u) return [];
-  return db.prepare('SELECT slot, label, command FROM speed_dials WHERE username=? ORDER BY slot').all(u)
-    .map((s) => ({ slot: num(s.slot), label: s.label || '', command: s.command }));
+  return db.prepare('SELECT slot, label, command, command_off, toggle_on FROM speed_dials WHERE username=? ORDER BY slot').all(u)
+    .map((s) => ({ slot: num(s.slot), label: s.label || '', command: s.command, commandOff: s.command_off || '', toggleOn: s.toggle_on === 1 }));
 }
 
 // Set one slot (UPSERT on username+slot); ensures the account row exists so `sd @user N = …` works with no
 // explicit "add account" first. The caller is responsible for authorizing the handle (addVouch).
-export function setSpeedDialSlot({ username, slot, label = '', command, at = Date.now() }) {
+export function setSpeedDialSlot({ username, slot, label = '', command, commandOff = '', at = Date.now() }) {
   const u = normUsername(username);
   if (!u || !Number.isInteger(slot) || slot < 0 || slot > 9 || !String(command || '').trim()) return false;
   db.prepare('INSERT OR IGNORE INTO speed_dial_accounts (username, speed_dial_only, created_at, updated_at) VALUES (?,0,?,?)').run(u, at, at);
+  const off = String(commandOff || '').trim() || null; // a second command makes the slot a toggle; empty = one-shot
+  // Note: toggle_on is NOT touched on update — an edit keeps its position; a fresh insert takes the column default (off).
   db.prepare(
-    `INSERT INTO speed_dials (username, slot, label, command, created_at, updated_at)
-     VALUES (?,?,?,?,?,?)
-     ON CONFLICT(username, slot) DO UPDATE SET label=excluded.label, command=excluded.command, updated_at=excluded.updated_at`,
-  ).run(u, slot, label || null, String(command).trim(), at, at);
+    `INSERT INTO speed_dials (username, slot, label, command, command_off, created_at, updated_at)
+     VALUES (?,?,?,?,?,?,?)
+     ON CONFLICT(username, slot) DO UPDATE SET label=excluded.label, command=excluded.command, command_off=excluded.command_off, updated_at=excluded.updated_at`,
+  ).run(u, slot, label || null, String(command).trim(), off, at, at);
   return true;
+}
+
+// Flip a toggle slot's remembered position (which of its two commands fires next). Server-tracked, so every
+// surface — the Telegram digit, the web pad, the no-login /r/ link — agrees on whether the light is on.
+export function setSpeedDialToggleState(username, slot, on) {
+  const u = normUsername(username);
+  if (!u) return;
+  db.prepare('UPDATE speed_dials SET toggle_on=? WHERE username=? AND slot=?').run(on ? 1 : 0, u, slot);
 }
 
 export function clearSpeedDialSlot(username, slot) {

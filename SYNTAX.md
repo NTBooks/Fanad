@@ -266,6 +266,10 @@ clock       ← INT (":" INT)? ("am"/"pm"/"a"/"p")?              # "8", "8am", "
 # Settings -> Access -> Generate link. It serves GET /r/<fsd1_ token> (a page of just that pad's buttons) and
 # POST /r/<token>/fire (runs one predefined slot) OUTSIDE the /api auth gate, so a guest needs no account. The
 # token is expiring (1/7/30d) + revocable, hash-stored, and scoped to one pad — see server/routes/remote.js.
+# ALSO web-only: a slot may carry a SECOND "off" command (speed_dials.command_off, v45). With both set the
+# number becomes a TOGGLE — one button that alternates the device on<->off. The position is tracked server-side
+# (speed_dials.toggle_on), NOT in the guest's browser, so every surface agrees: the Telegram digit, the web pad,
+# and the /r/ link all read and flip the same bit. The chat "sd @user N = …" form sets a one-shot only.
 speeddial   ← "/"? ("sd"/"speeddial")                                       # the owner board (all pads)
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE                        # show one account's pad
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP DIGIT "=" (label "|")? TEXT  # set a slot (0-9)

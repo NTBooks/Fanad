@@ -358,7 +358,9 @@ a.gear{ text-decoration:none; display:inline-block; }
 .sd-num{ font-weight:700; width:16px; text-align:center; color:var(--navy); }
 .sd-slot .sd-label{ width:130px; flex:0 0 auto; }
 .sd-slot .sd-cmd{ flex:1; }
-.sd-slot .ghost{ border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:5px 10px; font:inherit; font-size:12px; cursor:pointer; }
+.sd-slot .sd-cmd-off{ border-style:dashed; }
+.sd-slot.toggle .sd-num{ color:var(--teal, var(--navy)); }
+.sd-slot .ghost{ border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:5px 10px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
 .sd-slot .ghost:disabled{ opacity:.45; cursor:not-allowed; }
 @media (max-width:560px){
   .sd-slot{ flex-wrap:wrap; }

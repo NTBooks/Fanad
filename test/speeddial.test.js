@@ -35,6 +35,21 @@ function stubHouse(speech = 'Turned off the light') {
   return () => { global.fetch = real; };
 }
 
+// Like stubHouse, but records the command text HA received (converse posts { text } as the JSON body), so a
+// toggle test can assert WHICH of a slot's two commands fired. `last()` is the most recent command string.
+function stubHouseCapturing(speech = 'ok') {
+  settings.setHomeAssistantConfig({ baseUrl: 'http://127.0.0.1:8123', token: 'tok' });
+  const real = global.fetch;
+  const seen = [];
+  global.fetch = async (url, opts) => {
+    let text = '';
+    try { text = JSON.parse(opts?.body || '{}').text || ''; } catch { /* not a converse call */ }
+    seen.push(text);
+    return { ok: true, json: async () => ({ response: { speech: { plain: { speech } } } }), text: async () => '' };
+  };
+  return { seen, last: () => seen[seen.length - 1] || '', restore: () => { global.fetch = real; } };
+}
+
 // Minimal Express res double for exercising the public remote-control route handlers directly.
 function fakeRes() {
   const res = { statusCode: 200, headers: {}, body: null };
@@ -52,7 +67,7 @@ test('owner sets a slot with a label, and it authorizes + creates the account', 
   await sd.ownerCommand(owner, 'sd @alice 1 = Kitchen | turn off the kitchen lights');
   const slots = repo.listSpeedDialSlots('alice');
   assert.equal(slots.length, 1);
-  assert.deepEqual(slots[0], { slot: 1, label: 'Kitchen', command: 'turn off the kitchen lights' });
+  assert.deepEqual(slots[0], { slot: 1, label: 'Kitchen', command: 'turn off the kitchen lights', commandOff: '', toggleOn: false });
   assert.ok(repo.getSpeedDialAccount('alice'), 'account row created');
   assert.ok(repo.isVouched('alice'), 'programming a pad authorizes the handle to reach the bot');
 });
@@ -136,6 +151,94 @@ test('firing with HA not connected returns the "ask the owner" message, not a cr
   const bob = repo.getOrCreateTelegramUser(60060, 'bob');
   const r = await sd.fireSlot(bob, 3);
   assert.match(r.text, /isn.t connected/i);
+});
+
+// ── on/off toggle slots (ON + OFF command; server-tracked position; one number, both ways) ───────────────
+describe('on/off toggle slots', () => {
+  // king #1 is a toggle (ON = "turn on king boo", OFF = "turn off king boo"); #2 is a plain one-shot.
+  before(() => {
+    sd.savePadData(owner, 'king', { slots: [
+      { slot: 1, label: 'King Boo', command: 'turn on king boo', commandOff: 'turn off king boo' },
+      { slot: 2, label: 'Door', command: 'lock the door' },
+    ] });
+    repo.getOrCreateTelegramUser(40040, 'king');
+    repo.linkSpeedDialAccount('king', 40040);
+  });
+
+  test('savePadData persists the OFF command; a plain slot has none, and a toggle starts off', () => {
+    const slots = repo.listSpeedDialSlots('king');
+    const one = slots.find((s) => s.slot === 1);
+    const two = slots.find((s) => s.slot === 2);
+    assert.equal(one.commandOff, 'turn off king boo', 'the toggle keeps its second command');
+    assert.equal(one.toggleOn, false, 'a freshly saved toggle starts off');
+    assert.equal(two.commandOff, '', 'a one-shot slot has no OFF command');
+  });
+
+  test('fireSlot alternates on↔off and flips the server-tracked position', async () => {
+    const king = repo.getOrCreateTelegramUser(40040, 'king');
+    const h = stubHouseCapturing('done');
+    try {
+      const on = await sd.fireSlot(king, 1);
+      assert.match(h.last(), /turn on king boo/, 'first press runs the ON command');
+      assert.match(on.text, /\(on\)/, 'the reply says it is now on');
+      assert.equal(repo.listSpeedDialSlots('king').find((s) => s.slot === 1).toggleOn, true, 'position flipped to on');
+
+      const off = await sd.fireSlot(king, 1);
+      assert.match(h.last(), /turn off king boo/, 'the next press runs the OFF command');
+      assert.match(off.text, /\(off\)/, 'the reply says it is now off');
+      assert.equal(repo.listSpeedDialSlots('king').find((s) => s.slot === 1).toggleOn, false, 'position flipped back to off');
+    } finally { h.restore(); }
+  });
+
+  test('a plain (one-shot) slot fires the same command every time and never flips', async () => {
+    const king = repo.getOrCreateTelegramUser(40040, 'king');
+    const h = stubHouseCapturing('done');
+    try {
+      await sd.fireSlot(king, 2);
+      await sd.fireSlot(king, 2);
+      assert.match(h.last(), /lock the door/, 'a one-shot always runs its single command');
+      assert.equal(repo.listSpeedDialSlots('king').find((s) => s.slot === 2).toggleOn, false, 'nothing to flip');
+    } finally { h.restore(); }
+  });
+
+  test('fireShareSlot alternates too, and reports the new state to the remote page', async () => {
+    const h = stubHouseCapturing('done');
+    try {
+      const on = await sd.fireShareSlot('king', 1);
+      assert.match(h.last(), /turn on king boo/);
+      assert.equal(on.toggle, true);
+      assert.equal(on.on, true, 'the remote page is told the light is now on');
+      const off = await sd.fireShareSlot('king', 1);
+      assert.match(h.last(), /turn off king boo/);
+      assert.equal(off.on, false, 'and now off');
+    } finally { h.restore(); }
+  });
+
+  test('shareRemoteData flags a toggle + its state but never leaks either command', () => {
+    const rd = sd.shareRemoteData('king');
+    const one = rd.slots.find((s) => s.slot === 1);
+    assert.equal(one.toggle, true, 'the remote page knows #1 is a toggle');
+    assert.equal(typeof one.on, 'boolean', 'and its current on/off state');
+    assert.equal(one.name, 'King Boo');
+    assert.doesNotMatch(JSON.stringify(rd), /turn (on|off) king boo/, 'the raw commands never reach the browser');
+    assert.deepEqual(rd.slots.find((s) => s.slot === 2), { slot: 2, name: 'Door' }, 'a one-shot stays a bare { slot, name }');
+  });
+
+  test('the owner Test button fires the command TYPED in the panel, saved or not', async () => {
+    const h = stubHouseCapturing('ok');
+    try {
+      // Typed-but-unsaved fires verbatim — the fix for "#N failed: no #N" when testing before saving.
+      const typed = await sd.testSlotData('king', 7, 'flash the lights');
+      assert.ok(typed.ok && /flash the lights/.test(h.last()), 'a typed command is tested even with slot 7 empty');
+      // No command → falls back to the saved slot's ON command.
+      const fallback = await sd.testSlotData('king', 1);
+      assert.ok(fallback.ok && /turn on king boo/.test(h.last()), 'empty command tests the saved ON command');
+      // Nothing typed and nothing saved is the only real "no #N".
+      const none = await sd.testSlotData('king', 7);
+      assert.equal(none.ok, false);
+      assert.match(none.error, /no #7/);
+    } finally { h.restore(); }
+  });
 });
 
 // ── limited-account lockdown ────────────────────────────────────────────────────────────────────────────

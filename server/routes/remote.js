@@ -59,6 +59,8 @@ const HEAD = `<meta charset="utf-8">
   .num { flex:0 0 auto; width:44px; height:44px; border-radius:12px; background:var(--accent); color:var(--accentink);
          display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:800; }
   .lbl { font-weight:650; }
+  .state { margin-left:auto; flex:0 0 auto; font-size:.8rem; font-weight:700; padding:4px 11px; border-radius:999px; border:1px solid var(--line); color:var(--sub); }
+  .state.on { background:var(--accent); color:var(--accentink); border-color:transparent; }
   .empty, .banner { text-align:center; color:var(--sub); background:var(--card); border:1px solid var(--line);
                     border-radius:14px; padding:20px; box-shadow:var(--shadow); line-height:1.5; }
   .banner.warn { color:#8a5a00; }
@@ -90,8 +92,8 @@ export function remotePageHandler(req, res) {
   const body = !slots.length
     ? '<p class="empty">There are no buttons on this remote yet. Ask whoever shared it to set some up.</p>'
     : `<div class="pad">${slots.map((s) => `
-        <button class="key" data-slot="${s.slot}"${houseConnected ? '' : ' disabled'}>
-          <span class="num">${s.slot}</span><span class="lbl">${esc(s.name)}</span>
+        <button class="key" data-slot="${s.slot}"${s.toggle ? ' data-toggle="1"' : ''}${houseConnected ? '' : ' disabled'}>
+          <span class="num">${s.slot}</span><span class="lbl">${esc(s.name)}</span>${s.toggle ? `<span class="state ${s.on ? 'on' : 'off'}">${s.on ? 'On' : 'Off'}</span>` : ''}
         </button>`).join('')}</div>`;
 
   const houseBanner = houseConnected ? '' : '<p class="banner warn" style="margin-bottom:16px">The house isn’t reachable right now — buttons are disabled. Try again later.</p>';
@@ -131,7 +133,13 @@ export function remotePageHandler(req, res) {
         });
         var d = await r.json().catch(function () { return {}; });
         if (!r.ok || !d.ok) toast(d.error || 'That didn’t go through — try again.', true);
-        else toast('🏠 ' + (d.speech || 'Done.'));
+        else {
+          if (btn.getAttribute('data-toggle') && typeof d.on === 'boolean') {
+            var pill = btn.querySelector('.state');
+            if (pill) { pill.textContent = d.on ? 'On' : 'Off'; pill.className = 'state ' + (d.on ? 'on' : 'off'); }
+          }
+          toast('🏠 ' + (d.speech || 'Done.'));
+        }
       } catch (e) { toast('Couldn’t reach the house — check your connection.', true); }
       finally { btn.disabled = false; }
     });
@@ -156,7 +164,7 @@ export async function remoteFireHandler(req, res) {
   try {
     const r = await fireShareSlot(share.username, slot);
     if (!r.ok) return res.status(502).json({ error: r.text || 'The house didn’t answer.' });
-    return res.json({ ok: true, speech: r.speech, name: r.name, slot: r.slot });
+    return res.json({ ok: true, speech: r.speech, name: r.name, slot: r.slot, on: r.on });
   } catch (err) {
     return res.status(502).json({ error: `Couldn’t reach the house: ${err.message}` });
   }

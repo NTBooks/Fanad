@@ -11,7 +11,7 @@
 import { randomBytes, createHash } from 'node:crypto';
 import {
   getSpeedDialPad, listSpeedDialSlots, listSpeedDialAccounts, getSpeedDialAccount,
-  upsertSpeedDialAccount, setSpeedDialSlot, clearSpeedDialSlot, clearSpeedDialPad,
+  upsertSpeedDialAccount, setSpeedDialSlot, setSpeedDialToggleState, clearSpeedDialSlot, clearSpeedDialPad,
   deleteSpeedDialAccount, addVouch, getUser, normUsername, listVouches,
   createSpeedDialShare, resolveSpeedDialShareHash, listSpeedDialShares, revokeSpeedDialShare,
 } from './repo.js';
@@ -71,9 +71,10 @@ export async function fireSlot(userId, n) {
   if (!pad) return { text: houseNotConnected, buttons: null };
   const slot = pad.slots.find((s) => s.slot === n);
   if (!slot) return { text: `You don’t have a #${n} set.`, buttons: padButtons(pad.slots) };
-  const said = await runHouseCommand(slot.command);
-  if (!said.ok) return { text: said.text, buttons: padButtons(pad.slots) };
-  return { text: `🏠 ${KEYCAP[n]} ${slotName(slot)} → ${said.speech}`, buttons: padButtons(pad.slots) };
+  const r = await runSlot(pad.username, slot);
+  if (!r.ok) return { text: r.text, buttons: padButtons(pad.slots) };
+  const state = r.toggle ? ` (${r.on ? 'on' : 'off'})` : '';
+  return { text: `🏠 ${KEYCAP[n]} ${slotName(slot)}${state} → ${r.speech}`, buttons: padButtons(pad.slots) };
 }
 
 // The lockdown-gate entry for a limited account: "0" (or anything unrecognized) shows the pad; a bare 1-9 or
@@ -96,6 +97,30 @@ async function runHouseCommand(command) {
   } catch (err) {
     return { ok: false, text: `Couldn’t reach the house: ${err.message}` };
   }
+}
+
+// A slot is a "toggle" when it carries a second (OFF) command; the number then alternates on↔off.
+const isToggle = (s) => !!(s && String(s.commandOff || '').trim());
+
+// Fire one slot, honoring a toggle. A plain slot always runs its `command`. A toggle runs whichever command
+// the remembered position calls for (currently-off → run ON; currently-on → run OFF) and, on success, flips
+// the server-tracked position so the next press does the other one. `username` is the pad owner's @handle,
+// needed to persist the flip. Returns { ok, speech?, text?, toggle, on? } — `on` is the NEW state (toggles only).
+async function runSlot(username, s) {
+  const toggle = isToggle(s);
+  const turningOn = toggle ? !s.toggleOn : true;      // a plain slot is always an "on" (single) press
+  const command = turningOn ? s.command : s.commandOff;
+  const said = await runHouseCommand(command);
+  if (!said.ok) return { ok: false, text: said.text, toggle };
+  if (toggle) setSpeedDialToggleState(username, s.slot, turningOn);
+  return { ok: true, speech: said.speech, toggle, on: toggle ? turningOn : undefined };
+}
+
+// The per-slot shape both web pad surfaces send to a browser: { slot, name } for a one-shot, plus { toggle, on }
+// for a toggle so the button can show/repaint its On/Off state. Never includes the raw command (privacy).
+function padSlotView(s) {
+  const base = { slot: s.slot, name: slotName(s) };
+  return isToggle(s) ? { ...base, toggle: true, on: !!s.toggleOn } : base;
 }
 
 // ── Owner authoring (chat commands; the web panel calls the same repo helpers via the routes) ────────────
@@ -207,7 +232,7 @@ export async function ownerCommand(ownerUserId, text) {
 export function padSummary(userId) {
   const pad = getSpeedDialPad(userId);
   if (!pad || !pad.slots.length) return null;
-  return { slots: pad.slots.map((s) => ({ slot: s.slot, name: slotName(s) })) };
+  return { slots: pad.slots.map(padSlotView) };
 }
 
 // The expandable-account-list feed: one row per allowed Telegram handle (allowlist ∪ active vouches ∪ pads),
@@ -257,7 +282,7 @@ export function savePadData(ownerUserId, username, { speedDialOnly = false, slot
     const n = Number(s.slot);
     const command = String(s.command || '').trim();
     if (Number.isInteger(n) && n >= 0 && n <= 9 && command) {
-      setSpeedDialSlot({ username: u, slot: n, label: String(s.label || '').trim(), command });
+      setSpeedDialSlot({ username: u, slot: n, label: String(s.label || '').trim(), command, commandOff: String(s.commandOff || '').trim() });
     }
   }
   return { ok: true };
@@ -275,11 +300,14 @@ export function removePadData(username) {
   return { ok: true };
 }
 
-// Owner "Test" button on a slot: fire it against the house and report what happened.
-export async function testSlotData(username, slot) {
-  const s = listSpeedDialSlots(username).find((x) => x.slot === Number(slot));
-  if (!s) return { ok: false, error: `no #${slot}` };
-  const r = await runHouseCommand(s.command);
+// Owner "Test" button on a slot: fire a command against the house right now and report what happened. `command`
+// (optional) is the text currently typed in the panel — tested verbatim so the owner can try a row (ON or OFF)
+// BEFORE saving it; with no command it falls back to the slot's saved ON command. Never flips a toggle's state.
+export async function testSlotData(username, slot, command) {
+  const typed = String(command || '').trim();
+  const cmd = typed || listSpeedDialSlots(username).find((x) => x.slot === Number(slot))?.command;
+  if (!cmd) return { ok: false, error: `no #${slot}` };
+  const r = await runHouseCommand(cmd);
   return r.ok ? { ok: true, speech: r.speech } : { ok: false, error: r.text };
 }
 
@@ -331,17 +359,18 @@ export async function fireShareSlot(username, n) {
   const u = normUsername(username);
   const slot = listSpeedDialSlots(u).find((s) => s.slot === Number(n));
   if (!slot) return { ok: false, text: `There’s no #${n} on this pad.` };
-  const said = await runHouseCommand(slot.command);
-  if (!said.ok) return { ok: false, text: said.text };
-  return { ok: true, speech: said.speech, name: slotName(slot), slot: slot.slot };
+  const r = await runSlot(u, slot);
+  if (!r.ok) return { ok: false, text: r.text };
+  return { ok: true, speech: r.speech, name: slotName(slot), slot: slot.slot, toggle: r.toggle, on: r.on };
 }
 
-// The remote page's pad payload: filled slots as { slot, name } + whether the house is reachable. Deliberately
-// carries NO @handle — a guest sees only the numbers and their labels, never whose pad it is.
+// The remote page's pad payload: filled slots (each { slot, name }, plus { toggle, on } for a toggle so the
+// button can show/repaint its state) + whether the house is reachable. Deliberately carries NO @handle and NO
+// raw command — a guest sees only the numbers and their labels, never the command or whose pad it is.
 export function shareRemoteData(username) {
   const u = normUsername(username);
   return {
-    slots: listSpeedDialSlots(u).map((s) => ({ slot: s.slot, name: slotName(s) })),
+    slots: listSpeedDialSlots(u).map(padSlotView),
     houseConnected: configured(getHomeAssistantConfig()),
   };
 }

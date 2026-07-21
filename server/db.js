@@ -1077,6 +1077,19 @@ export const MIGRATIONS = [
       CREATE INDEX idx_speed_dial_shares_username ON speed_dial_shares(username);
     `);
   },
+
+  // v44 -> v45: on/off "toggle" slots. A speed-dial number normally fires one command; a light with separate
+  // named on/off automations used to burn two slots. Add an optional second command (command_off) so ONE slot
+  // can alternate — fill both and the number flips the light on↔off. The position is tracked server-side
+  // (toggle_on), NOT in the guest's browser, so every surface agrees: the Telegram digit, the web pad, and the
+  // no-login /r/ link all read and flip the same bit (a locked Telegram account has no page to store it on and
+  // must still be able to turn the light back off). An empty command_off leaves the slot a plain one-shot.
+  (d) => {
+    d.exec(`
+      ALTER TABLE speed_dials ADD COLUMN command_off TEXT;
+      ALTER TABLE speed_dials ADD COLUMN toggle_on INTEGER NOT NULL DEFAULT 0;
+    `);
+  },
 ];
 
 export function migrate() {
