@@ -16,6 +16,7 @@ import {
   createSpeedDialShare, resolveSpeedDialShareHash, listSpeedDialShares, revokeSpeedDialShare,
 } from './repo.js';
 import { getHomeAssistantConfig, getTelegramConfig, getSiteConfig, getAuthConfig } from './settings.js';
+import { getBotIdentity } from './botStatus.js';
 import { converse } from './services/homeassistant.js';
 import { sanitizeForLlm } from './services/llm/sanitize.js';
 
@@ -265,10 +266,14 @@ export function accountsData() {
     if (a.telegramId != null) r.linked = true;
     if (!r.sources.length) r.sources.push('speeddial');
   }
+  const bot = getBotIdentity();
   return {
     accounts: [...rows.values()].sort((a, b) => a.username.localeCompare(b.username)),
     houseConnected: configured(getHomeAssistantConfig()),
     loginOn: getAuthConfig().mode === 'simple', // gates the "Generate link" affordance in the panel
+    // The connected Telegram bot's @username, so the printable sheet can tell a guest exactly whom to add and
+    // message (that first message onboards them). Null when Telegram is down or the box is Slack-only.
+    botUsername: bot?.platform === 'telegram' && bot.username ? bot.username : null,
   };
 }
 

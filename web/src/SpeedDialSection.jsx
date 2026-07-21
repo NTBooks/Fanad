@@ -3,10 +3,11 @@ import * as api from './api.js';
 
 // Accounts & Speed Dial (OWNER only, Settings → Access). The Telegram whitelist as an EXPANDABLE list: every
 // allowed handle (allowlist ∪ vouches ∪ pads) is a row you can open to give that person a Home Assistant
-// "speed dial" — numbers 0-9, each firing one owner-authored command against the house (the guest only ever
-// sends a digit, so their input is never free text to HA). Optionally LIMIT an account to speed dial only
-// (no tasks/chat). Speed dial needs the HA connection (Channels tab); the form disables with a banner until then.
-const SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+// "speed dial" — numbers 1-9, each firing one owner-authored command against the house (the guest only ever
+// sends a digit, so their input is never free text to HA). 0 is NOT a firable button — it's the reserved
+// "show my pad" key — so the editor lists 1-9 only. Optionally LIMIT an account to speed dial only (no
+// tasks/chat). Speed dial needs the HA connection (Channels tab); the form disables with a banner until then.
+const SLOTS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const emptySlots = () => Object.fromEntries(SLOTS.map((n) => [n, { label: '', command: '', commandOff: '' }]));
 
 export default function SpeedDialSection() {
@@ -20,6 +21,7 @@ export default function SpeedDialSection() {
   const [shareLabel, setShareLabel] = useState('');
   const [minted, setMinted] = useState(null);    // { url, expiresAt, hadSiteUrl } — shown ONCE after generating
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(() => new Set()); // slot numbers whose editor is open (rows start compact)
 
   const load = () => api.getAccounts().then(setData).catch((e) => setMsg(e.message));
   useEffect(() => { load(); }, []);
@@ -27,14 +29,27 @@ export default function SpeedDialSection() {
   function expand(acct) {
     if (open === acct.username) { setOpen(null); setDraft(null); return; }
     const slots = emptySlots();
-    for (const s of acct.slots) slots[s.slot] = { label: s.label || '', command: s.command || '', commandOff: s.commandOff || '' };
+    let moved = null;
+    for (const s of acct.slots) {
+      let n = s.slot;
+      if (n === 0) {
+        // Slot 0 was retired from the editor (it's the reserved "show my pad" key, not a firable button).
+        // Relocate any saved command to the first free 1-9 so it isn't silently lost on the next Save.
+        const free = SLOTS.find((k) => !acct.slots.some((x) => x.slot === k) && !slots[k].command);
+        if (free == null) continue;
+        n = free; moved = free;
+      }
+      slots[n] = { label: s.label || '', command: s.command || '', commandOff: s.commandOff || '' };
+    }
     setDraft({ speedDialOnly: acct.speedDialOnly, slots });
+    setEditing(new Set(moved != null ? [moved] : []));
     setOpen(acct.username);
-    setMsg(null);
+    setMsg(moved != null ? `Moved your old #0 to #${moved} — number 0 just shows the pad now. Save to keep it.` : null);
     setMinted(null); setShareLabel(''); setShareTtl(7); setCopied(false);
   }
 
   const setSlot = (n, p) => setDraft((d) => ({ ...d, slots: { ...d.slots, [n]: { ...d.slots[n], ...p } } }));
+  const toggleEdit = (n) => setEditing((s) => { const next = new Set(s); if (next.has(n)) next.delete(n); else next.add(n); return next; });
 
   async function addAccount() {
     const u = newUser.trim().replace(/^@+/, '');
@@ -106,6 +121,7 @@ export default function SpeedDialSection() {
     const slots = (a.slots || []).slice().sort((x, y) => x.slot - y.slot);
     if (!slots.length) return;
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const bot = data?.botUsername || null; // the Telegram bot to add + message (onboards the guest); null if unknown
     const cells = slots.map((s) => {
       const toggle = !!(s.commandOff && s.commandOff.trim());
       return `
@@ -130,15 +146,21 @@ export default function SpeedDialSection() {
         .lbl{font-size:20px;font-weight:700}
         .tog{font-size:12px;font-weight:700;color:#0f766e;border:1px solid #0f766e;border-radius:999px;padding:1px 8px;margin-left:8px;vertical-align:middle}
         .cmd{font-size:12px;color:#666;margin-top:2px}
-        .foot{margin-top:24px;color:#555;font-size:13px}
+        .start{margin-top:22px;padding:14px 16px;border:2px dashed #0f766e;border-radius:12px;font-size:15px;line-height:1.5;color:#222}
+        .start .bot{font-weight:800;color:#0f766e;white-space:nowrap}
+        .start .note{display:block;margin-top:6px;font-size:12px;color:#666}
+        .foot{margin-top:20px;color:#555;font-size:13px}
         button{margin-top:18px;padding:9px 18px;font-size:14px;border:1px solid #111;border-radius:9px;background:#fff;cursor:pointer}
         @media print{body{margin:12mm} button{display:none} .foot{margin-top:16px}}
       </style></head>
       <body>
         <h1>⚡ Speed Dial</h1>
-        <p class="sub">for <strong>@${esc(a.username)}</strong> — text just the number to the bot to run it.</p>
+        <p class="sub">for <strong>@${esc(a.username)}</strong>${bot ? ` — message <strong>@${esc(bot)}</strong> on Telegram, then text it a number` : ' — text just the number to the bot to run it'}.</p>
         <div class="grid">${cells}</div>
-        <p class="foot">Each number runs a Home Assistant command set up for you. Text the number (for example “1”) to the bot on Telegram, or tap it if the bot shows the pad. A number marked “on / off” switches that device — press it again to turn it back.</p>
+        <div class="start">${bot
+          ? `<strong>First time?</strong> Open Telegram, search for <span class="bot">@${esc(bot)}</span>, tap <em>Start</em>, and send it a quick “hi”. It’ll reply with your buttons. After that, just text a number (like <strong>1</strong>) any time — or tap the button it shows.<span class="note">Set a @username in your Telegram settings first, so the bot recognizes you.</span>`
+          : `<strong>First time?</strong> On Telegram, open the bot your host set up for you, tap <em>Start</em>, and send it a quick “hi”. It’ll reply with your buttons. Then just text a number (like <strong>1</strong>) any time — or tap the button it shows.`}</div>
+        <p class="foot">Each number runs one Home Assistant command your host set up. A number marked “on / off” switches that device — press it again to turn it back.</p>
         <button onclick="window.print()">Print</button>
         <script>window.onload=function(){setTimeout(function(){try{window.print()}catch(e){}},150)}<\/script>
       </body></html>`;
@@ -194,26 +216,47 @@ export default function SpeedDialSection() {
               <label className="check">
                 <input type="checkbox" checked={draft.speedDialOnly}
                   onChange={(e) => setDraft({ ...draft, speedDialOnly: e.target.checked })} />
-                Limit to speed dial only <span className="sub">— they can only use their 0-9 pad, no tasks or chat</span>
+                Limit to speed dial only <span className="sub">— they can only use their pad, no tasks or chat</span>
               </label>
               <div className="sd-grid">
                 {SLOTS.map((n) => {
                   const slot = draft.slots[n];
                   const isToggle = !!slot.commandOff.trim();
+                  const isOpen = editing.has(n);
+                  const filled = !!slot.command.trim();
+                  const preview = slot.label.trim() || slot.command.trim();
                   return (
-                    <div key={n} className={`sd-slot${isToggle ? ' toggle' : ''}`}>
-                      <span className="sd-num">{n}</span>
-                      <input className="sd-label" value={slot.label} placeholder="label"
-                        onChange={(e) => setSlot(n, { label: e.target.value })} />
-                      <input className="sd-cmd" value={slot.command}
-                        placeholder={isToggle ? 'ON — e.g. turn on king boo' : 'e.g. turn off the kitchen lights'}
-                        onChange={(e) => setSlot(n, { command: e.target.value })} />
-                      <input className="sd-cmd sd-cmd-off" value={slot.commandOff} placeholder="OFF (optional) — makes it a toggle"
-                        onChange={(e) => setSlot(n, { commandOff: e.target.value })} />
-                      <button className="ghost" disabled={!houseConnected || !slot.command.trim()}
-                        onClick={() => test(a.username, n, 'on')}>Test</button>
-                      <button className="ghost sd-test-off" disabled={!houseConnected || !slot.commandOff.trim()}
-                        onClick={() => test(a.username, n, 'off')} title="Test the OFF command">Test off</button>
+                    <div key={n} className={`sd-slot${isToggle ? ' toggle' : ''}${isOpen ? ' editing' : ''}`}>
+                      <div className="sd-slot-head" role="button" tabIndex={0}
+                        onClick={() => toggleEdit(n)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleEdit(n); } }}>
+                        <span className="sd-num">{n}</span>
+                        {isOpen
+                          ? <span className="sd-preview editing">Editing…</span>
+                          : (<>
+                              <span className={`sd-preview${filled ? '' : ' empty'}`}>{filled ? preview : 'empty'}</span>
+                              {isToggle && <span className="sd-tog-badge">on / off</span>}
+                            </>)}
+                        <span className="sd-edit-btn">{isOpen ? 'Done' : (filled ? 'Edit' : 'Set')}</span>
+                      </div>
+                      {isOpen && (
+                        <div className="sd-slot-fields">
+                          <input className="sd-label" value={slot.label} placeholder="label (e.g. King Boo)"
+                            onChange={(e) => setSlot(n, { label: e.target.value })} />
+                          <input className="sd-cmd" value={slot.command}
+                            placeholder={isToggle ? 'ON command — e.g. turn on king boo' : 'command — e.g. turn off the kitchen lights'}
+                            onChange={(e) => setSlot(n, { command: e.target.value })} />
+                          <input className="sd-cmd sd-cmd-off" value={slot.commandOff}
+                            placeholder="OFF command (optional) — makes it a toggle"
+                            onChange={(e) => setSlot(n, { commandOff: e.target.value })} />
+                          <div className="sd-slot-actions">
+                            <button className="ghost" disabled={!houseConnected || !slot.command.trim()}
+                              onClick={() => test(a.username, n, 'on')}>Test</button>
+                            <button className="ghost sd-test-off" disabled={!houseConnected || !slot.commandOff.trim()}
+                              onClick={() => test(a.username, n, 'off')} title="Test the OFF command">Test off</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -354,19 +354,23 @@ a.gear{ text-decoration:none; display:inline-block; }
 .sd-print:hover{ background:var(--line); }
 .sd-body{ padding:10px 12px 12px; border-top:1px solid var(--line); }
 .sd-grid{ display:flex; flex-direction:column; gap:6px; margin:10px 0; }
-.sd-slot{ display:flex; align-items:center; gap:8px; }
-.sd-num{ font-weight:700; width:16px; text-align:center; color:var(--navy); }
-.sd-slot .sd-label{ width:130px; flex:0 0 auto; }
-.sd-slot .sd-cmd{ flex:1; }
-.sd-slot .sd-cmd-off{ border-style:dashed; }
+/* Each slot is a compact card: a one-line summary you click to open a stacked editor (label / ON / OFF each
+   on its own full-width line), so ten rows aren't ten cramped rows of side-by-side inputs. */
+.sd-slot{ border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+.sd-slot-head{ display:flex; align-items:center; gap:10px; padding:8px 10px; cursor:pointer; border-radius:10px; }
+.sd-slot-head:hover{ background:var(--line); }
+.sd-num{ font-weight:700; width:18px; text-align:center; color:var(--navy); flex:0 0 auto; }
 .sd-slot.toggle .sd-num{ color:var(--teal, var(--navy)); }
-.sd-slot .ghost{ border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:5px 10px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
+.sd-preview{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sd-preview.empty, .sd-preview.editing{ opacity:.55; font-style:italic; }
+.sd-tog-badge{ flex:0 0 auto; font-size:11px; font-weight:700; color:var(--teal, var(--navy)); border:1px solid currentColor; border-radius:999px; padding:1px 8px; }
+.sd-edit-btn{ flex:0 0 auto; font-size:12px; font-weight:600; border:1px solid var(--line); border-radius:8px; padding:3px 12px; background:var(--surface); }
+.sd-slot-fields{ display:flex; flex-direction:column; gap:6px; padding:0 10px 10px 38px; }
+.sd-slot-fields .sd-label, .sd-slot-fields .sd-cmd{ width:100%; }
+.sd-slot-fields .sd-cmd-off{ border-style:dashed; }
+.sd-slot-actions{ display:flex; gap:8px; }
+.sd-slot .ghost{ border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:5px 12px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
 .sd-slot .ghost:disabled{ opacity:.45; cursor:not-allowed; }
-@media (max-width:560px){
-  .sd-slot{ flex-wrap:wrap; }
-  .sd-slot .sd-label{ width:auto; flex:1; }
-  .sd-slot .sd-cmd{ flex:1 1 100%; }
-}
 
 /* Shareable "remote control" link block (per pad) — a host mints a no-login guest link here. */
 .sd-share{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); }

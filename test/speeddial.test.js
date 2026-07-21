@@ -384,6 +384,16 @@ test('accountsData merges pad accounts and reports house-connected state', () =>
   assert.equal(typeof d.houseConnected, 'boolean');
 });
 
+test('accountsData surfaces the connected Telegram bot @username for the printable sheet', async () => {
+  const { setBotIdentity } = await import('../server/botStatus.js');
+  assert.equal(sd.accountsData().botUsername, null, 'null when no bot is connected');
+  setBotIdentity({ platform: 'telegram', username: 'MyHouseBot' });
+  assert.equal(sd.accountsData().botUsername, 'MyHouseBot', 'the Telegram bot name is exposed to the panel');
+  setBotIdentity({ platform: 'slack', username: 'slackbot' });
+  assert.equal(sd.accountsData().botUsername, null, 'a Slack-only box exposes no Telegram bot name');
+  setBotIdentity(null);
+});
+
 // ── web left-hint-bar pad summary (rides /api/sidebar) ──────────────────────────────────────────────────
 
 test('padSummary returns the filled slots for a pad-holder, null for everyone else', () => {
