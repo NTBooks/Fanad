@@ -331,17 +331,15 @@
   <div class="box">
     <h2>⚡ Speed Dial <span class="opt">owner-managed</span></h2>
     <table>
-      <tr><td class="c"><code>1</code> … <code>9</code> · <code>dial 3</code></td><td class="d">a pad-holder fires that number’s house command · <code>0</code> or <code>pad</code> shows the pad (also shown on first contact)</td></tr>
-      <tr><td class="c"><code>sd @sam 1 = turn off the kitchen lights</code></td><td class="d">owner: set number 1 (add a label with <code>Label | command</code>)</td></tr>
-      <tr><td class="c"><code>sd @sam limit on</code></td><td class="d">owner: lock @sam to speed dial only (no tasks/chat) · <code>off</code> to unlock</td></tr>
-      <tr><td class="c"><code>sd @sam test 1</code> · <code>sd @sam</code> · <code>sd</code></td><td class="d">owner: test-fire · view one pad · list all pads</td></tr>
-      <tr><td class="c">Settings → Access → <code>Generate link</code></td><td class="d">owner: mint a no-login <code>/r/…</code> remote-control link (1/7/30-day expiry, revocable) — text it to a guest with no Telegram</td></tr>
-      <tr><td class="c">Settings → Access → expand a row → <code>OFF</code> field</td><td class="d">owner: give a number a second <em>off</em> command → one button that alternates the device on↔off each press</td></tr>
+      <tr><td class="c"><code>1</code> … <code>9</code> · <code>dial 3</code></td><td class="d">a pad-holder fires that number’s command · <code>0</code>/<code>pad</code> shows the pad</td></tr>
+      <tr><td class="c"><code class="wrap">sd @sam 1 = turn off the lights</code></td><td class="d">owner: set number 1 (label it with <code>Label | command</code>)</td></tr>
+      <tr><td class="c"><code>sd @sam limit on</code></td><td class="d">owner: lock @sam to the pad only · <code>off</code> to unlock</td></tr>
+      <tr><td class="c"><code>sd @sam test 1</code></td><td class="d">owner: test-fire · <code>sd @sam</code> views a pad · <code>sd</code> lists all</td></tr>
     </table>
     <div class="note">Give someone a handful of Home Assistant buttons without the run of the house — they send a
-    digit, only your predefined command runs. Set it up in Settings → Access (expand an account). Or
-    <strong>share a remote-control link</strong> — a guest taps just their buttons on a web page, no account
-    needed. Needs the HA connection (Channels tab).</div>
+    digit, only your predefined command runs. In <b>Settings → Access</b> (expand an account) you can also add a
+    second <b>OFF</b> command so one number toggles on↔off, and <b>Generate</b> a no-login remote-control link
+    (1/7/30-day, revocable) to text a guest with no Telegram. Needs the HA connection (Channels tab).</div>
   </div>
 
   <div class="box">
