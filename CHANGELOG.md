@@ -4,6 +4,29 @@ All notable changes to Fanad are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-07-19
+
+### Added
+- Task detail view: `/view N` (or the per-row 👁 `/view_N`) opens a task's full detail (your verbatim
+  text, a fuller read, and the steps checklist) and lets you edit its steps without starting it, on
+  Telegram, Slack, and web. This brings the chat surfaces to parity with the web Kanban editor.
+- Speed-dial on/off toggle slots: give a pad slot a second (OFF) command and the number becomes a
+  toggle that alternates the device, kept in sync across the Telegram digit, the web pad, and the
+  no-login link. Each remote-page button now washes a color fill across itself on press, which also
+  acts as a brief re-tap lock so a quick double-tap can't fire twice.
+
+### Changed
+- The speed-dial pad editor was decluttered, its Test button now fires the command typed in the row
+  (not only the saved one), and the no-login handout page names the bot.
+- The remote-control page's "Powered by Fanad" footer links to fanad.org.
+
+### Fixed
+- Bare action verbs no longer hijack a task statement: "start the doc" or "done the dishes" files a
+  task, while the slash form ("/done clean the garage") and a position ("start 3") still act on one.
+- Renamed the web remote/link panel's CSS class (`sd-share` to `sd-remote`) so ad blockers stop
+  hiding it.
+- Cheat-sheet Speed Dial box no longer renders mushed together.
+
 ## [0.5.1] - 2026-07-19
 
 ### Added
