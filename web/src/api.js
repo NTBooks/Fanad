@@ -81,7 +81,7 @@ export const revokeVouch = (username, platform = 'telegram') => post('/api/vouch
 // Assistant pad + the "limit to speed dial" flag. Create/authorize an account, save a pad, remove a pad, or
 // test-fire one slot against the house.
 export const getAccounts = () => req('/api/accounts');
-export const addAccount = (username) => post('/api/accounts', { username });
+export const addAccount = (username, kind = 'telegram') => post('/api/accounts', { username, kind });
 export const savePad = (username, data) => send(`/api/accounts/${encodeURIComponent(username)}`, 'PUT', data);
 export const removePad = (username) => send(`/api/accounts/${encodeURIComponent(username)}/pad`, 'DELETE');
 export const testSlot = (username, slot, command = '') => post(`/api/accounts/${encodeURIComponent(username)}/test/${slot}`, { command });

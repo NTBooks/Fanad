@@ -576,3 +576,87 @@ describe('remote-control share links', () => {
     }
   });
 });
+
+// ── LOCAL accounts (v46): family members with no Telegram at all — a household name whose whole account is
+// its pad, used through the /r/ remote link. Locked in here: a local is never vouched (creating "grandma"
+// must not open the Telegram gate to whoever squats @grandma), can never be claimed or pinned by a Telegram
+// sender, can never be unlocked, and may hold a never-expiring share link (telegram pads may not). ─────────
+describe('local accounts', () => {
+  before(() => settings.setAuthConfig({ mode: 'simple' })); // share links only exist under web login
+  after(() => settings.setAuthConfig({ mode: 'none' }));
+
+  test('adding a local account creates a locked pad and NO vouch', () => {
+    const r = sd.addAccountData(owner, 'grandma', 'local');
+    assert.ok(r.ok && r.kind === 'local');
+    const acct = repo.getSpeedDialAccount('grandma');
+    assert.equal(acct.kind, 'local');
+    assert.equal(acct.speed_dial_only, 1, 'a local account is born locked');
+    assert.equal(repo.isVouched('grandma'), false, 'no vouch — the Telegram gate stays closed to that handle');
+  });
+
+  test('a Telegram sender can never resolve, pin, or claim a local pad', () => {
+    assert.equal(repo.resolveSpeedDialAccount({ telegramId: 12345, username: 'grandma' }), null, 'no resolution by handle');
+    assert.equal(repo.linkSpeedDialAccount('grandma', 12345), false, 'no pinning either');
+    assert.equal(repo.getSpeedDialAccount('grandma').telegram_id, null, 'the local row stays unpinned');
+    const imposter = repo.getOrCreateTelegramUser(12345, 'grandma');
+    assert.equal(repo.hasSpeedDial(imposter), false, 'a same-named Telegram user gets no pad');
+    assert.equal(repo.isSpeedDialOnly(imposter), false, 'and inherits no lockdown');
+  });
+
+  test('name collisions are refused both ways', () => {
+    assert.equal(sd.addAccountData(owner, 'grandma', 'local').ok, false, 'duplicate local name');
+    assert.equal(sd.addAccountData(owner, 'grandma').ok, false, 'a Telegram add cannot take a local name');
+    assert.equal(sd.addAccountData(owner, 'alice', 'local').ok, false, 'an existing Telegram pad name cannot become local');
+    repo.addVouch({ username: 'walter', voucherUserId: owner, voucherUsername: 'root', voucherTelegramId: null });
+    assert.equal(sd.addAccountData(owner, 'walter', 'local').ok, false, 'a vouched handle (no pad yet) cannot become local');
+  });
+
+  test('the owner can author a local pad in chat without vouching; "limit off" is refused', async () => {
+    await sd.ownerCommand(owner, 'sd grandma 1 = Porch | turn on the porch light');
+    assert.equal(repo.listSpeedDialSlots('grandma').length, 1, 'the chat grammar reaches a local pad too');
+    assert.equal(repo.isVouched('grandma'), false, 'editing the pad still never vouches');
+    const r = await sd.ownerCommand(owner, 'sd grandma limit off');
+    assert.match(r.text, /always speed-dial-only/i, 'a local cannot be unlocked');
+    assert.equal(repo.getSpeedDialAccount('grandma').speed_dial_only, 1);
+  });
+
+  test('savePadData cannot unlock a local account or change its kind', () => {
+    sd.savePadData(owner, 'grandma', { speedDialOnly: false, slots: [{ slot: 1, label: 'Porch', command: 'turn on the porch light' }] });
+    const acct = repo.getSpeedDialAccount('grandma');
+    assert.equal(acct.speed_dial_only, 1, 'still locked');
+    assert.equal(acct.kind, 'local', 'still local');
+  });
+
+  test('a local pad may hold a NEVER-expiring link; a telegram pad clamps ttl 0 to the default', () => {
+    const m = sd.mintShareLink('grandma', { ttlDays: 0 });
+    assert.ok(m.ok && m.expiresAt === null && m.ttlDays === 0, 'ttl 0 = never, for a local only');
+    assert.equal(sd.resolveShare(m.token)?.expiresAt, null, 'and it resolves with no expiry');
+    const tg = sd.mintShareLink('dave', { ttlDays: 0 });
+    assert.ok(tg.ok && tg.ttlDays === 7 && tg.expiresAt > Date.now(), 'a telegram-pad link always expires');
+  });
+
+  test('the /r/ remote fires a local pad like any other', async () => {
+    const m = sd.mintShareLink('grandma', { ttlDays: 0 });
+    const restore = stubHouse('Porch light on');
+    try {
+      const res = fakeRes();
+      await remote.remoteFireHandler({ params: { token: m.token }, body: { slot: 1 } }, res);
+      assert.equal(res.statusCode, 200);
+      assert.match(res.body.speech, /Porch light on/);
+    } finally { restore(); }
+  });
+
+  test('accountsData reports the local kind so the panel can render it', () => {
+    const g = sd.accountsData().accounts.find((a) => a.username === 'grandma');
+    assert.equal(g.kind, 'local');
+    assert.ok(g.sources.includes('local'));
+    assert.equal(g.speedDialOnly, true);
+  });
+
+  test('removing a local account removes everything — pad, links, account', () => {
+    const m = sd.mintShareLink('grandma', { ttlDays: 0 });
+    sd.removePadData('grandma');
+    assert.equal(repo.getSpeedDialAccount('grandma'), null);
+    assert.equal(sd.resolveShare(m.token), null, 'its links die with it');
+  });
+});

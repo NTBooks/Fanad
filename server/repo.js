@@ -484,6 +484,9 @@ export function reclaimStaleDemoSeats({ olderThanMs, now = Date.now() } = {}) {
 // no slots yet); `speed_dials` holds the 0-9 command slots. A pad-holder never gets raw `ha` — the pad is
 // their whole line to the house; each slot's owner-authored text runs through the same converse() the
 // `ha <command>` module uses. Runtime lookups resolve by the messaging user's telegram_id then @username.
+// v46 adds `kind`: 'telegram' (all of the above) or 'local' — a household name with NO Telegram behind it,
+// reachable only through its /r/ share link. Locals are excluded from every messaging-identity resolution
+// below, so a Telegram user who happens to share the name can never claim (or pin themselves onto) the pad.
 
 // The account row for a stored @handle (or null).
 export function getSpeedDialAccount(username) {
@@ -497,36 +500,38 @@ export function getSpeedDialAccount(username) {
 // (squatter-proof). Mirrors isVouchedTelegram exactly.
 export function resolveSpeedDialAccount({ telegramId = null, username = null } = {}) {
   if (telegramId != null) {
-    const byId = db.prepare('SELECT * FROM speed_dial_accounts WHERE telegram_id=?').get(telegramId);
+    const byId = db.prepare("SELECT * FROM speed_dial_accounts WHERE telegram_id=? AND kind='telegram'").get(telegramId);
     if (byId) return byId;
   }
   const u = normUsername(username);
   if (!u) return null;
-  const row = db.prepare('SELECT * FROM speed_dial_accounts WHERE username=?').get(u);
+  const row = db.prepare("SELECT * FROM speed_dial_accounts WHERE username=? AND kind='telegram'").get(u);
   if (!row) return null;
   if (row.telegram_id == null) return row;                 // unpinned — first contact
   return telegramId != null && Number(row.telegram_id) === Number(telegramId) ? row : null;
 }
 
-// Create/update an account's lockdown flag (idempotent). Returns the fresh row.
-export function upsertSpeedDialAccount({ username, speedDialOnly = false, at = Date.now() }) {
+// Create/update an account's lockdown flag (idempotent). Returns the fresh row. `kind` only applies on
+// INSERT — an existing account's kind is immutable (a local can never silently become a Telegram grant).
+export function upsertSpeedDialAccount({ username, speedDialOnly = false, kind = 'telegram', at = Date.now() }) {
   const u = normUsername(username);
   if (!u) return null;
   db.prepare(
-    `INSERT INTO speed_dial_accounts (username, speed_dial_only, created_at, updated_at)
-     VALUES (?,?,?,?)
+    `INSERT INTO speed_dial_accounts (username, speed_dial_only, kind, created_at, updated_at)
+     VALUES (?,?,?,?,?)
      ON CONFLICT(username) DO UPDATE SET speed_dial_only=excluded.speed_dial_only, updated_at=excluded.updated_at`,
-  ).run(u, speedDialOnly ? 1 : 0, at, at);
+  ).run(u, speedDialOnly ? 1 : 0, kind === 'local' ? 'local' : 'telegram', at, at);
   return getSpeedDialAccount(u);
 }
 
 // Stamp the person's numeric id onto their still-unpinned account on first contact (a no-op otherwise).
-// Mirrors pinVouchTelegramId; called from telegram-handler alongside it.
+// Mirrors pinVouchTelegramId; called from telegram-handler alongside it. Locals never pin — no Telegram
+// sender may attach themselves to a household name's pad.
 export function linkSpeedDialAccount(username, telegramId, at = Date.now()) {
   const u = normUsername(username);
   if (!u || telegramId == null) return false;
   return num(db.prepare(
-    'UPDATE speed_dial_accounts SET telegram_id=?, updated_at=? WHERE username=? AND telegram_id IS NULL',
+    "UPDATE speed_dial_accounts SET telegram_id=?, updated_at=? WHERE username=? AND telegram_id IS NULL AND kind='telegram'",
   ).run(telegramId, at, u).changes) > 0;
 }
 
@@ -589,6 +594,7 @@ export function clearSpeedDialPad(username) {
 export function listSpeedDialAccounts() {
   return db.prepare('SELECT * FROM speed_dial_accounts ORDER BY username').all().map((a) => ({
     username: a.username,
+    kind: a.kind === 'local' ? 'local' : 'telegram',
     telegramId: a.telegram_id == null ? null : num(a.telegram_id),
     speedDialOnly: a.speed_dial_only === 1,
     slots: listSpeedDialSlots(a.username),

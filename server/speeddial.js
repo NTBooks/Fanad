@@ -12,7 +12,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import {
   getSpeedDialPad, listSpeedDialSlots, listSpeedDialAccounts, getSpeedDialAccount,
   upsertSpeedDialAccount, setSpeedDialSlot, setSpeedDialToggleState, clearSpeedDialSlot, clearSpeedDialPad,
-  deleteSpeedDialAccount, addVouch, getUser, normUsername, listVouches,
+  deleteSpeedDialAccount, addVouch, getUser, normUsername, listVouches, isVouched,
   createSpeedDialShare, resolveSpeedDialShareHash, listSpeedDialShares, revokeSpeedDialShare,
 } from './repo.js';
 import { getHomeAssistantConfig, getTelegramConfig, getSiteConfig, getAuthConfig } from './settings.js';
@@ -125,14 +125,24 @@ const padSlotView = (s) => ({ slot: s.slot, name: slotName(s) });
 
 // Create/ensure an account row AND authorize the handle to reach the bot (idempotent vouch by the owner).
 // Programming a pad grants house access, so it also grants bot access — otherwise the fail-closed Telegram
-// gate would drop the person before they could ever dial.
+// gate would drop the person before they could ever dial. A LOCAL account is the exception on both counts:
+// it's never vouched (there is no Telegram behind the name to let in — vouching would open the gate to a
+// squatter of that @handle) and it's permanently locked (its only surface is its /r/ remote link).
 function ensureAccount(ownerUserId, username, { speedDialOnly } = {}) {
   const u = normUsername(username);
   if (!u) return null;
-  const existed = !!getSpeedDialAccount(u);
-  const acct = upsertSpeedDialAccount({ username: u, speedDialOnly: speedDialOnly === undefined ? (getSpeedDialAccount(u)?.speed_dial_only === 1) : speedDialOnly });
-  if (!existed) authorizeHandle(ownerUserId, u);
+  const existing = getSpeedDialAccount(u);
+  const lock = existing?.kind === 'local'
+    ? true
+    : (speedDialOnly === undefined ? existing?.speed_dial_only === 1 : speedDialOnly);
+  const acct = upsertSpeedDialAccount({ username: u, speedDialOnly: lock });
+  if (!existing) authorizeHandle(ownerUserId, u);
   return acct;
+}
+
+// Is this handle already on the manual Telegram allowlist CSV? (Guards local-name collisions.)
+function onAllowlist(u) {
+  return String(getTelegramConfig().allowedUsername || '').split(/[,\s]+/).some((raw) => normUsername(raw) === u);
 }
 function authorizeHandle(ownerUserId, username) {
   const owner = getUser(ownerUserId) || {};
@@ -146,9 +156,9 @@ function board() {
   const accts = listSpeedDialAccounts();
   if (!accts.length) return okReply('No speed-dial pads yet. Add one: “sd @username 1 = turn off the kitchen lights”.');
   const lines = accts.map((a) => {
-    const tag = a.speedDialOnly ? ' 🔒 limited' : '';
+    const tag = a.kind === 'local' ? ' 🏠 local' : (a.speedDialOnly ? ' 🔒 limited' : '');
     const filled = a.slots.map((s) => s.slot).join(',') || '—';
-    return `@${a.username}${tag} · slots: ${filled}`;
+    return `${a.kind === 'local' ? a.username : `@${a.username}`}${tag} · slots: ${filled}`;
   });
   return okReply(`⚡ Speed-dial pads:\n${lines.join('\n')}\n\nEdit: “sd @user” · set: “sd @user 3 = …” · lock: “sd @user limit on”.`);
 }
@@ -162,8 +172,10 @@ function showAccount(username) {
   const lines = slots.length
     ? slots.map((s) => `${KEYCAP[s.slot]} ${s.label ? `${s.label} — ` : ''}${s.command}`).join('\n')
     : '(no numbers set)';
-  const lock = acct.speed_dial_only === 1 ? '🔒 limited to speed dial' : 'full account + pad';
-  return okReply(`⚡ @${u} — ${lock}\n${lines}\n\nSet: “sd @${u} 3 = Label | command” · clear: “sd @${u} 3 clear” · test: “sd @${u} test 3”.`);
+  const lock = acct.kind === 'local'
+    ? '🏠 local account (no Telegram — they use their remote link)'
+    : (acct.speed_dial_only === 1 ? '🔒 limited to speed dial' : 'full account + pad');
+  return okReply(`⚡ ${acct.kind === 'local' ? u : `@${u}`} — ${lock}\n${lines}\n\nSet: “sd @${u} 3 = Label | command” · clear: “sd @${u} 3 clear” · test: “sd @${u} test 3”.`);
 }
 
 // Parse + run an owner "sd …" / "speeddial …" command. Returns a reply, or null if it isn't a speed-dial
@@ -180,15 +192,29 @@ export async function ownerCommand(ownerUserId, text) {
 
   if (!rest) return showAccount(username);
   // sd @user add
-  if (/^add$/i.test(rest)) { ensureAccount(ownerUserId, username); return okReply(`✓ @${username} added — they can reach the bot. Set numbers: “sd @${username} 1 = …”.`); }
-  // sd @user remove | delete  → drop the whole pad (keeps the vouch/allowlist access).
-  if (/^(remove|delete)$/i.test(rest)) { deleteSpeedDialAccount(username); return okReply(`✓ Removed @${username}'s pad. (Their bot access is unchanged — revoke that in Access.)`); }
+  if (/^add$/i.test(rest)) {
+    if (getSpeedDialAccount(username)?.kind === 'local') return okReply(`“${username}” is already here as a local account — set numbers: “sd ${username} 1 = …”.`);
+    ensureAccount(ownerUserId, username);
+    return okReply(`✓ @${username} added — they can reach the bot. Set numbers: “sd @${username} 1 = …”.`);
+  }
+  // sd @user remove | delete  → drop the whole pad (keeps the vouch/allowlist access; for a local account
+  // the pad + its links ARE the whole account, so removing it removes everything).
+  if (/^(remove|delete)$/i.test(rest)) {
+    const wasLocal = getSpeedDialAccount(username)?.kind === 'local';
+    deleteSpeedDialAccount(username);
+    return okReply(wasLocal
+      ? `✓ Removed local account “${username}” — its remote links are dead too.`
+      : `✓ Removed @${username}'s pad. (Their bot access is unchanged — revoke that in Access.)`);
+  }
   // sd @user clear  → clear all slots, keep the account.
   if (/^clear$/i.test(rest)) { clearSpeedDialPad(username); return okReply(`✓ Cleared @${username}'s numbers.`); }
   // sd @user limit on|off
   let lm;
   if ((lm = /^limit\s+(on|off)$/i.exec(rest))) {
     const on = /on/i.test(lm[1]);
+    if (getSpeedDialAccount(username)?.kind === 'local') {
+      return okReply(`“${username}” is a local account — it's always speed-dial-only (the pad is its whole account).`);
+    }
     ensureAccount(ownerUserId, username, { speedDialOnly: on });
     return okReply(on
       ? `🔒 @${username} is now limited to speed dial — no tasks or chat, only their 0-9 numbers.`
@@ -238,7 +264,7 @@ export function padSummary(userId) {
 export function accountsData() {
   const rows = new Map(); // username → row
   const row = (u) => {
-    if (!rows.has(u)) rows.set(u, { username: u, sources: [], voucher: null, speedDialOnly: false, linked: false, slots: [], shares: [] });
+    if (!rows.has(u)) rows.set(u, { username: u, kind: 'telegram', sources: [], voucher: null, speedDialOnly: false, linked: false, slots: [], shares: [] });
     return rows.get(u);
   };
   // (1) the raw allowlist CSV
@@ -254,14 +280,16 @@ export function accountsData() {
     r.voucher = v.voucher_username || 'owner';
     if (v.vouched_telegram_id != null) r.linked = true;
   }
-  // (3) speed-dial accounts (the pad config + lock flag + any active remote-control links)
+  // (3) speed-dial accounts (the pad config + lock flag + any active remote-control links). A local account
+  // can't collide with a vouch/allowlist row (blocked at creation), so keying the merge by name stays safe.
   for (const a of listSpeedDialAccounts()) {
     const r = row(a.username);
+    r.kind = a.kind;
     r.speedDialOnly = a.speedDialOnly;
     r.slots = a.slots;
     r.shares = listSpeedDialShares(a.username);
     if (a.telegramId != null) r.linked = true;
-    if (!r.sources.length) r.sources.push('speeddial');
+    if (!r.sources.length) r.sources.push(a.kind === 'local' ? 'local' : 'speeddial');
   }
   const bot = getBotIdentity();
   return {
@@ -290,11 +318,28 @@ export function savePadData(ownerUserId, username, { speedDialOnly = false, slot
   return { ok: true };
 }
 
-export function addAccountData(ownerUserId, username) {
+// Add an account from the web panel. kind 'telegram' (default) is the original flow: create + vouch the
+// @handle. kind 'local' creates a household name with NO Telegram behind it — never vouched, permanently
+// speed-dial-only; the person uses the pad via its /r/ remote link. One name = one pad (UNIQUE spans both
+// kinds), and a local name may not shadow a handle that's already allowed through the Telegram gate.
+export function addAccountData(ownerUserId, username, kind = 'telegram') {
   const u = normUsername(username);
   if (!u) return { ok: false, error: 'bad username' };
+  const existing = getSpeedDialAccount(u);
+  if (kind === 'local') {
+    if (!/^[a-z0-9_]{1,32}$/.test(u)) return { ok: false, error: 'Local names can use letters, numbers, and _ (up to 32).' };
+    if (existing) {
+      return { ok: false, error: existing.kind === 'local' ? `“${u}” already exists.` : `@${u} is already a Telegram account here — pick a different name.` };
+    }
+    if (isVouched(u) || onAllowlist(u)) {
+      return { ok: false, error: `@${u} is an allowed Telegram handle — add them as a Telegram account, or pick a different name.` };
+    }
+    upsertSpeedDialAccount({ username: u, speedDialOnly: true, kind: 'local' }); // deliberately NO vouch
+    return { ok: true, username: u, kind: 'local' };
+  }
+  if (existing?.kind === 'local') return { ok: false, error: `“${u}” is a local account — pick a different handle.` };
   ensureAccount(ownerUserId, u);
-  return { ok: true, username: u };
+  return { ok: true, username: u, kind: 'telegram' };
 }
 
 export function removePadData(username) {
@@ -319,8 +364,8 @@ export async function testSlotData(username, slot, command) {
 // fires its owner-authored slots, so a leaked link is bounded (predefined commands, an expiry, revocable) and
 // still can't send free text to HA. The raw token lives only in the URL; the DB keeps only its sha256.
 const SHARE_PREFIX = 'fsd1_';                 // recognizable/greppable like the CLI's fnd1_ (leak triage)
-export const SHARE_TTL_DAYS = [1, 7, 30];      // the only expiries offered (no non-expiring link by design)
-export const DEFAULT_SHARE_TTL_DAYS = 7;
+export const SHARE_TTL_DAYS = [1, 7, 30];      // the only expiries offered a TELEGRAM pad (guest handouts expire by design)
+export const DEFAULT_SHARE_TTL_DAYS = 7;      // a LOCAL account may also take ttlDays 0 = never: the link IS the account
 const sha256 = (t) => createHash('sha256').update(String(t)).digest('hex');
 
 // Mint a link for an EXISTING pad. Clamps ttlDays to the offered set (default 7d). Returns the raw token +
@@ -335,10 +380,15 @@ export function mintShareLink(username, { ttlDays = DEFAULT_SHARE_TTL_DAYS, labe
   }
   const u = normUsername(username);
   if (!u) return { ok: false, error: 'bad username' };
-  if (!getSpeedDialAccount(u)) return { ok: false, error: `No pad for @${u} yet — set a number first.` };
-  const days = SHARE_TTL_DAYS.includes(Number(ttlDays)) ? Number(ttlDays) : DEFAULT_SHARE_TTL_DAYS;
+  const acct = getSpeedDialAccount(u);
+  if (!acct) return { ok: false, error: `No pad for @${u} yet — set a number first.` };
+  // ttlDays 0 = never expires — offered ONLY for a local account, where the link is the person's whole way
+  // in (a family member shouldn't be locked out of the house buttons every 30 days). A telegram pad's links
+  // stay guest handouts: always expiring, so a bad ttl clamps to the default instead.
+  const never = Number(ttlDays) === 0 && acct.kind === 'local';
+  const days = never ? 0 : (SHARE_TTL_DAYS.includes(Number(ttlDays)) ? Number(ttlDays) : DEFAULT_SHARE_TTL_DAYS);
   const now = Date.now();
-  const expiresAt = now + days * 86400000;
+  const expiresAt = never ? null : now + days * 86400000;
   const token = SHARE_PREFIX + randomBytes(32).toString('base64url');
   const id = createSpeedDialShare({ username: u, tokenHash: sha256(token), label: String(label || '').trim().slice(0, 80) || null, expiresAt, at: now });
   if (!id) return { ok: false, error: 'could not create link' };

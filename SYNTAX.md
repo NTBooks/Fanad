@@ -270,6 +270,12 @@ clock       ← INT (":" INT)? ("am"/"pm"/"a"/"p")?              # "8", "8am", "
 # number becomes a TOGGLE — one button that alternates the device on<->off. The position is tracked server-side
 # (speed_dials.toggle_on), NOT in the guest's browser, so every surface agrees: the Telegram digit, the web pad,
 # and the /r/ link all read and flip the same bit. The chat "sd @user N = …" form sets a one-shot only.
+# ALSO web-only: LOCAL accounts (speed_dial_accounts.kind='local', v46) — a household name with NO Telegram
+# behind it (family without the app). Created only in Settings -> Access (never by the chat grammar, which
+# vouches new handles); a local is NEVER vouched, can never be resolved/pinned by a Telegram sender, is
+# permanently speed-dial-only ("limit off" is refused), and its ONE surface is its /r/ share link — which,
+# for locals only, may be minted NON-expiring (ttlDays 0), since the link is the account. The "sd HANDLE …"
+# editing forms below still reach an EXISTING local pad by its name (no vouch on edit).
 speeddial   ← "/"? ("sd"/"speeddial")                                       # the owner board (all pads)
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE                        # show one account's pad
             / "/"? ("sd"/"speeddial") SP "@"? HANDLE SP DIGIT "=" (label "|")? TEXT  # set a slot (0-9)

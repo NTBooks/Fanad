@@ -340,8 +340,9 @@ a.gear{ text-decoration:none; display:inline-block; }
 .vouch-row .ghost.danger:hover{ background:#a8432c14; }
 
 /* ── Accounts & Speed Dial (Access tab): an expandable per-account list with a 0-9 command grid. ── */
-.sd-add{ display:flex; gap:8px; margin:10px 0 6px; }
-.sd-add input{ flex:1; }
+.sd-add{ display:flex; gap:8px; margin:10px 0 6px; align-items:center; }
+.sd-add input{ flex:1; margin-top:0; }
+.sd-add select{ width:auto; flex:0 0 auto; margin-top:0; } /* beat the .settings select { width:100% } default */
 .sd-account{ border:1px solid var(--line); border-radius:10px; margin-top:8px; overflow:hidden; }
 .sd-head{ display:flex; align-items:center; gap:10px; padding:9px 12px; cursor:pointer; background:var(--surface); }
 .sd-head:hover{ background:var(--line); }

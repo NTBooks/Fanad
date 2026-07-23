@@ -1969,8 +1969,11 @@ router.post('/vouches/revoke', requireOwner, (req, res) => {
 // against the house. Owner-only, like every access-admin route. All house calls reuse the one HA connection. ──
 router.get('/accounts', requireOwner, (_req, res) => res.json(accountsData()));
 
+// kind 'telegram' (default) creates + vouches a whitelist @handle; kind 'local' creates a household name
+// with no Telegram behind it (never vouched, permanently pad-only — used via its /r/ remote link).
 router.post('/accounts', requireOwner, (req, res) => {
-  const r = addAccountData(uid(req), (req.body?.username ?? '').toString());
+  const kind = req.body?.kind === 'local' ? 'local' : 'telegram';
+  const r = addAccountData(uid(req), (req.body?.username ?? '').toString(), kind);
   if (!r.ok) return res.status(400).json({ error: r.error });
   res.json(r);
 });

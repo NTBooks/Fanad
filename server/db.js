@@ -1090,6 +1090,22 @@ export const MIGRATIONS = [
       ALTER TABLE speed_dials ADD COLUMN toggle_on INTEGER NOT NULL DEFAULT 0;
     `);
   },
+
+  // v45 -> v46: LOCAL speed-dial accounts — pads for family/household members who have no Telegram at all.
+  // `kind` splits speed_dial_accounts into 'telegram' (the original: a whitelist @handle, vouched on add,
+  // pinned to a telegram_id on first contact) and 'local' (a made-up household name, e.g. "grandma"). A local
+  // account is NEVER vouched (creating one must not open the Telegram gate to whoever squats that @handle),
+  // can NEVER be resolved by a messaging identity (resolveSpeedDialAccount/linkSpeedDialAccount skip locals),
+  // and is permanently speed-dial-only — its ONE surface is the no-login /r/ remote link, which already fires
+  // purely by username. Kind is immutable after creation; UNIQUE(username) still spans both kinds, so one
+  // name is one pad. Locals may hold a non-expiring share link (expires_at NULL) — it's their account key,
+  // not a guest handout — where telegram-kind links keep the mandatory 1/7/30-day expiry.
+  (d) => {
+    d.exec(`
+      ALTER TABLE speed_dial_accounts ADD COLUMN kind TEXT NOT NULL DEFAULT 'telegram'
+        CHECK (kind IN ('telegram','local'));
+    `);
+  },
 ];
 
 export function migrate() {

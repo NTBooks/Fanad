@@ -1687,7 +1687,7 @@ Calendar: calendar.house
       <span class="cmd">ha &lt;command&gt;</span> &mdash; their pad is their only line to the house, and since
       they only ever send a digit, their words never reach HA. <span class="mono-note">(Owner-managed; needs the
       Home Assistant connection set up.)</span></p>
-    <p>Each person can be one of two kinds, your choice per account:</p>
+    <p>Each person can be one of three kinds, your choice per account:</p>
     <ul>
       <li><strong>Full account + pad</strong> &mdash; a normal Fanad user (their own tasks and chat) who also
         has the pad.</li>
@@ -1695,6 +1695,10 @@ Calendar: calendar.house
         <span class="cmd">0</span>&ndash;<span class="cmd">9</span> pad: no tasks, no chat, no other commands.
         Anything else they send just shows the pad again. A limited account also can&rsquo;t vouch anyone
         in &mdash; the pad is its whole reach, so it can&rsquo;t grow the guest list around its own limit.</li>
+      <li><strong>Local (no Telegram)</strong> &mdash; a household <em>name</em>, not a Telegram handle: for a
+        family member who doesn&rsquo;t use Telegram at all. A local account is a pad and nothing else &mdash;
+        it&rsquo;s always speed-dial-only, is never let through the Telegram gate, and is used entirely through
+        its remote-control link (below).</li>
     </ul>
     <table class="cmd-table">
       <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
@@ -1753,6 +1757,17 @@ Calendar: calendar.house
       locked, so Fanad won&rsquo;t generate a link until you&rsquo;ve turned on web login (Settings &rarr;
       Security) &mdash; and a link <em>stops working</em> the moment login is turned back off, so a guest can
       never reach the buttons while the rest of the app is open.</p>
+    <p><strong>Local accounts: house buttons for family without Telegram.</strong> Grandma isn&rsquo;t installing
+      Telegram, and she shouldn&rsquo;t have to. In Settings &rarr; <em>Access</em>, switch the add-account row to
+      <em>Local (no Telegram)</em> and type a name &mdash; <span class="cmd">grandma</span>, not an
+      <span class="cmd">@handle</span>. That makes an account that is <em>only</em> a pad: fill her numbers like
+      any other row, then generate her remote-control link and send it to her (or bookmark it on her phone&rsquo;s
+      home screen) &mdash; that link <em>is</em> how she uses it. Because the link is her whole way in, a local
+      account is the one place you may pick <em>Never expires</em> when generating it; you can still revoke it
+      from her row any moment, and removing the account kills the pad and every link with it. A local name never
+      opens your Telegram bot to anyone &mdash; even a Telegram user with the very same @username stays a
+      stranger &mdash; and the <span class="cmd">🖨 Sheet</span> card adapts its instructions for her
+      (&ldquo;open your link&rdquo;, not &ldquo;message the bot&rdquo;).</p>
   </div>
 
   <div class="subsec" id="adv-notebooks">

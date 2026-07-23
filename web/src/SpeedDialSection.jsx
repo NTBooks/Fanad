@@ -15,6 +15,7 @@ export default function SpeedDialSection() {
   const [open, setOpen] = useState(null);    // expanded username
   const [draft, setDraft] = useState(null);  // { speedDialOnly, slots: {n:{label,command}} }
   const [newUser, setNewUser] = useState('');
+  const [newKind, setNewKind] = useState('telegram'); // 'telegram' = whitelist @handle · 'local' = family name, no Telegram
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
   const [shareTtl, setShareTtl] = useState(7);   // 1 | 7 | 30 days (no non-expiring link)
@@ -55,25 +56,32 @@ export default function SpeedDialSection() {
     const u = newUser.trim().replace(/^@+/, '');
     if (!u) return;
     setBusy(true); setMsg(null);
-    try { await api.addAccount(u); setNewUser(''); await load(); setMsg(`@${u} added — they can reach the bot.`); }
-    catch (e) { setMsg(e.message); } finally { setBusy(false); }
+    try {
+      await api.addAccount(u, newKind); setNewUser(''); await load();
+      setMsg(newKind === 'local'
+        ? `${u} added — set their numbers, then share their remote link below.`
+        : `@${u} added — they can reach the bot.`);
+    } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
 
-  async function save(username) {
+  async function save(a) {
     setBusy(true); setMsg(null);
     const slots = SLOTS
       .map((n) => ({ slot: n, label: draft.slots[n].label.trim(), command: draft.slots[n].command.trim(), commandOff: draft.slots[n].commandOff.trim() }))
       .filter((s) => s.command);
     try {
-      const res = await api.savePad(username, { speedDialOnly: draft.speedDialOnly, slots });
-      setData(res); setMsg(`Saved @${username}.`); setOpen(null); setDraft(null);
+      const res = await api.savePad(a.username, { speedDialOnly: draft.speedDialOnly, slots });
+      setData(res); setMsg(`Saved ${displayName(a)}.`); setOpen(null); setDraft(null);
     } catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
 
-  async function remove(username) {
-    if (!window.confirm(`Remove @${username}'s speed-dial pad? Their bot access is unchanged (revoke that below).`)) return;
+  async function remove(a) {
+    const ask = a.kind === 'local'
+      ? `Remove local account "${a.username}"? Their pad and remote links stop working immediately.`
+      : `Remove @${a.username}'s speed-dial pad? Their bot access is unchanged (revoke that below).`;
+    if (!window.confirm(ask)) return;
     setBusy(true); setMsg(null);
-    try { const res = await api.removePad(username); setData(res); setOpen(null); setDraft(null); }
+    try { const res = await api.removePad(a.username); setData(res); setOpen(null); setDraft(null); }
     catch (e) { setMsg(e.message); } finally { setBusy(false); }
   }
 
@@ -133,8 +141,9 @@ export default function SpeedDialSection() {
         </div>
       </div>`;
     }).join('');
+    const local = a.kind === 'local'; // a local's numbers are used on their remote link, not by texting a bot
     const doc = `<!doctype html><html><head><meta charset="utf-8">
-      <title>Speed Dial — @${esc(a.username)}</title>
+      <title>Speed Dial — ${local ? esc(a.username) : `@${esc(a.username)}`}</title>
       <style>
         *{box-sizing:border-box}
         body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111;margin:32px}
@@ -155,11 +164,13 @@ export default function SpeedDialSection() {
       </style></head>
       <body>
         <h1>⚡ Speed Dial</h1>
-        <p class="sub">for <strong>@${esc(a.username)}</strong>${bot ? ` — message <strong>@${esc(bot)}</strong> on Telegram, then text it a number` : ' — text just the number to the bot to run it'}.</p>
+        <p class="sub">for <strong>${local ? esc(a.username) : `@${esc(a.username)}`}</strong>${local ? ' — open your remote link and tap a number' : (bot ? ` — message <strong>@${esc(bot)}</strong> on Telegram, then text it a number` : ' — text just the number to the bot to run it')}.</p>
         <div class="grid">${cells}</div>
-        <div class="start">${bot
-          ? `<strong>First time?</strong> Open Telegram, search for <span class="bot">@${esc(bot)}</span>, tap <em>Start</em>, and send it a quick “hi”. It’ll reply with your buttons. After that, just text a number (like <strong>1</strong>) any time — or tap the button it shows.<span class="note">Set a @username in your Telegram settings first, so the bot recognizes you.</span>`
-          : `<strong>First time?</strong> On Telegram, open the bot your host set up for you, tap <em>Start</em>, and send it a quick “hi”. It’ll reply with your buttons. Then just text a number (like <strong>1</strong>) any time — or tap the button it shows.`}</div>
+        <div class="start">${local
+          ? `<strong>How it works:</strong> your host sent you a link — open it on your phone and you'll see these buttons. Tap one to run it in the house. Bookmark the link (or add it to your home screen) so it's always a tap away.`
+          : (bot
+            ? `<strong>First time?</strong> Open Telegram, search for <span class="bot">@${esc(bot)}</span>, tap <em>Start</em>, and send it a quick “hi”. It’ll reply with your buttons. After that, just text a number (like <strong>1</strong>) any time — or tap the button it shows.<span class="note">Set a @username in your Telegram settings first, so the bot recognizes you.</span>`
+            : `<strong>First time?</strong> On Telegram, open the bot your host set up for you, tap <em>Start</em>, and send it a quick “hi”. It’ll reply with your buttons. Then just text a number (like <strong>1</strong>) any time — or tap the button it shows.`)}</div>
         <p class="foot">Each number runs one Home Assistant command your host set up. A number marked “on / off” switches that device — press it again to turn it back.</p>
         <button onclick="window.print()">Print</button>
         <script>window.onload=function(){setTimeout(function(){try{window.print()}catch(e){}},150)}<\/script>
@@ -174,7 +185,10 @@ export default function SpeedDialSection() {
   if (!data) return <p className="hint">Loading…</p>;
   const { accounts, houseConnected, loginOn } = data;
 
+  const isLocal = (a) => a.kind === 'local';
+  const displayName = (a) => (isLocal(a) ? a.username : `@${a.username}`);
   const sourceLabel = (a) => {
+    if (isLocal(a)) return 'local · no Telegram';
     if (a.sources.includes('allowlist')) return 'allowlisted';
     if (a.voucher) return `vouched by ${a.voucher === 'owner' ? 'owner' : `@${a.voucher}`}`;
     return 'speed dial';
@@ -185,12 +199,18 @@ export default function SpeedDialSection() {
       <h3>Accounts &amp; speed dial</h3>
       <p className="hint">Everyone allowed to use the Telegram bot. Expand a person to give them a
         <strong> Home Assistant speed dial</strong> — numbers 0-9, each firing one command you set. You can also
-        limit an account to speed dial only (no tasks or chat).</p>
+        limit an account to speed dial only (no tasks or chat), or add a <strong>local account</strong> for a
+        family member with no Telegram — they get just a pad, used through a remote link.</p>
       {!houseConnected && (
         <p className="bad">Home Assistant isn't connected — set the URL &amp; token in the Channels tab to use speed dial.</p>
       )}
       <div className="sd-add">
-        <input value={newUser} onChange={(e) => setNewUser(e.target.value)} placeholder="@username"
+        <select value={newKind} onChange={(e) => setNewKind(e.target.value)} title="Telegram: a real @handle, allowed through the bot. Local: just a name — no Telegram, pad only.">
+          <option value="telegram">Telegram</option>
+          <option value="local">Local (no Telegram)</option>
+        </select>
+        <input value={newUser} onChange={(e) => setNewUser(e.target.value)}
+          placeholder={newKind === 'local' ? 'name (e.g. grandma)' : '@username'}
           onKeyDown={(e) => { if (e.key === 'Enter') addAccount(); }} />
         <button className="primary" onClick={addAccount} disabled={busy || !newUser.trim()}>Add account</button>
       </div>
@@ -200,11 +220,15 @@ export default function SpeedDialSection() {
           <div className="sd-head" onClick={() => expand(a)} role="button" tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter') expand(a); }}>
             <span className="sd-chevron">{open === a.username ? '▾' : '▸'}</span>
-            <span className="vouch-who">@{a.username}</span>
-            <span className="sub">{sourceLabel(a)} · {a.linked ? 'active' : 'not messaged yet'}</span>
+            <span className="vouch-who">{displayName(a)}</span>
+            <span className="sub">{isLocal(a)
+              ? `${sourceLabel(a)} · ${(a.shares || []).length ? 'has a remote link' : 'no remote link yet'}`
+              : `${sourceLabel(a)} · ${a.linked ? 'active' : 'not messaged yet'}`}</span>
             <span className="sd-badges">
               {a.slots.length > 0 && <span className="sd-badge">⚡{a.slots.length}</span>}
-              {a.speedDialOnly && <span className="sd-badge" title="limited to speed dial">🔒</span>}
+              {isLocal(a)
+                ? <span className="sd-badge" title="local account — pad only, via remote link">🏠</span>
+                : a.speedDialOnly && <span className="sd-badge" title="limited to speed dial">🔒</span>}
               {a.slots.length > 0 && (
                 <button className="sd-print" title="Printable sheet to hand out"
                   onClick={(e) => { e.stopPropagation(); printSheet(a); }}>🖨 Sheet</button>
@@ -213,11 +237,16 @@ export default function SpeedDialSection() {
           </div>
           {open === a.username && draft && (
             <div className="sd-body">
-              <label className="check">
-                <input type="checkbox" checked={draft.speedDialOnly}
-                  onChange={(e) => setDraft({ ...draft, speedDialOnly: e.target.checked })} />
-                Limit to speed dial only <span className="sub">— they can only use their pad, no tasks or chat</span>
-              </label>
+              {isLocal(a) ? (
+                <p className="sub">Local account — no Telegram behind it. The pad is their whole account; they
+                  use it through the remote link below.</p>
+              ) : (
+                <label className="check">
+                  <input type="checkbox" checked={draft.speedDialOnly}
+                    onChange={(e) => setDraft({ ...draft, speedDialOnly: e.target.checked })} />
+                  Limit to speed dial only <span className="sub">— they can only use their pad, no tasks or chat</span>
+                </label>
+              )}
               <div className="sd-grid">
                 {SLOTS.map((n) => {
                   const slot = draft.slots[n];
@@ -262,14 +291,15 @@ export default function SpeedDialSection() {
                 })}
               </div>
               <div className="settings-foot">
-                <button className="ghost danger" onClick={() => remove(a.username)} disabled={busy}>Remove pad</button>
-                <button className="primary" onClick={() => save(a.username)} disabled={busy}>Save pad</button>
+                <button className="ghost danger" onClick={() => remove(a)} disabled={busy}>{isLocal(a) ? 'Remove account' : 'Remove pad'}</button>
+                <button className="primary" onClick={() => save(a)} disabled={busy}>Save pad</button>
               </div>
 
               <div className="sd-remote">
-                <h4>Share a remote-control link</h4>
-                <p className="sub">Text a guest a link to just these buttons — no login, no Telegram account.
-                  {' '}The link controls only this pad and expires on its own.</p>
+                <h4>{isLocal(a) ? 'Their remote-control link' : 'Share a remote-control link'}</h4>
+                <p className="sub">{isLocal(a)
+                  ? 'This is how they use their pad: send them a link to just these buttons — no login, no Telegram. Pick "never expires" for a permanent one, and revoke it here if it ever leaks.'
+                  : 'Text a guest a link to just these buttons — no login, no Telegram account. The link controls only this pad and expires on its own.'}</p>
                 {!loginOn && (
                   <p className="bad">Turn on <strong>web login</strong> (Settings → Security) before sharing a link.
                     {' '}Without it, anyone who can reach this address can use the whole app, not just these buttons.</p>
@@ -285,12 +315,14 @@ export default function SpeedDialSection() {
                         <option value={1}>Expires in 1 day</option>
                         <option value={7}>Expires in 7 days</option>
                         <option value={30}>Expires in 30 days</option>
+                        {isLocal(a) && <option value={0}>Never expires</option>}
                       </select>
                       <button className="primary" onClick={() => generateShare(a.username)} disabled={busy || !loginOn}>Generate link</button>
                     </div>
                     {minted && (
                       <div className="sd-minted">
-                        <p className="sub">Here's the link — copy it now, it won't be shown again. Expires {fmtDate(minted.expiresAt)}.</p>
+                        <p className="sub">Here's the link — copy it now, it won't be shown again.
+                          {' '}{minted.expiresAt ? `Expires ${fmtDate(minted.expiresAt)}.` : 'It never expires — revoke it here if it leaks.'}</p>
                         <div className="sd-minted-row">
                           <input readOnly value={minted.url} onFocus={(e) => e.target.select()} />
                           <button className="ghost" onClick={copyLink}>{copied ? 'Copied ✓' : 'Copy'}</button>
