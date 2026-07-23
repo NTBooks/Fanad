@@ -4,6 +4,18 @@ All notable changes to Fanad are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims
 to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2026-07-19
+
+### Added
+- Local speed-dial accounts, for family without Telegram: a local account is a household name with no
+  Telegram behind it, whose entire surface is its no-login `/r/` remote-control link. It is never
+  vouched, can't be claimed by any Telegram sender (even one with the same @username), and is
+  permanently speed-dial-only. Because the link is the account, a local's share link can be minted
+  never-expiring (Telegram guest links still always expire). The Access tab gains a Telegram/Local
+  selector, local rows show a house badge with link-first copy, and the printable sheet gives
+  open-your-link instructions. Name collisions with existing pads, vouches, and the allowlist are
+  refused both ways.
+
 ## [0.5.2] - 2026-07-19
 
 ### Added
