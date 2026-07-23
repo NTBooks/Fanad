@@ -1,13 +1,15 @@
 // Link previews for pasted URLs — the capture-time "what is this page?" fetch. When a task body carries a
 // URL, ingest calls fetchLinkPreview() ONCE and stores the result on the task (tasks.link_json); nothing
 // here runs on render, on a schedule, or for anyone but the capturing user. Extraction is regex over the
-// first ~64KB of HTML (og:title / og:description / <title>) — deliberately no HTML-parser dependency,
-// matching the codebase's native-primitives style.
+// document's <head> — the body is streamed until </head> appears (or a 2MB hard ceiling), because sites
+// like YouTube bury their og tags ~650KB deep behind inline scripts while ordinary pages close <head> in
+// the first chunk. Deliberately no HTML-parser dependency, matching the codebase's native-primitives style.
 //
 // SECURITY (the reason half this file exists): the URL is user input and public demo boxes run this server,
 // so the fetch is an SSRF surface. Guards: http/https only, no credentials in the URL, default ports only,
 // DNS-resolve the host and refuse if ANY address is loopback/private/link-local/CGN/ULA/metadata, manual
-// redirects (each hop re-validated, ≤3), 4s timeout, 64KB body cap, html content-types only. Residual risk,
+// redirects (each hop re-validated, ≤3), 4s timeout, 2MB body ceiling (early exit at </head>), html
+// content-types only. Residual risk,
 // documented: a DNS-rebinding TOCTOU remains — native fetch re-resolves after our check and can't pin the
 // vetted IP (fixing that means adding undici's custom dispatcher; out of scope). LINK_PREVIEW=off kills the
 // whole feature (config.linkPreview.enabled).
@@ -137,19 +139,29 @@ function assertFetchableUrl(u) {
 
 const UA = 'Mozilla/5.0 (compatible; Fanad-LinkPreview/1.0)';
 
-// Read at most maxBytes from a response body, then cancel the stream. A truncated document still parses —
-// the interesting meta tags live in <head>.
+// Read a response body until </head> has been seen (the meta tags we want can't appear later) or the hard
+// byte ceiling is hit, then cancel the stream. Ordinary pages close <head> within the first chunk or two;
+// meta-heavy ones (YouTube parks its og tags behind ~650KB of inline script) read deeper, which the ceiling
+// allows — this server serves a household, not a crawler fleet. A truncated document still parses.
+const HEAD_END_RE = /<\/head\s*>/i;
 async function readCapped(res, maxBytes) {
   const reader = res.body?.getReader?.();
   if (!reader) { // test stubs and tiny responses may not expose a stream
     const buf = new Uint8Array(await res.arrayBuffer());
     return buf.subarray(0, maxBytes);
   }
-  const chunks = []; let total = 0;
+  const probe = new TextDecoder('utf-8', { fatal: false }); // detection only; decodeBody re-decodes with the real charset
+  const chunks = []; let total = 0; let tail = '';
   while (total < maxBytes) {
-    const { done, value } = await reader.read();
+    let done, value;
+    // A timeout that fires MID-body (the deadline covers the whole fetch) aborts the read — salvage what
+    // already arrived instead of throwing the bytes away; the tags we want may well be in hand.
+    try { ({ done, value } = await reader.read()); } catch { break; }
     if (done) break;
     chunks.push(value); total += value.length;
+    const text = tail + probe.decode(value, { stream: true });
+    if (HEAD_END_RE.test(text)) break;
+    tail = text.slice(-16); // overlap so a </head> split across chunks still matches
   }
   reader.cancel().catch(() => {});
   const out = new Uint8Array(Math.min(total, maxBytes));
@@ -179,7 +191,7 @@ function decodeBody(bytes, contentType) {
 //   'blocked' SSRF guard refused the URL or one of its redirect hops
 //   'timeout' the site didn't answer in time
 //   'error'   anything else (network failure, non-2xx, non-HTML, redirect loop)
-export async function fetchLinkPreview(url, { timeoutMs = 4000, maxBytes = 65536, maxRedirects = 3 } = {}) {
+export async function fetchLinkPreview(url, { timeoutMs = 4000, maxBytes = 2097152, maxRedirects = 3 } = {}) {
   const base = { url, finalUrl: null, title: null, description: null, site: null, fetchedAt: Date.now() };
   let current = url;
   try {

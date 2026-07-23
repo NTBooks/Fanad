@@ -155,7 +155,7 @@ export const config = {
   linkPreview: {
     enabled: !['0', 'false', 'off', 'no'].includes(String(process.env.LINK_PREVIEW ?? '').toLowerCase() || 'on'),
     timeoutMs: Number(process.env.LINK_PREVIEW_TIMEOUT_MS) || 4000,
-    maxBytes: Number(process.env.LINK_PREVIEW_MAX_BYTES) || 65536,
+    maxBytes: Number(process.env.LINK_PREVIEW_MAX_BYTES) || 2097152, // hard ceiling; the read exits early at </head>
   },
   telegram: { botToken: process.env.TELEGRAM_BOT_TOKEN || '' },
   // Slack (optional second channel). Secrets from env only (encrypted at rest when set in the UI instead).

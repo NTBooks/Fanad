@@ -185,3 +185,70 @@ test('fetchLinkPreview parses a body truncated at the byte cap', async (t) => {
   assert.equal(r.status, 'ok');
   assert.equal(r.title, 'Capped'); // the <head> meta survived the cap
 });
+
+test('fetchLinkPreview finds meta tags buried deep in a huge <head> (the YouTube shape)', async (t) => {
+  t.after(restoreFetch);
+  // ~700KB of inline-script filler BEFORE the tags — past the old 64KB cap, inside the default ceiling.
+  const page = `<html><head><script>/*${'x'.repeat(700000)}*/</script>`
+    + '<meta property="og:title" content="Deep Title"><meta property="og:description" content="Deep Desc">'
+    + '</head><body>hi</body></html>';
+  stubFetch(async () => htmlResponse(page));
+  const r = await fetchLinkPreview('https://example.com/deep');
+  assert.equal(r.status, 'ok');
+  assert.equal(r.title, 'Deep Title');
+  assert.equal(r.description, 'Deep Desc');
+});
+
+test('fetchLinkPreview stops reading at </head> instead of draining the body', async (t) => {
+  t.after(restoreFetch);
+  const enc = new TextEncoder();
+  let pulls = 0;
+  const stream = new ReadableStream({
+    pull(controller) {
+      pulls++;
+      if (pulls === 1) controller.enqueue(enc.encode('<meta property="og:title" content="Early"></head>'));
+      else controller.enqueue(enc.encode(`<p>${'x'.repeat(1000)}</p>`)); // endless body — must never be drained
+    },
+  });
+  stubFetch(async () => new Response(stream, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  const r = await fetchLinkPreview('https://example.com/stream');
+  assert.equal(r.status, 'ok');
+  assert.equal(r.title, 'Early');
+  assert.ok(pulls <= 3, `read should stop at </head>, pulled ${pulls} chunks`);
+});
+
+test('fetchLinkPreview catches a </head> split across chunk boundaries', async (t) => {
+  t.after(restoreFetch);
+  const enc = new TextEncoder();
+  const chunks = ['<meta property="og:title" content="Split"></he', 'ad>'];
+  let pulls = 0;
+  const stream = new ReadableStream({
+    pull(controller) {
+      pulls++;
+      if (pulls <= chunks.length) controller.enqueue(enc.encode(chunks[pulls - 1]));
+      else controller.enqueue(enc.encode(`<p>${'x'.repeat(1000)}</p>`));
+    },
+  });
+  stubFetch(async () => new Response(stream, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  const r = await fetchLinkPreview('https://example.com/split');
+  assert.equal(r.status, 'ok');
+  assert.equal(r.title, 'Split');
+  assert.ok(pulls <= 4, `read should stop right after the split </head>, pulled ${pulls} chunks`);
+});
+
+test('fetchLinkPreview salvages the partial body when the timeout fires mid-read', async (t) => {
+  t.after(restoreFetch);
+  const enc = new TextEncoder();
+  let pulls = 0;
+  const stream = new ReadableStream({
+    pull(controller) {
+      pulls++;
+      if (pulls === 1) controller.enqueue(enc.encode('<meta property="og:title" content="Partial"><script>'));
+      else controller.error(Object.assign(new Error('aborted'), { name: 'AbortError' })); // deadline hit mid-body
+    },
+  });
+  stubFetch(async () => new Response(stream, { status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } }));
+  const r = await fetchLinkPreview('https://example.com/slowbody');
+  assert.equal(r.status, 'ok');
+  assert.equal(r.title, 'Partial'); // bytes already in hand are parsed, not thrown away
+});
