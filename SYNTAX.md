@@ -479,6 +479,8 @@ test reads exactly these lines.
 /eat 4oz chicken breast
 /eat 8oz chicken, half a pepper, 5 mushrooms
 /eat whatever
+/eat whatever yesterday
+/eat whatever 7/20 off
 /foods
 /food add chicken breast 45
 /recipes

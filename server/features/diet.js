@@ -10,7 +10,7 @@ import {
   saveMeal, confirmMeal, confirmAdhocMeal, eatMealText,
   foodsText, addFoodText, setFoodText, deleteFoodText, showFoodText,
   recipesText, showRecipeText, deleteRecipeText, startRecipeBuild, defineRecipeCompact,
-  recordWeight, setCalorieTarget, setWhateverDay,
+  recordWeight, setCalorieTarget, setWhateverDayText,
 } from '../diet.js';
 import { foodConfirmAnswer, qtyAnswer, notebookGuardAnswer, setDialogState, clearDialogState } from '../dialog.js';
 import { registerFeature, tryFeatureCommand } from './registry.js';
@@ -96,10 +96,12 @@ registerFeature({
       run: nbGuard(({ userId }, m) => eatMealText(userId, m[1].trim())) },
     { match: ({ t }) => /^\/?save\s+meal\s+(\S+)\s+(.+)$/i.exec(t),
       run: nbGuard(({ userId }, m) => saveMeal(userId, m[1].trim(), m[2].trim())) },
-    // "eat whatever" marks today off the record (cheat/fast/travel day) — must beat the generic eat
-    // matcher below, which would otherwise save a food called "whatever". "eat whatever off" clears it.
-    { match: ({ t }) => /^\/?(?:eat|ate)\s+whatever(?:\s+(off|on|clear|no|cancel|undo))?\.?$/i.exec(t),
-      run: nbGuard(({ userId }, m) => setWhateverDay(userId, !/^(off|clear|no|cancel|undo)$/i.test(m[1] || ''))) },
+    // "eat whatever [date] [off]" marks a day off the record (cheat/fast/travel day) — must beat the
+    // generic eat matcher below, which would otherwise save a food called "whatever". Bare = today;
+    // "yesterday" / a weekday / "7/20" retro-marks a past day; "off" (either side) puts it back.
+    // Swallows the whole tail on purpose: an unreadable tail gets the usage hint, never a phantom food.
+    { match: ({ t }) => /^\/?(?:eat|ate)\s+whatever\b\s*(.*)$/i.exec(t),
+      run: nbGuard(({ userId }, m) => setWhateverDayText(userId, m[1])) },
     { match: ({ t }) => /^\/?(?:eat|ate)\s+(.+)$/i.exec(t),
       run: nbGuard(({ userId }, m) => startEat(userId, m[1].trim())) },
     { match: ({ lower }) => lower === '/foods' || lower === 'foods',

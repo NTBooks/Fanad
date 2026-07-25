@@ -17,7 +17,7 @@ const { migrate } = await import('../server/db.js');
 const { handleMessage } = await import('../server/chat.js');
 const { setUserFeatures, getCurrentNotebookId } = await import('../server/settings.js');
 const { getMetric, listFoods, getOrCreateTelegramUser, metricValuesSince, getDietDay, listDietDays } = await import('../server/repo.js');
-const { parseEatLine } = await import('../server/diet.js');
+const { parseEatLine, parsePastDay } = await import('../server/diet.js');
 const { dayStartOf } = await import('../shared/timeframe.js');
 
 migrate();
@@ -364,6 +364,47 @@ test('marking is idempotent — one row per day, and it says so', async () => {
   assert.match((await say('eat whatever')).reply, /already was/);
   assert.equal(listDietDays(1).filter((d) => d.day_start === dayStartOf(Date.now())).length, 1);
   await say('eat whatever off'); // clean up so later tests aren't skewed
+});
+
+// ── Retro "eat whatever <date>": mark a day off the record after the fact ──
+test('parsePastDay resolves every retro date form, always backward', () => {
+  const now = new Date(2026, 6, 24, 12).getTime(); // Fri Jul 24 2026, noon
+  const day = (y, m, d) => new Date(y, m, d, 2).getTime(); // 02:00 logical-day start
+  assert.equal(parsePastDay('', now), day(2026, 6, 24));          // bare = today
+  assert.equal(parsePastDay('today', now), day(2026, 6, 24));
+  assert.equal(parsePastDay('yesterday', now), day(2026, 6, 23));
+  assert.equal(parsePastDay('3 days ago', now), day(2026, 6, 21));
+  assert.equal(parsePastDay('tuesday', now), day(2026, 6, 21));   // most recent Tue
+  assert.equal(parsePastDay('friday', now), day(2026, 6, 24));    // today's weekday = today
+  assert.equal(parsePastDay('last friday', now), day(2026, 6, 17)); // "last" skips today's
+  assert.equal(parsePastDay('7/20', now), day(2026, 6, 20));
+  assert.equal(parsePastDay('on 7/20', now), day(2026, 6, 20));   // "on" preposition tolerated
+  assert.equal(parsePastDay('12/31', now), day(2025, 11, 31));    // year-less future → last year's
+  assert.equal(parsePastDay('jul 20th', now), day(2026, 6, 20));
+  assert.equal(parsePastDay('2026-07-20', now), day(2026, 6, 20));
+  assert.equal(parsePastDay('7/20/25', now), day(2025, 6, 20));
+  assert.equal(parsePastDay('2/30', now), null);                  // invalid date never rolls over
+  assert.equal(parsePastDay('pizza party', now), null);
+});
+
+test('"eat whatever yesterday" retro-marks yesterday only; "… yesterday off" puts it back', async () => {
+  const y = new Date(dayStartOf(Date.now())); y.setDate(y.getDate() - 1);
+  const yday = y.getTime();
+  const r = await say('eat whatever yesterday');
+  assert.match(r.reply, /Yesterday is an eat-whatever day/i);
+  assert.ok(getDietDay(1, yday), 'yesterday is marked');
+  assert.equal(getDietDay(1, dayStartOf(Date.now())), null, 'today untouched');
+  assert.match((await say('eat whatever yesterday off')).reply, /counts toward your averages again/i);
+  assert.equal(getDietDay(1, yday), null);
+});
+
+test('a future date is refused; an unreadable tail hints instead of saving a phantom food', async () => {
+  assert.match((await say('eat whatever 1/1/2099')).reply, /hasn.t happened yet/i);
+  const before = listFoods(1).length;
+  const r = await say('eat whatever pizza party');
+  assert.match(r.reply, /couldn.t read that as a day/i);
+  assert.equal(listFoods(1).length, before, 'no phantom food');
+  assert.equal(listDietDays(1).length, 0, 'nothing marked');
 });
 
 // ── The notebook guard: diet writes belong in Main; a notebook gets a warn + switch/here/cancel choice ──

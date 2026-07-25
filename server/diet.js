@@ -18,7 +18,7 @@ import {
 import { setDialogState, clearDialogState, setListing, resolveListing } from './dialog.js';
 import { tallyText } from './metrics.js';
 import { recordUndo } from './undo.js';
-import { dayStartOf } from '../shared/timeframe.js';
+import { dayStartOf, DAY_ROLLOVER_HOUR } from '../shared/timeframe.js';
 import {
   UNIT_LABEL, COUNT_UNIT_TYPES, toFoodUnits, caloriesFor, recipeTotals, recipeCalPerOz, qtyLabel,
 } from '../shared/diet.js';
@@ -306,17 +306,104 @@ export async function startEat(userId, text) {
 // "eat whatever" — declare a day off the record. A cheat day, a fast, a travel day: calories still log
 // normally if you want, but the graph tints the day and the report's average leaves it out, so one
 // deliberate blowout (or a skipped day) never reads as a tracked result. Idempotent; `on = false`
-// ("eat whatever off") clears it. Marks the SERVER's current logical day (dayStartOf, 02:00 rollover).
+// ("eat whatever off") clears it. `at` picks the logical day (dayStartOf, 02:00 rollover) — today by
+// default; setWhateverDayText below parses the retro chat forms ("yesterday", "tuesday", "7/20").
 export function setWhateverDay(userId, on = true, at = Date.now()) {
   const day = dayStartOf(at);
+  const isToday = day === dayStartOf(Date.now());
+  const label = isToday ? 'Today' : pastDayLabel(day);
   if (on) {
     const already = getDietDay(userId, day) != null;
     setDietDay(userId, day, 'whatever');
-    return `🍕 Today’s an eat-whatever day${already ? ' (already was)' : ''} — off the record. I’ll tint it on the graph and leave it out of your averages.\n(“eat whatever off” puts it back on the books.)`;
+    return isToday
+      ? `🍕 Today’s an eat-whatever day${already ? ' (already was)' : ''} — off the record. I’ll tint it on the graph and leave it out of your averages.\n(“eat whatever off” puts it back on the books.)`
+      : `🍕 ${label} is an eat-whatever day${already ? ' (already was)' : ''} — off the record. I’ll tint it on the graph and leave it out of your averages.\n(“eat whatever ${dateKeyOf(day)} off” puts it back on the books.)`;
   }
   return clearDietDay(userId, day)
-    ? '✓ Cleared — today counts toward your averages again.'
-    : 'Today wasn’t marked as an eat-whatever day.';
+    ? `✓ Cleared — ${isToday ? 'today' : label} counts toward your averages again.`
+    : `${label} wasn’t marked as an eat-whatever day.`;
+}
+
+// ── Retro "eat whatever <date>" parsing: mark a PAST logical day off the record after the fact ──
+const DAY_MS = 86400000;
+const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+const DOW_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_LABEL = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// N calendar days back from a day-start epoch, via setDate so DST can't drift the 02:00 anchor.
+const backDays = (day0, n) => { const d = new Date(day0); d.setDate(d.getDate() - n); return d.getTime(); };
+// A calendar Y/M/D's logical-day start (02:00 local). Null when JS would roll an invalid date over (2/30 → Mar 2).
+const dayOfYmd = (y, mo, d) => {
+  const x = new Date(y, mo, d, DAY_ROLLOVER_HOUR);
+  return x.getMonth() === mo && x.getDate() === d ? x.getTime() : null;
+};
+const dateKeyOf = (day0) => { // the day's M/D (year appended when it isn't this year's), round-trips through the parser
+  const d = new Date(day0);
+  const yr = d.getFullYear() === new Date().getFullYear() ? '' : `/${d.getFullYear()}`;
+  return `${d.getMonth() + 1}/${d.getDate()}${yr}`;
+};
+function pastDayLabel(day0) {
+  const today0 = dayStartOf(Date.now());
+  if (day0 === backDays(today0, 1)) return 'Yesterday';
+  const d = new Date(day0);
+  const yr = d.getFullYear() === new Date(today0).getFullYear() ? '' : ` ${d.getFullYear()}`;
+  return `${DOW_LABEL[d.getDay()]} ${MONTH_LABEL[d.getMonth()]} ${d.getDate()}${yr}`;
+}
+
+// A date phrase → the logical-day start it names, resolved BACKWARD (this marks days already lived):
+// yesterday · "3 days ago" · a weekday = its most recent occurrence ("last tue" skips today's) · 7/20,
+// jul 20, 2026-07-20 — year-less forms that land in the future roll back a year. Explicit-year futures
+// come back as-is so the caller can refuse them. Returns the epoch or null. Pure; exported for tests.
+export function parsePastDay(text, now = Date.now()) {
+  const s = String(text || '').trim().toLowerCase().replace(/^on\s+/, '').replace(/[.!?,;:]+$/, '');
+  const today0 = dayStartOf(now);
+  if (!s || s === 'today' || s === 'tonight') return today0;
+  if (s === 'yesterday') return backDays(today0, 1);
+  let m;
+  if ((m = /^(\d{1,3})\s+days?\s+ago$/.exec(s))) return backDays(today0, Number(m[1]));
+  if ((m = /^(last\s+)?(sun|mon|tue|wed|thu|fri|sat)[a-z]*$/.exec(s))) {
+    let delta = (new Date(today0).getDay() - WEEKDAYS.indexOf(m[2]) + 7) % 7;
+    if (m[1] && delta === 0) delta = 7; // "last tuesday" said on a Tuesday → a week ago, not today
+    return backDays(today0, delta);
+  }
+  if ((m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s))) return dayOfYmd(+m[1], +m[2] - 1, +m[3]);
+  if ((m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/.exec(s))) {
+    let yr = m[3] ? Number(m[3]) : new Date(today0).getFullYear();
+    if (yr < 100) yr += 2000;
+    const at = dayOfYmd(yr, +m[1] - 1, +m[2]);
+    return at != null && !m[3] && at > today0 ? dayOfYmd(yr - 1, +m[1] - 1, +m[2]) : at;
+  }
+  if ((m = /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})(?:st|nd|rd|th)?$/.exec(s))) {
+    const yr = new Date(today0).getFullYear();
+    const at = dayOfYmd(yr, MONTHS.indexOf(m[1]), +m[2]);
+    return at != null && at > today0 ? dayOfYmd(yr - 1, MONTHS.indexOf(m[1]), +m[2]) : at;
+  }
+  return null;
+}
+
+// The chat surface behind "eat whatever …" (features/diet.js): `tail` is everything after "whatever" —
+// an optional off-word (leading or trailing) plus an optional date. Today and past days only; the
+// future hasn't happened yet, so there's nothing to take off the record.
+export function setWhateverDayText(userId, tail = '', now = Date.now()) {
+  let s = String(tail || '').trim().replace(/[.!?]+$/, '');
+  const OFF = /^(off|clear|no|cancel|undo)$/i;
+  let on = true; let m;
+  if ((m = /^(off|on|clear|no|cancel|undo)\b\s*/i.exec(s)) && (OFF.test(m[1]) || /^on$/i.test(s))) {
+    // Leading off-word ("whatever off yesterday") — but a leading "on" only counts BARE ("whatever on"),
+    // since "on 7/20" is the preposition, which parsePastDay strips itself.
+    on = !OFF.test(m[1]);
+    s = s.slice(m[0].length);
+  } else if ((m = /\s+(off|on|clear|no|cancel|undo)$/i.exec(s))) { // trailing: "whatever 7/20 off"
+    on = !OFF.test(m[1]);
+    s = s.slice(0, m.index);
+  }
+  const day = parsePastDay(s, now);
+  if (day == null) {
+    return 'I couldn’t read that as a day — try “eat whatever” (today), “eat whatever yesterday”, a weekday (“eat whatever tuesday”), or a date (“eat whatever 7/20”). Add “off” to put a day back on the books.';
+  }
+  if (day > dayStartOf(now)) return `${pastDayLabel(day)} hasn’t happened yet — I can only take today or a past day off the record.`;
+  return setWhateverDay(userId, on, day);
 }
 
 // food_confirm resolution: save the (possibly corrected) density as a canonical food, then log the
