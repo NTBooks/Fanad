@@ -4,17 +4,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A **local-first, local-LLM RAG life-OS**. You text short snippets to your "future self" (web chat,
-Telegram, or Slack); a local LLM you configure (LM Studio) classifies them, and every suggestion is
+Telegram, or Slack); a local LLM you configure (LM Studio or Ollama) classifies them, and every suggestion is
 **grounded in your own data** — the model only ranks and phrases real rows it's given, never invents.
 It addresses you as **PastSelf**.
 
-> Status: functional and heavily tested (1,100+ automated tests), in daily use by its author and
-> under active development. Single maintainer — expect fast iteration and the occasional rough edge.
+> Status: functional and heavily tested, in daily use by its author and under active development.
+> Single maintainer — expect fast iteration and the occasional rough edge.
 
 ## Prerequisites
 - **Node 24+** (uses the native built-in `node:sqlite` — no C++ addon; unflagged on Node 24).
-- **[LM Studio](https://lmstudio.ai)** running its local server with a chat model **and** an
-  embedding model loaded (Developer tab → Start Server).
+- A **local model server**: [LM Studio](https://lmstudio.ai) (the easy default; Developer tab →
+  Start Server) or [Ollama](https://ollama.com), with a chat model **and** an embedding model
+  loaded. No model hardware? See the `mock` provider below, or the triple-locked cloud option
+  under Privacy.
 
 ## Setup
 
@@ -42,6 +44,17 @@ provider, encryption key) and writes `.env`. If `.env` already exists it refuses
 redo setup. Then double-click **`run.bat`**, which checks for Node 24+, installs dependencies and
 builds the web UI on first run, and starts the server. (`npm run setup` launches the same wizard
 from a terminal on any platform.)
+
+**Home Assistant OS (add-on):** Fanad ships as a Home Assistant App (add-on) so it runs on the
+same box as HA and appears in your sidebar via ingress (no ports to open, no reverse proxy).
+In HA: **Settings → Apps → App store → ⋮ → Repositories** (Add-on store on older versions) → add
+`https://github.com/NTBooks/fanad-ha`, then install and start Fanad. Data lives in `/data` and
+rides along in HA backups. Running plain Docker instead? Same image:
+```bash
+docker run -p 8787:8787 -v fanad_data:/persist ghcr.io/ntbooks/fanad-app
+```
+Fanad itself is light (Node + SQLite, fine on a Pi 4); point it at an LM Studio or Ollama box
+elsewhere on your network, or start with the `mock` provider and wire the model later.
 
 Manual setup:
 ```bash
@@ -146,9 +159,106 @@ command), so on Slack the command sigil is **`$`**. The bot shows `$`-prefixed c
 user IDs (`Uxxxx`) or `@handles`. Any allowed user can grow the list with **`vouch @name`** in chat
 (Slack: pick them from the `@` menu); revoke from **Settings → Access**.
 
+## Modules (all opt-in)
+Tasks are always on; everything else is a per-user module that starts **off**, so a fresh account
+sees only the scratchpad. Type `modules` in chat to see what's available and toggle by tapping, or
+`optin <name>` / `optout <name>`:
+
+- **Notes** and nestable **Lists** (an outliner for packing lists, projects, shopping)
+- **Metrics** (numbers you track in one line, with charts)
+- **Timer** (one-shot server timers: "timer 12 min for the oven", from any phone in the family)
+- **Diet** ("eat skyr 140cal" teaches a typical serving; foods, meals, recipes, reports,
+  off-record "eat whatever" days)
+- **Medication** (an adherence logger, not an advisor; templates + daily reminders)
+- **Journal** (a trend journal with daily/weekly/monthly AI summaries)
+- **Batches** (process runs with auto-versioned recipe templates)
+- **Notebooks** (separate private sub-spaces with their own tasks, notes, and lists)
+- **Home Assistant** (below)
+
+The owner can also enable or disable any module system-wide for the whole install (the `system`
+command, or Settings). Everyday safety net: `undo` (or a bare `u`) takes back the last thing the
+bot did, app-wide.
+
+## The web app
+The web chat is always on and everything the bots do works there too, plus GUI views a phone can't
+do: a **kanban board** for tasks, notes wall, metric charts, lists outliner, templates, diet report
+with inline edits, the journal, and batches (each view toggles GUI/Text), with themes (including
+the pixel-sim day/night Ocean) and wide-screen side panels. From Telegram or Slack, type `/web`
+for a one-time sign-in link that opens the browser already signed in as you.
+
+**Web login is optional.** By default there's no login (fine on localhost or a trusted LAN). Turn
+it on in Settings → Security to expose the UI beyond that: scrypt passwords plus mandatory TOTP
+2FA, database-backed sessions, an optional IP allowlist and registration toggle. It's also the
+prerequisite for speed-dial share links (below).
+
+**Terminal client.** Type `cmd` in any chat and Fanad mints a ready-to-paste
+`npx github:NTBooks/Fanad <server> <token>` line: a full-screen chat client in your console, no
+checkout needed. Owner opt-in; tokens are minted with an expiry you choose and revocable in
+Settings → Security.
+
+## Backup & restore
+Set `BACKUP_MODE=1` and Settings → Data & privacy grows a **Backup** button that downloads the
+whole installation as one zip (database, uploads, optionally the encryption key). Restore it onto
+a fresh box by dragging the zip into the setup wizard, or with `npm run restore`. (On HA OS,
+native Home Assistant backups already cover `/data`.)
+
+## Home Assistant (optional module)
+Wherever Fanad runs (as the HA add-on or on any other box), it can bridge to your Home Assistant.
+Opt in with `optin ha`; the owner pairs HA once in **⚙ Settings → Home Assistant** (paste the HA URL
+plus a long-lived access token from your HA profile's *Security* page; stored encrypted like every
+other secret), then `ha test` rings every output to prove the wiring.
+
+- **Your dings ring the house.** HA has no reminders that survive a restart; Fanad does. Timers and
+  reminders you set here also announce on voice satellites/media players, can fire a script you name
+  (wire a siren or lights there), and push to phones via the HA companion app.
+- **`ha <command>` from anywhere.** Anything after `ha` goes verbatim to your own HA Assist agent
+  (`ha turn off the kitchen light`, `ha run goodnight`). Remote control through Telegram's outbound
+  connection: no open ports, no cloud tunnel. `/ha` shows connection status.
+- **`ha cal <n>`** pushes a dated task onto a house calendar (needs HA's *Local Calendar*
+  integration and a calendar picked in Settings).
+- **Dashboards (the other direction).** `GET /api/ha/summary` is a read-only JSON bundle for HA REST
+  sensors: open tasks, due today, overdue, next deadline, plus a block per enabled module. Counts
+  and timestamps only unless you add `?titles=1`. Pair it with a read-only token (type `token` in
+  any chat, or Settings → Security), which can never post or change anything. `GET /api/stream`
+  (SSE, same token) emits a `counts` event when the numbers change, so you can skip polling.
+
+Fanad never reads your house: no sensors, no presence. The house is an output, not an input, and
+house commands are deterministic passthrough to your own Assist agent, never model output.
+
+### Speed Dial: give someone a few house buttons
+Owner-managed pads of numbers `0`–`9`, each mapped to one HA command you write. The pad-holder sends
+(or taps) a digit and only that command runs: how you hand a houseguest, a kid, or a roommate a few
+house controls without the run of your whole Home Assistant. Pad-holders never get free-text
+`ha <command>`, so their words never reach HA.
+
+- `sd @sam 1 = Kitchen | turn off the kitchen lights` sets a number (label optional);
+  `sd @sam limit on` locks that account to the pad only; `sd @sam test 1` test-fires it;
+  `sd` lists every pad. Or manage it all in **Settings → Access** (expand an account's row).
+- **Toggles:** give a number an optional second *OFF* command and one button turns the device on,
+  then off, alternating each press, on every surface.
+- **Remote-control links (no Telegram needed):** generate a no-login web link (1/7/30-day expiry,
+  revocable) from a person's row and text it to a guest; they get a simple page of just their
+  buttons. Requires web login to be enabled, so the rest of the app stays locked.
+- **Local accounts:** for family who don't use Telegram at all, add a *local* account (a name, not
+  an @handle). It's pad-only, never reaches the bot, and its remote link may be minted
+  never-expiring: the link is their account. Each row also prints a 🖨 hand-out card of their
+  numbers, like an old speed-dial card.
+
+## Docs
+The full **[manual](https://ntbooks.github.io/Fanad/manual.html)** and printable
+**[cheat sheet](https://ntbooks.github.io/Fanad/cheatsheet.html)** are published from `site/` via
+GitHub Pages, and the app serves them itself too (📖 in the web header; `/manual` in chat answers
+questions straight from the book). Running on Home Assistant? Start at the
+**[HA guide](https://ntbooks.github.io/Fanad/hacs.html)**.
+
 ## Privacy
-Everything stays on your machine. The only outbound calls are to your local LM Studio and (optionally)
-a weather API and the chat channels you enable. No cloud, no telemetry.
+Everything stays on your machine. The only outbound calls are to your local model server, your own
+Home Assistant if you pair it, and (optionally) a weather API and the chat channels you enable.
+No cloud, no telemetry. Secrets (chat tokens, API keys) are stored encrypted (AES-256-GCM).
+BYO cloud model keys exist for people without local-model hardware, but they only work behind an
+explicit `LLM_ALLOW_CLOUD` flag: off by default, hard-blocked at runtime, hidden in the UI when
+off. `/requestdeletion` in chat erases an account completely (confirm-gated, with an optional
+export first).
 
 ## License
 [MIT](LICENSE). Do what you like — self-host, modify, redistribute; just keep the copyright notice.
