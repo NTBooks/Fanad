@@ -18,7 +18,7 @@ export default function SpeedDialSection() {
   const [newKind, setNewKind] = useState('telegram'); // 'telegram' = whitelist @handle · 'local' = family name, no Telegram
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [shareTtl, setShareTtl] = useState(7);   // 1 | 7 | 30 days (no non-expiring link)
+  const [shareTtl, setShareTtl] = useState(7);   // 1 | 7 | 30 days, or 0 = never expires
   const [shareLabel, setShareLabel] = useState('');
   const [minted, setMinted] = useState(null);    // { url, expiresAt, hadSiteUrl } — shown ONCE after generating
   const [copied, setCopied] = useState(false);
@@ -299,7 +299,7 @@ export default function SpeedDialSection() {
                 <h4>{isLocal(a) ? 'Their remote-control link' : 'Share a remote-control link'}</h4>
                 <p className="sub">{isLocal(a)
                   ? 'This is how they use their pad: send them a link to just these buttons — no login, no Telegram. Pick "never expires" for a permanent one, and revoke it here if it ever leaks.'
-                  : 'Text a guest a link to just these buttons — no login, no Telegram account. The link controls only this pad and expires on its own.'}</p>
+                  : 'Text a guest a link to just these buttons — no login, no Telegram account. Pick an expiry for a guest handout, or "never expires" for a permanent pad (a wall tablet, say) — you can revoke it here any time.'}</p>
                 {!loginOn && (
                   <p className="bad">Turn on <strong>web login</strong> (Settings → Security) before sharing a link.
                     {' '}Without it, anyone who can reach this address can use the whole app, not just these buttons.</p>
@@ -315,7 +315,7 @@ export default function SpeedDialSection() {
                         <option value={1}>Expires in 1 day</option>
                         <option value={7}>Expires in 7 days</option>
                         <option value={30}>Expires in 30 days</option>
-                        {isLocal(a) && <option value={0}>Never expires</option>}
+                        <option value={0}>Never expires</option>
                       </select>
                       <button className="primary" onClick={() => generateShare(a.username)} disabled={busy || !loginOn}>Generate link</button>
                     </div>

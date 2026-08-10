@@ -364,8 +364,8 @@ export async function testSlotData(username, slot, command) {
 // fires its owner-authored slots, so a leaked link is bounded (predefined commands, an expiry, revocable) and
 // still can't send free text to HA. The raw token lives only in the URL; the DB keeps only its sha256.
 const SHARE_PREFIX = 'fsd1_';                 // recognizable/greppable like the CLI's fnd1_ (leak triage)
-export const SHARE_TTL_DAYS = [1, 7, 30];      // the only expiries offered a TELEGRAM pad (guest handouts expire by design)
-export const DEFAULT_SHARE_TTL_DAYS = 7;      // a LOCAL account may also take ttlDays 0 = never: the link IS the account
+export const SHARE_TTL_DAYS = [1, 7, 30];      // the timed expiries offered in the panel
+export const DEFAULT_SHARE_TTL_DAYS = 7;      // ttlDays 0 = never expires (wall-mounted pads, family links)
 const sha256 = (t) => createHash('sha256').update(String(t)).digest('hex');
 
 // Mint a link for an EXISTING pad. Clamps ttlDays to the offered set (default 7d). Returns the raw token +
@@ -382,10 +382,10 @@ export function mintShareLink(username, { ttlDays = DEFAULT_SHARE_TTL_DAYS, labe
   if (!u) return { ok: false, error: 'bad username' };
   const acct = getSpeedDialAccount(u);
   if (!acct) return { ok: false, error: `No pad for @${u} yet — set a number first.` };
-  // ttlDays 0 = never expires — offered ONLY for a local account, where the link is the person's whole way
-  // in (a family member shouldn't be locked out of the house buttons every 30 days). A telegram pad's links
-  // stay guest handouts: always expiring, so a bad ttl clamps to the default instead.
-  const never = Number(ttlDays) === 0 && acct.kind === 'local';
+  // ttlDays 0 = never expires — for links that ARE the person's way in (a local family account) or a pad
+  // left up permanently on a wall-mounted house tablet. Still hash-stored and revocable from the panel;
+  // an unrecognized ttl clamps to the default rather than silently minting a permanent link.
+  const never = Number(ttlDays) === 0;
   const days = never ? 0 : (SHARE_TTL_DAYS.includes(Number(ttlDays)) ? Number(ttlDays) : DEFAULT_SHARE_TTL_DAYS);
   const now = Date.now();
   const expiresAt = never ? null : now + days * 86400000;

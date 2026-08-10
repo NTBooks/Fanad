@@ -580,7 +580,7 @@ describe('remote-control share links', () => {
 // ── LOCAL accounts (v46): family members with no Telegram at all — a household name whose whole account is
 // its pad, used through the /r/ remote link. Locked in here: a local is never vouched (creating "grandma"
 // must not open the Telegram gate to whoever squats @grandma), can never be claimed or pinned by a Telegram
-// sender, can never be unlocked, and may hold a never-expiring share link (telegram pads may not). ─────────
+// sender, and can never be unlocked. ───────────────────────────────────────────────────────────────────────
 describe('local accounts', () => {
   before(() => settings.setAuthConfig({ mode: 'simple' })); // share links only exist under web login
   after(() => settings.setAuthConfig({ mode: 'none' }));
@@ -627,12 +627,12 @@ describe('local accounts', () => {
     assert.equal(acct.kind, 'local', 'still local');
   });
 
-  test('a local pad may hold a NEVER-expiring link; a telegram pad clamps ttl 0 to the default', () => {
+  test('any pad may hold a NEVER-expiring link (ttl 0) — local or telegram', () => {
     const m = sd.mintShareLink('grandma', { ttlDays: 0 });
-    assert.ok(m.ok && m.expiresAt === null && m.ttlDays === 0, 'ttl 0 = never, for a local only');
+    assert.ok(m.ok && m.expiresAt === null && m.ttlDays === 0, 'ttl 0 = never for a local pad');
     assert.equal(sd.resolveShare(m.token)?.expiresAt, null, 'and it resolves with no expiry');
     const tg = sd.mintShareLink('dave', { ttlDays: 0 });
-    assert.ok(tg.ok && tg.ttlDays === 7 && tg.expiresAt > Date.now(), 'a telegram-pad link always expires');
+    assert.ok(tg.ok && tg.ttlDays === 0 && tg.expiresAt === null, 'ttl 0 = never for a telegram pad too (wall-mounted house pads)');
   });
 
   test('the /r/ remote fires a local pad like any other', async () => {
