@@ -6,6 +6,7 @@ content_rating: everyone
 contains: []
 category: [productivity, bot, web-app, ml]
 status: beta
+tagline: A local-first, local-LLM RAG life-OS. You text your future self; it stays grounded in your own data.
 built_with: [claude-code]
 interface: [web, bot, cli]
 frameworks: [express]
